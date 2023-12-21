@@ -1,6 +1,6 @@
 import Image from './atoms/Image';
 
-const Item = ({ d }) => {
+const Item = ({ d }:any) => {
    return (
     <div>
       <Image
