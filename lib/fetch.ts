@@ -35,7 +35,7 @@ export async function sendData( ) {
     const responseData = await response.blob();
     
     const imageUrl = URL.createObjectURL(responseData);
-    return responseData;
+    return imageUrl;
   } catch (error) {
     console.error('Error sending data:', error);
     throw error;
