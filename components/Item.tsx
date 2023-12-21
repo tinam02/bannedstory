@@ -1,17 +1,12 @@
-import { loadItems } from '@/lib/fetch';
 import Image from './atoms/Image';
 
-const Item = ({ i }) => {
-  console.log('i', i);
-  return (
+const Item = ({ d }) => {
+   return (
     <div>
-      <h1>Items</h1>
-      <ul>
-        <Image
-          src={`data:image/png;base64,${i.metaInfo?.iconRaw}`}
-          alt={i.description?.name}
-        />
-      </ul>
+      <Image
+        src={`data:image/png;base64,${d.metaInfo?.iconRaw}`}
+        alt={d.description?.name}
+      />
     </div>
   );
 };

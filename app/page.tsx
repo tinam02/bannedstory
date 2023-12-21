@@ -1,27 +1,15 @@
-import Image from 'next/image'
-import styles from './page.module.css'
-import { loadItems } from '@/lib/fetch'
-import Item, { getItems } from '@/components/Item'
+import Image from 'next/image';
+import { loadItems, sendData } from '@/lib/fetch';
+import Item from '@/components/Item';
+import Char from '@/components/Char';
 
 export default async function Home() {
-  const data= await loadItems()
+  //const data = await loadItems();
+  const character = await sendData( );
+  console.log(character)
   return (
-    <main className={styles.main}>
-     
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-     <Item i={data}/>
+    <main>
+     <Char d={character} />
     </main>
-  )
+  );
 }
-
- 
