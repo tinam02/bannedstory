@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/blob": "^0.16.1",
+    "nanoid": "^5.0.4",
     "next": "14.0.4",
     "normalize.css": "^8.0.1",
     "react": "^18",

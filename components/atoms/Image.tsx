@@ -1,6 +1,6 @@
 import NextImage from 'next/image';
 
-const Image = ({ src, alt }: { src: string; alt?: string }) => {
+const DefaultImage = ({ src, alt }: { src: string; alt?: string }) => {
   return (
     <NextImage
       src={src}
@@ -12,4 +12,4 @@ const Image = ({ src, alt }: { src: string; alt?: string }) => {
   );
 };
 
-export default Image;
+export default DefaultImage;
