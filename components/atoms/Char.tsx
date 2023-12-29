@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { fetchCharacter } from '@/lib/fetch';
 import { DEFAULT_CHAR_BODY } from '@/lib/utils';
 import { IChar } from '@/types';
-import DefaultImage from './atoms/Image';
+import DefaultImage from './Image';
 
 const Char = ({ reqBody }: { reqBody: IChar }) => {
   const [imageSrc, setImageSrc] = useState('');

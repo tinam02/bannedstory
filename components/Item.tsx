@@ -1,14 +1,12 @@
+import DefaultImage from './atoms/Image';
 import Image from './atoms/Image';
 
-const Item = ({ d }:any) => {
+const Icon = () => {
    return (
     <div>
-      <Image
-        src={`data:image/png;base64,${d.metaInfo?.iconRaw}`}
-        alt={d.description?.name}
-      />
-    </div>
+ 
+     </div>
   );
 };
 
-export default Item;
+export default Icon;

@@ -1,12 +1,10 @@
-import Image from 'next/image';
-import { loadItems } from '@/lib/fetch';
-import Item from '@/components/Item';
-import Char from '@/components/Char';
+import Char from '@/components/atoms/Char';
+import Items from '@/components/molecules/Items';
 
 export default async function Home() {
   return (
     <main>
-      <Char reqBody={{}} />
+      <Char reqBody={{}} /><Items/>
     </main>
   );
 }

@@ -12,7 +12,7 @@ export async function loadItems() {
   }
 }
 
-export const NW_API_URL = 'https://api.maplestory.net/character/render';
+export const NW_API_URL = 'https://api.maplestory.net/';
 export const fetchCharacter = async ({
   reqBody,
   method = 'POST',
@@ -23,7 +23,7 @@ export const fetchCharacter = async ({
   prev?: string;
 }) => {
   try {
-    const response = await fetch(NW_API_URL, {
+    const response = await fetch(`${NW_API_URL}character/render`, {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reqBody),
@@ -42,5 +42,44 @@ export const fetchCharacter = async ({
   } catch (error) {
     console.error('Error fetching char:', error);
     return prev;
+  }
+};
+
+export const fetchItems = async ({
+  page,
+  nameText,
+  overallCategory = 'Equip',
+}: {
+  page?: number;
+  nameText?: string;
+  overallCategory?: string;
+}) => {
+  try {
+    const pageNumber = page || 1;
+    console.log({ page });
+    const pageQuery = page ? `&page=${pageNumber}` : '';
+    const nameQuery = nameText ? `&name=${nameText}` : '';
+    const response = await fetch(
+      `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}&maxEntries=2`
+    );
+    const { result, metadata } = await response.json();
+
+    return { result, metadata };
+  } catch (error: any) {
+    console.error('Error fetching items:', error);
+    return error;
+  }
+};
+
+export const fetchRawIcon = async ({ id }: { id: number }) => {
+  if (!id) return null;
+  try {
+    const response = await fetch(`${NW_API_URL}item/${id}/iconRaw`);
+    const data = await response.json();
+
+    return data;
+  } catch (error: any) {
+    console.error('Error fetching item:' + id, error);
+    return error;
   }
 };
