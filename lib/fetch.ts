@@ -41,7 +41,8 @@ export const fetchCharacter = async ({
     return dataUrl as string;
   } catch (error) {
     console.error('Error fetching char:', error);
-    return prev;
+    if (prev) return prev;
+    return 'Error fetching char!';
   }
 };
 
