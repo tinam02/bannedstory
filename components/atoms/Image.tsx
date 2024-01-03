@@ -1,6 +1,14 @@
 import NextImage from 'next/image';
 
-const DefaultImage = ({ src, alt }: { src: string; alt?: string }) => {
+const DefaultImage = ({
+  src,
+  alt,
+  title,
+}: {
+  src: string;
+  alt?: string;
+  title?: string;
+}) => {
   return (
     <NextImage
       src={src}
@@ -8,6 +16,7 @@ const DefaultImage = ({ src, alt }: { src: string; alt?: string }) => {
       width='0'
       height='0'
       style={{ width: 'auto', height: 'auto' }}
+      {...(title && { title })}
     />
   );
 };

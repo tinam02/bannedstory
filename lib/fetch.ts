@@ -38,6 +38,10 @@ export const fetchCharacter = async ({
       reader.readAsDataURL(blob);
     });
 
+    //save reqbody in localstorage if different from prev
+    // if (prev !== JSON.stringify(reqBody))
+    localStorage.setItem('char', JSON.stringify(reqBody));
+
     return dataUrl as string;
   } catch (error) {
     console.error('Error fetching char:', error);
@@ -57,7 +61,6 @@ export const fetchItems = async ({
 }) => {
   try {
     const pageNumber = page || 1;
-    console.log({ page });
     const pageQuery = page ? `&page=${pageNumber}` : '';
     const nameQuery = nameText ? `&name=${nameText}` : '';
     const response = await fetch(
@@ -72,15 +75,23 @@ export const fetchItems = async ({
   }
 };
 
-export const fetchRawIcon = async ({ id }: { id: number }) => {
-  if (!id) return null;
+export const fetchRawIcon = async ({ itemId }: { itemId: number }) => {
+  if (!itemId) return null;
   try {
-    const response = await fetch(`${NW_API_URL}item/${id}/iconRaw`);
-    const data = await response.json();
+    const response = await fetch(`${NW_API_URL}item/${itemId}/iconRaw`);
+    const blob = await response.blob();
 
-    return data;
+    // convert binary data to a b64 string
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+    return dataUrl;
   } catch (error: any) {
-    console.error('Error fetching item:' + id, error);
+    console.error('Error fetching item:' + itemId, error);
     return error;
   }
 };

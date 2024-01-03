@@ -10,7 +10,8 @@ const Char = ({ reqBody }: { reqBody: IChar }) => {
 
   useEffect(() => {
     let body = DEFAULT_CHAR_BODY;
-    if (reqBody) body = reqBody;
+    // if empty object, use default body
+    if (Object.keys(reqBody).length !== 0) body = reqBody;
 
     fetchCharacter({
       reqBody: body,

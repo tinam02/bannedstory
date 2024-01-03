@@ -1,20 +1,18 @@
 import { fetchItems } from '@/lib/fetch';
-import { useEffect } from 'react';
+import Item from '../atoms/Item';
 
 const Items = async () => {
-  const {result,metadata} = await fetchItems({});
+  const { result, metadata } = await fetchItems({});
   return (
     <div>
-      {result.length >1 && result?.map(item => {  console.log(item);
-
-        return (
-          <div key={item.id}>
-            <h1>{item.name}</h1>
-            <h2>{item.description}</h2>
-            <h3>{item.price}</h3>
-          </div>
-        );
-      })}
+      {result.length > 1 &&
+        result?.map((item: any) => {
+          return (
+            <div key={item.id}>
+              <Item item={item} />
+            </div>
+          );
+        })}
     </div>
   );
 };
