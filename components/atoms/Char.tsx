@@ -17,8 +17,9 @@ const Char = ({ reqBody }: { reqBody: IChar }) => {
       reqBody: body,
       prev: imageSrc,
     }).then(res => setImageSrc(res));
-  }, [reqBody]);
+  }, [imageSrc, reqBody]);
 
+  if (!imageSrc) return <>...</>;
   return (
     <>
       <DefaultImage src={imageSrc} alt='Character' />

@@ -4,10 +4,12 @@ const DefaultImage = ({
   src,
   alt,
   title,
+  onClick,
 }: {
   src: string;
   alt?: string;
   title?: string;
+  onClick?: () => void;
 }) => {
   return (
     <NextImage
@@ -15,8 +17,13 @@ const DefaultImage = ({
       alt={alt || ''}
       width='0'
       height='0'
-      style={{ width: 'auto', height: 'auto' }}
+      style={{
+        width: 'auto',
+        height: 'auto',
+        cursor: onClick ? 'pointer' : 'default',
+      }}
       {...(title && { title })}
+      {...(onClick && { onClick })}
     />
   );
 };

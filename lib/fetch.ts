@@ -60,14 +60,14 @@ export const fetchItems = async ({
   overallCategory?: string;
 }) => {
   try {
-    const pageNumber = page || 1;
+    const pageNumber = page;
     const pageQuery = page ? `&page=${pageNumber}` : '';
     const nameQuery = nameText ? `&name=${nameText}` : '';
     const response = await fetch(
-      `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}&maxEntries=2`
+      `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}&maxEntries=12`
     );
     const { result, metadata } = await response.json();
-
+    console.log(result);
     return { result, metadata };
   } catch (error: any) {
     console.error('Error fetching items:', error);
@@ -78,7 +78,9 @@ export const fetchItems = async ({
 export const fetchRawIcon = async ({ itemId }: { itemId: number }) => {
   if (!itemId) return null;
   try {
-    const response = await fetch(`${NW_API_URL}item/${itemId}/iconRaw`);
+    const response = await fetch(`${NW_API_URL}item/${itemId}/iconRaw`, {
+      cache: 'force-cache',
+    });
     const blob = await response.blob();
 
     // convert binary data to a b64 string
