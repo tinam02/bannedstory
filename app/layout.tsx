@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import 'normalize.css';
 import './globals.css';
+import { CharProvider } from './context/CharCtx';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,8 +17,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    <CharProvider>
     <html lang='en'>
       <body className={inter.className}>{children}</body>
-    </html>
+    </html></CharProvider>
   );
 }
