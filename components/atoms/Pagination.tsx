@@ -10,8 +10,10 @@ const Pagination = ({
 }) => {
   return (
     <>
-      {metadata.prevPage && (
+      {metadata.prevPage ? (
         <button onClick={() => setPage(metadata.prevPage)}>Prev</button>
+      ) : (
+        ''
       )}
       <p>{metadata.page}</p>
       {metadata.nextPage && (

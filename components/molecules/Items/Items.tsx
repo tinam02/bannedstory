@@ -19,9 +19,19 @@ const Items = ({ q }: { q: any }) => {
   }, [page]);
 
   function addToChar(item: any) {
-     if (!equippedItems.includes(item)) {
+    if (!equippedItems.includes(item)) {
+      //if equipepditems already has the item with this category, remove old
+      if (equippedItems.some((i: any) => i.subcategory === item.subcategory)) {
+        //remove old item
+        const newEquippedItems = equippedItems.filter(
+          (i: any) => i.subcategory !== item.subcategory
+        );
+        setEquippedItems([...newEquippedItems, item]);
+        console.log('neweqi', newEquippedItems);
+        return;
+      }
       setEquippedItems([...equippedItems, item]);
-      console.log(equippedItems);
+      console.log('eqi', equippedItems);
     }
   }
 
