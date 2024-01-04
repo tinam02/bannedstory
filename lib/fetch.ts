@@ -1,4 +1,6 @@
 import { IChar } from '@/types';
+import * as R from 'remeda';
+import { DEFAULT_CHAR_BODY } from './utils';
 
 export const API_URL = 'https://maplestory.io/api/GMS/23/';
 export async function loadItems() {
@@ -37,10 +39,13 @@ export const fetchCharacter = async ({
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
-
+    
     //save reqbody in localstorage if different from prev
-    // if (prev !== JSON.stringify(reqBody))
-    localStorage.setItem('char', JSON.stringify(reqBody));
+
+    if (!R.equals(reqBody, DEFAULT_CHAR_BODY)) {
+      console.log("SET CHAR")
+      localStorage.setItem('char', JSON.stringify(reqBody));
+    }
 
     return dataUrl as string;
   } catch (error) {

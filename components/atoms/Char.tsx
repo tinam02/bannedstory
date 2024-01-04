@@ -12,6 +12,9 @@ const Char = ({ reqBody }: { reqBody: IChar }) => {
 
   useEffect(() => {
     let body = DEFAULT_CHAR_BODY;
+    if (localStorage.getItem('char')) {
+      body = JSON.parse(localStorage.getItem('char') || '{}');
+    }
     // if empty object, use default body
     if (Object.keys(reqBody).length !== 0) body = reqBody;
     if (equippedItems.length) {
