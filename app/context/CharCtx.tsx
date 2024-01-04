@@ -19,6 +19,21 @@ export const CharContext = createContext<{
 export function CharProvider({ children }: { children: React.ReactNode }) {
   const [equippedItems, setEquippedItems] = useState([]);
 
+  //save to ls
+  useEffect(() => {
+    if (!equippedItems.length) return;
+    localStorage.setItem('equippedItems', JSON.stringify(equippedItems));
+  }, [equippedItems]);
+
+  //get from ls
+  useEffect(() => {
+    if (localStorage.getItem('equippedItems')) {
+      setEquippedItems(
+        JSON.parse(localStorage.getItem('equippedItems') || '[]')
+      );
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       equippedItems,

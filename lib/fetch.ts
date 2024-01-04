@@ -39,11 +39,23 @@ export const fetchCharacter = async ({
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
-    
-    //save reqbody in localstorage if different from prev
 
-    if (!R.equals(reqBody, DEFAULT_CHAR_BODY)) {
-      console.log("SET CHAR")
+    //save reqbody in localstorage if different from prev
+    if (
+      !R.equals(reqBody, {
+        itemIds: [],
+        faceId: 20000,
+        hairId: 30000,
+        skin: 'light',
+        ears: 'humanEars',
+        pose: 'standingOneHanded',
+        faceEmote: 'smile',
+        faceFrame: 0,
+        poseFrame: 0,
+        effectFrame: 0,
+      })
+    ) {
+      console.log('SET CHAR');
       localStorage.setItem('char', JSON.stringify(reqBody));
     }
 
@@ -59,17 +71,20 @@ export const fetchItems = async ({
   page,
   nameText,
   overallCategory = 'Equip',
+  subcategory,
 }: {
   page?: number;
   nameText?: string;
   overallCategory?: string;
+  subcategory?: string;
 }) => {
   try {
     const pageNumber = page;
     const pageQuery = page ? `&page=${pageNumber}` : '';
     const nameQuery = nameText ? `&name=${nameText}` : '';
+    const subcategoryQuery = subcategory ? `&subcategory=${subcategory}` : '';
     const response = await fetch(
-      `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}&maxEntries=12`
+      `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}${subcategoryQuery}&maxEntries=12`
     );
     const { result, metadata } = await response.json();
     console.log(result);
