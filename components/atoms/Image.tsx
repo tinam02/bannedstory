@@ -5,14 +5,17 @@ const DefaultImage = ({
   alt,
   title,
   onClick,
+  className
 }: {
   src: string;
   alt?: string;
   title?: string;
   onClick?: () => void;
+  className?: string;
 }) => {
   return (
     <NextImage
+      className={className}
       src={src}
       alt={alt || ''}
       width='0'

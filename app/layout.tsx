@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import 'normalize.css';
 import './globals.css';
 import { CharProvider } from './context/CharCtx';
+import { classes } from 'typestyle';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,7 +20,7 @@ export default function RootLayout({
   return (
     <CharProvider>
     <html lang='en'>
-      <body className={inter.className}>{children}</body>
+      <body className={classes(inter.className,'bgImg')}>{children}</body>
     </html></CharProvider>
   );
 }

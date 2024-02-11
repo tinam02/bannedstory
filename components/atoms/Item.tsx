@@ -11,7 +11,7 @@ const Item = ({ item, onClick }: { item: any; onClick: () => void }) => {
     fetchRawIcon({ itemId }).then((res: any) => setImageSrc(res));
   }, [item]);
 
-  if (!imageSrc) return <>...</>;
+  if (!imageSrc) return null;
   return (
     <div>
       <DefaultImage
