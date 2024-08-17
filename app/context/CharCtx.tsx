@@ -1,7 +1,6 @@
 'use client';
 import React, {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -11,19 +10,32 @@ import React, {
 export const CharContext = createContext<{
   equippedItems: any;
   setEquippedItems: any;
+  equippedBodyItems: any;
+  setEquippedBodyItems: any;
 }>({
   equippedItems: [],
   setEquippedItems: () => {},
+  equippedBodyItems: [],
+  setEquippedBodyItems: () => {},
 });
 
 export function CharProvider({ children }: { children: React.ReactNode }) {
   const [equippedItems, setEquippedItems] = useState([]);
+  const [equippedBodyItems, setEquippedBodyItems] = useState([]);
 
   //save to ls
   useEffect(() => {
     if (!equippedItems.length) return;
     localStorage.setItem('equippedItems', JSON.stringify(equippedItems));
   }, [equippedItems]);
+
+  useEffect(() => {
+    if (!equippedBodyItems.length) return;
+    localStorage.setItem(
+      'equippedBodyItems',
+      JSON.stringify(equippedBodyItems)
+    );
+  }, [equippedBodyItems]);
 
   //get from ls
   useEffect(() => {
@@ -32,14 +44,21 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
         JSON.parse(localStorage.getItem('equippedItems') || '[]')
       );
     }
+    if (localStorage.getItem('char')) {
+      setEquippedBodyItems(
+        JSON.parse(localStorage.getItem('equippedBodyItems') || '[]')
+      );
+    }
   }, []);
 
   const value = useMemo(
     () => ({
       equippedItems,
       setEquippedItems,
+      equippedBodyItems,
+      setEquippedBodyItems,
     }),
-    [equippedItems, setEquippedItems]
+    [equippedItems, setEquippedItems, equippedBodyItems, setEquippedBodyItems]
   );
 
   return <CharContext.Provider value={value}>{children}</CharContext.Provider>;

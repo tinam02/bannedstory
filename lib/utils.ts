@@ -7,7 +7,7 @@ export const DEFAULT_CHAR_BODY: IChar = {
   skin: 'light',
   ears: 'humanEars',
   pose: 'standingOneHanded',
-  faceEmote: 'smile',
+  faceEmote: 'default',
   faceFrame: 0,
   poseFrame: 0,
   effectFrame: 0,

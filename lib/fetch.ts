@@ -30,6 +30,7 @@ export const fetchCharacter = async ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reqBody),
     });
+    console.log('qqfetc',reqBody)
     const blob = await response.blob();
 
     // convert binary data to a b64 string
@@ -49,7 +50,7 @@ export const fetchCharacter = async ({
         skin: 'light',
         ears: 'humanEars',
         pose: 'standingOneHanded',
-        faceEmote: 'smile',
+        faceEmote: 'default',
         faceFrame: 0,
         poseFrame: 0,
         effectFrame: 0,
@@ -111,6 +112,60 @@ export const fetchRawIcon = async ({ itemId }: { itemId: number }) => {
       reader.readAsDataURL(blob);
     });
 
+    return dataUrl;
+  } catch (error: any) {
+    console.error('Error fetching item:' + itemId, error);
+    return error;
+  }
+};
+
+// BODY
+export const fetchFaces = async ({
+  page,
+  nameText,
+}: {
+  page?: number;
+  nameText?: string;
+}) => {
+  try {
+    const pageNumber = page;
+    const pageQuery = page ? `page=${pageNumber}` : '';
+    const nameQuery = nameText ? `&name=${nameText}` : '';
+
+    const response = await fetch(
+      `${NW_API_URL}faces?${pageQuery}${nameQuery}&maxEntries=12`
+    );
+    const { result, metadata } = await response.json();
+    return { result, metadata };
+  } catch (error: any) {
+    console.error('Error fetching faces:', error);
+    return error;
+  }
+};
+
+export type IBodyTypes = 'face' | 'hair';
+export const fetchBodyIcon = async ({
+  itemId,
+  q = 'face',
+}: {
+  itemId: number;
+  q: IBodyTypes;
+}) => {
+  if (!itemId) return null;
+  try {
+    const response = await fetch(`${NW_API_URL}${q}/${itemId}/icon`, {
+      cache: 'force-cache',
+    });
+    const blob = await response.blob();
+    console.log('dataurlf',blob)
+
+    // convert binary data to a b64 string
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
     return dataUrl;
   } catch (error: any) {
     console.error('Error fetching item:' + itemId, error);

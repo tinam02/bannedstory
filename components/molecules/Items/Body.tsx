@@ -1,35 +1,27 @@
 'use client';
-import { fetchItems } from '@/lib/fetch';
+import { fetchFaces, fetchItems, IBodyTypes } from '@/lib/fetch';
 import Item from '../../atoms/Item';
 import Pagination from '../../atoms/Pagination/Pagination';
 import { useEffect, useState } from 'react';
 import { stItemList } from './items.css';
 import useChar from '@/app/context/CharCtx';
+import BodyItem from '@/components/atoms/BodyItem';
 
-const Items = ({ q }: { q: string }) => {
+const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
   const [items, setItems] = useState<any>({});
   const [page, setPage] = useState(0);
-  const { equippedItems, setEquippedItems } = useChar();
+  const { equippedBodyItems, setEquippedBodyItems } = useChar();
 
   useEffect(() => {
-    fetchItems({
+    fetchFaces({
       page,
-      subcategory: q,
     }).then(res => setItems(res));
   }, [page, q]);
 
   function addToChar(item: any) {
-    if (!equippedItems.includes(item)) {
-      //if equipepditems already has the item with this category, remove old
-      if (equippedItems.some((i: any) => i.subcategory === item.subcategory)) {
-        //remove old item
-        const newEquippedItems = equippedItems.filter(
-          (i: any) => i.subcategory !== item.subcategory
-        );
-        setEquippedItems([...newEquippedItems, item]);
-        return;
-      }
-      setEquippedItems([...equippedItems, item]);
+    if (!equippedBodyItems?.find((i: any) => i.faceId === item.faceId)) {
+      const newEquippedItems = equippedBodyItems.filter((i: any) => !i.faceId);
+      setEquippedBodyItems([...newEquippedItems, item]);
     }
   }
 
@@ -38,9 +30,17 @@ const Items = ({ q }: { q: string }) => {
     <div className={stItemList}>
       {items.result?.length > 1 &&
         items?.result?.map((item: any) => {
+          const itemId = item.faceId || item.hairId;
           return (
-            <div key={item.itemId}>
-              <Item item={item} onClick={() => addToChar(item)} />
+            <div key={itemId}>
+              <BodyItem
+                item={{
+                  ...item,
+                  itemId,
+                }}
+                onClick={() => addToChar(item)}
+                q={q}
+              />
             </div>
           );
         })}
@@ -51,4 +51,4 @@ const Items = ({ q }: { q: string }) => {
   );
 };
 
-export default Items;
+export default BodyItems;
