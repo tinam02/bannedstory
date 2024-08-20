@@ -25,6 +25,7 @@ const DefaultImage = ({
         height: 'auto',
         cursor: onClick ? 'pointer' : 'default',
       }}
+      priority
       {...(title && { title })}
       {...(onClick && { onClick })}
     />

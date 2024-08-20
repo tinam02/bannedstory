@@ -1,7 +1,10 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { fetchBodyIcon, IBodyTypes } from '@/lib/fetch';
+import { useState } from 'react';
+import { getItemId } from '../molecules/Items/Body';
 import DefaultImage from './Image';
-import { fetchBodyIcon, fetchRawIcon, IBodyTypes } from '@/lib/fetch';
+
+const imageCache = new Map<string, string>();
 
 const BodyItem = ({
   item,
@@ -12,12 +15,23 @@ const BodyItem = ({
   onClick: () => void;
   q: IBodyTypes;
 }) => {
-  const [imageSrc, setImageSrc] = useState('');
+  const itemId = getItemId(item, q);
+  const cacheKey = `${itemId}-${q}`;
 
-  useEffect(() => {
-    const { itemId } = item;
-    fetchBodyIcon({ itemId, q }).then((res: any) => setImageSrc(res));
-  }, [item, q]);
+  const [imageSrc, setImageSrc] = useState<string>(
+    () => imageCache.get(cacheKey) || ''
+  );
+
+  if (!imageSrc) {
+    fetchBodyIcon({ itemId, q })
+      .then((res: string) => {
+        imageCache.set(cacheKey, res);
+        setImageSrc(res);
+      })
+      .catch(error => {
+        console.error('Failed to fetch image:', error);
+      });
+  }
 
   if (!imageSrc) return null;
   return (

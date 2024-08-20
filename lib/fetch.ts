@@ -85,7 +85,8 @@ export const fetchItems = async ({
     const nameQuery = nameText ? `&name=${nameText}` : '';
     const subcategoryQuery = subcategory ? `&subcategory=${subcategory}` : '';
     const response = await fetch(
-      `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}${subcategoryQuery}&maxEntries=12`
+      `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}${subcategoryQuery}&maxEntries=12`,
+      { cache: 'force-cache' }
     );
     const { result, metadata } = await response.json();
     console.log(result);
@@ -133,7 +134,7 @@ export const fetchBodyItems = async ({
   try {
     const pageNumber = page;
     const pageQuery = page ? `page=${pageNumber}` : '';
-    const nameQuery = nameText ? `&name=${nameText}` : '';
+    const nameQuery = nameText ? `&nameText=${nameText}` : '';
 
     const response = await fetch(
       `${NW_API_URL}${q}s?${pageQuery}${nameQuery}&maxEntries=12`
@@ -159,7 +160,6 @@ export const fetchBodyIcon = async ({
       cache: 'force-cache',
     });
     const blob = await response.blob();
-    console.log('dataurlf', blob);
 
     // convert binary data to a b64 string
     const dataUrl = await new Promise((resolve, reject) => {
