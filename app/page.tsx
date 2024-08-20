@@ -13,6 +13,7 @@ export default async function Home({ searchParams }: { searchParams: any }) {
       <Items q={'Top'} />
       <Items q={'Bottom'} />
       <BodyItems q={'face'} />
+      <BodyItems q={'hair'} />
     </main>
   );
 }

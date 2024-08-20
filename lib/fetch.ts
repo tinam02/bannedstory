@@ -30,7 +30,7 @@ export const fetchCharacter = async ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reqBody),
     });
-    console.log('qqfetc',reqBody)
+    console.log('qqfetc', reqBody);
     const blob = await response.blob();
 
     // convert binary data to a b64 string
@@ -120,12 +120,15 @@ export const fetchRawIcon = async ({ itemId }: { itemId: number }) => {
 };
 
 // BODY
-export const fetchFaces = async ({
+export type IBodyTypes = 'face' | 'hair';
+export const fetchBodyItems = async ({
   page,
   nameText,
+  q = 'face',
 }: {
   page?: number;
   nameText?: string;
+  q?: IBodyTypes;
 }) => {
   try {
     const pageNumber = page;
@@ -133,17 +136,16 @@ export const fetchFaces = async ({
     const nameQuery = nameText ? `&name=${nameText}` : '';
 
     const response = await fetch(
-      `${NW_API_URL}faces?${pageQuery}${nameQuery}&maxEntries=12`
+      `${NW_API_URL}${q}s?${pageQuery}${nameQuery}&maxEntries=12`
     );
     const { result, metadata } = await response.json();
     return { result, metadata };
   } catch (error: any) {
-    console.error('Error fetching faces:', error);
+    console.error(`Error fetching ${q}s:`, error);
     return error;
   }
 };
 
-export type IBodyTypes = 'face' | 'hair';
 export const fetchBodyIcon = async ({
   itemId,
   q = 'face',
@@ -157,7 +159,7 @@ export const fetchBodyIcon = async ({
       cache: 'force-cache',
     });
     const blob = await response.blob();
-    console.log('dataurlf',blob)
+    console.log('dataurlf', blob);
 
     // convert binary data to a b64 string
     const dataUrl = await new Promise((resolve, reject) => {
