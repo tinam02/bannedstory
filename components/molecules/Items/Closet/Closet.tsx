@@ -8,7 +8,7 @@ import { useState } from 'react';
 const Closet = ({}: {}) => {
   const [nameText, setNameText] = useState('');
   return (
-    <>
+    <section id='closet'>
       <DebouncedInput
         onDebouncedChange={(x: string) => {
           setNameText(x);
@@ -21,7 +21,7 @@ const Closet = ({}: {}) => {
       <Items q={'Bottom'} />
       <BodyItems q={'face'}  />
       <BodyItems q={'hair'} nameText={nameText} />
-    </>
+    </section>
   );
 };
 
