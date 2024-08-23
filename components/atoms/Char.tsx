@@ -23,7 +23,6 @@ const Char = ({ reqBody }: { reqBody: IChar }) => {
       body.itemIds = equippedItems.map((item: any) => item.itemId);
     }
     if (equippedBodyItems.length) {
-      console.log('equippedBodyItems.find((item: any) => item.faceId)?.faceId',equippedBodyItems.find((item: any) => item.faceId)?.faceId)
       body.faceId = equippedBodyItems.find((item: any) => item.faceId)?.faceId;
       body.hairId = equippedBodyItems.find((item: any) => item.hairId)?.hairId;
     }

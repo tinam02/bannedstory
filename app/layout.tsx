@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import 'normalize.css';
 import './globals.css';
 import { CharProvider } from './context/CharCtx';
-import { classes } from 'typestyle';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -19,8 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <CharProvider>
-    <html lang='en'>
-      <body className={classes(inter.className,'bgImg')}>{children}</body>
-    </html></CharProvider>
+      <html lang='en'>
+        <body className={'bgImg'}>{children}</body>
+      </html>
+    </CharProvider>
   );
 }
