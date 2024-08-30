@@ -27,7 +27,7 @@ const Closet = ({}: {}) => {
   // );
 
   return (
-    <div id='card' className={'card'}>
+    <div id='card' className={classes('card')}>
       <p className={classes('card-title', fontRegupix)}>INVENTORY</p>
       hello
     </div>
@@ -35,5 +35,3 @@ const Closet = ({}: {}) => {
 };
 
 export default Closet;
-
- 
