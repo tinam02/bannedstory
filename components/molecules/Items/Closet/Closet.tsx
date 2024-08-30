@@ -27,7 +27,7 @@ const Closet = ({}: {}) => {
   // );
 
   return (
-    <div id='card' className={classes(card)}>
+    <div id='card' className={'card'}>
       <p className={classes('card-title', fontRegupix)}>INVENTORY</p>
       hello
     </div>
@@ -36,21 +36,4 @@ const Closet = ({}: {}) => {
 
 export default Closet;
 
-const card = style({
-  height: 400,
-  width: 500,
-  background: 'rgba(0,0,0,0.65)',
-  border: '1px solid rgba(255,255,255,0.75)',
-  $nest: {
-    '.card-title': {
-      fontSize:12,
-      textAlign: 'center',
-      background: '-webkit-linear-gradient(#ffee44, #ffbb00)',
-      backgroundClip: 'text',
-      '-webkit-text-fill-color': 'transparent',
-      filter: 'drop-shadow(0 0 1px rgba(0,0, 0, 1))',
-      transform:'scale(1, 0.78)',
-letterSpacing:-0.3
-    },
-  },
-});
+ 
