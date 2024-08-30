@@ -29,7 +29,9 @@ const Closet = ({}: {}) => {
   return (
     <div id='card' className={classes('card')}>
       <p className={classes('card-title', fontRegupix)}>INVENTORY</p>
-      hello
+      <div className='card-inner'>
+
+      </div>
     </div>
   );
 };
