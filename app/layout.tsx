@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import 'normalize.css';
-import './globals.css';
+import './globals.scss';
 import { CharProvider } from './context/CharCtx';
 
 export const metadata: Metadata = {
