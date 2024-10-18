@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import 'normalize.css';
+import '@mantine/core/styles.css';
 import './globals.scss';
 import { CharProvider } from './context/CharCtx';
+import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -16,7 +17,12 @@ export default function RootLayout({
   return (
     <CharProvider>
       <html lang='en'>
-        <body className={'bgImg'}>{children}</body>
+        <head>
+          <ColorSchemeScript />
+        </head>
+        <body className={'bgImg'}>
+          <MantineProvider>{children}</MantineProvider>
+        </body>
       </html>
     </CharProvider>
   );
