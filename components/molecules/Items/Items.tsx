@@ -35,19 +35,22 @@ const Items = ({ q }: { q: string }) => {
 
   if (!items) return <>...</>;
   return (
-    <div className={stItemList}>
-      {items.result?.length > 1 &&
-        items?.result?.map((item: any) => {
-          return (
-            <div key={item.itemId}>
-              <Item item={item} onClick={() => addToChar(item)} />
-            </div>
-          );
-        })}
+    <>
+      <div className={stItemList}>
+        {items.result?.length > 1 &&
+          items?.result?.map((item: any) => {
+            return (
+              <div key={item.itemId} className='closet-item'>
+                <Item item={item} onClick={() => addToChar(item)} />
+              </div>
+            );
+          })}
+      </div>
+
       {items.metadata && (
         <Pagination metadata={items.metadata} setPage={setPage} />
       )}
-    </div>
+    </>
   );
 };
 

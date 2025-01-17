@@ -51,7 +51,7 @@ const Closet = ({}: {}) => {
           <Tabs.Panel value='Hat'>
             <Items q={'Hat'} />
           </Tabs.Panel>
-          <Tabs.Panel value='Top'>
+          {/* <Tabs.Panel value='Top'>
             <Items q={'Top'} />
           </Tabs.Panel>
           <Tabs.Panel value='Bottom'>
@@ -68,7 +68,7 @@ const Closet = ({}: {}) => {
           </Tabs.Panel>
           <Tabs.Panel value='Hair'>
             <BodyItems q={'hair'} />
-          </Tabs.Panel>
+          </Tabs.Panel> */}
         </Tabs>
       </div>
     </div>
