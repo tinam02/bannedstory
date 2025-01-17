@@ -40,7 +40,7 @@ const Items = ({ q }: { q: string }) => {
         {items.result?.length > 1 &&
           items?.result?.map((item: any) => {
             return (
-              <div key={item.itemId} className='closet-item'>
+              <div key={item.itemId} className='closet-item clickable'>
                 <Item item={item} onClick={() => addToChar(item)} />
               </div>
             );

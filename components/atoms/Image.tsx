@@ -5,7 +5,7 @@ const DefaultImage = ({
   alt,
   title,
   onClick,
-  className
+  className,
 }: {
   src: string;
   alt?: string;
@@ -23,7 +23,6 @@ const DefaultImage = ({
       style={{
         width: 'auto',
         height: 'auto',
-        cursor: onClick ? 'pointer' : 'default',
       }}
       priority
       {...(title && { title })}
