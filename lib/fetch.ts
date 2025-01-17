@@ -84,10 +84,8 @@ export const fetchItems = async ({
     const pageQuery = page ? `&page=${pageNumber}` : '';
     const nameQuery = nameText ? `&name=${nameText}` : '';
     const subcategoryQuery = subcategory ? `&subcategory=${subcategory}` : '';
-    const response = await fetch(
-      `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}${subcategoryQuery}&maxEntries=12`,
-      { cache: 'force-cache' }
-    );
+    const url = `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}${subcategoryQuery}&maxEntries=12`;
+    const response = await fetch(url, { cache: 'force-cache' });
     const { result, metadata } = await response.json();
     console.log(result);
     return { result, metadata };
