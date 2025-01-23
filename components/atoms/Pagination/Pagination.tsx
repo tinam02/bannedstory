@@ -1,11 +1,13 @@
 'use client';
 import { useState } from 'react';
-import { stArrow, stNumberInput, stPagination } from './pagination.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faChevronLeft,
-  faChevronRight,
-} from '@fortawesome/free-solid-svg-icons';
+  stArrow,
+  stLeftArrow,
+  stNumberInput,
+  stPagination,
+} from './pagination.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
 const Pagination = ({
   metadata,
@@ -14,34 +16,76 @@ const Pagination = ({
   metadata: any;
   setPage: (page: number) => void;
 }) => {
+  console.log(metadata);
   return (
     <div className={stPagination}>
-      {metadata.prevPage ? (
-        <FontAwesomeIcon
-          onClick={() => setPage(metadata.prevPage)}
-          icon={faChevronLeft}
-          size='2x'
-          className={stArrow}
-        />
+      {typeof metadata.prevPage === 'number' || true ? (
+        <>
+          <Icon
+            defaultImg='/ui/buttons/end/Item.BtSmall.normal.0.png'
+            activeImg='/ui/buttons/end/Item.BtSmall.pressed.0.png'
+            onClick={() => setPage(0)}
+          />
+          <Icon
+            defaultImg='/ui/buttons/arrow/Item.BtGather.normal.0.png'
+            activeImg='/ui/buttons/arrow/Item.BtGather.pressed.0.png'
+            onClick={() => setPage(metadata.prevPage)}
+            imgStyle={{ transform: 'rotate(-90deg)' }}
+          />
+        </>
       ) : (
         ''
       )}
       <input
         placeholder={metadata.page}
-        onChange={e => setPage(parseInt(e.target.value))}
+        onBlur={e => setPage(parseInt(e.target.value))}
         type='number'
         className={stNumberInput}
       />
       {metadata.nextPage && (
-        <FontAwesomeIcon
-          onClick={() => setPage(metadata.nextPage)}
-          icon={faChevronRight}
-          size='2x'
-          className={stArrow}
-        />
+        <>
+          <Icon
+            defaultImg='/ui/buttons/arrow/Item.BtGather.normal.0.png'
+            activeImg='/ui/buttons/arrow/Item.BtGather.pressed.0.png'
+            onClick={() => setPage(metadata.nextPage)}
+            imgStyle={{ transform: 'rotate(90deg)' }}
+          />
+          <Icon
+            defaultImg='/ui/buttons/end/Item.BtSmall.normal.0.png'
+            activeImg='/ui/buttons/end/Item.BtSmall.pressed.0.png'
+            onClick={() => setPage(800)}
+            imgStyle={{ transform: 'scaleX(-1)' }}
+          />
+        </>
       )}
     </div>
   );
 };
 
 export default Pagination;
+
+const Icon = ({ defaultImg, activeImg, onClick, imgStyle }: any) => {
+  const [isActive, setIsActive] = useState(false);
+
+  return (
+    <button
+      onMouseDown={() => setIsActive(true)}
+      onMouseUp={() => setIsActive(false)}
+      onMouseLeave={() => setIsActive(false)}
+      onClick={onClick}
+      style={{
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        cursor: 'pointer',
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={isActive ? activeImg : defaultImg}
+        alt='Arrow button'
+        style={imgStyle}
+      />
+    </button>
+  );
+};
