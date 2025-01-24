@@ -138,6 +138,7 @@ a {
     padding-left: 8px;
     padding-right: 8px;
     font-family: inherit;
+    margin-top: auto;
     span {
       //tab title
       font-size: 12px;
@@ -153,6 +154,7 @@ a {
         rgba(255, 176, 11)
       );
       border-color: #d6810f;
+      max-height: 32px;
       span {
         filter: drop-shadow(0 0 1px rgba(144, 82, 26, 0.6))
           drop-shadow(0 0 3px rgba(144, 82, 26, 1));

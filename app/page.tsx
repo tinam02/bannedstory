@@ -4,7 +4,7 @@ import Closet from '@/components/molecules/Items/Closet/Closet';
 import { fontArial } from './styles/fonts';
 import Cursor from '@/components/atoms/Cursor';
 
-export default async function Home({ searchParams }: { searchParams: any }) {
+export default async function Home() {
   return (
     <main className={fontArial}>
       <Char reqBody={{}} />

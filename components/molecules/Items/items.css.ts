@@ -26,10 +26,12 @@ export const stItemList = style({
 
 export const stPaginationContainer = style({
   position: 'absolute',
-  bottom: 10,
+  bottom: 16,
   display: 'flex',
+  justifyContent:'center',
   flex: 1,
   width: '100%',
   paddingLeft: px(8),
   paddingRight: px(8),
+  gap: 16,
 });

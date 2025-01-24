@@ -10,13 +10,15 @@ export const stPagination = style({
 });
 
 export const stNumberInput = style({
-  maxWidth: px(50),
   textAlign: 'center',
   borderRadius: px(4),
-  border: 'inset 2px #fff',
+  borderTop: '1px solid rgba(170, 170, 170, 0.9)',
+  borderLeft: '1px solid rgba(170, 170, 170, 0.7)',
+  borderRight: '1px solid rgba(170, 170, 170, 0.2)',
+  borderBottom: '1px solid rgba(170, 170, 170, 0.2)',
   outline: 'none',
-  //remove arrows
   '-moz-appearance': 'textfield',
+  appearance: 'textfield',
   $nest: {
     '&::-webkit-outer-spin-button': {
       '-webkit-appearance': 'none',
