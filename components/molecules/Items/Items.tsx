@@ -3,7 +3,7 @@ import { fetchItems } from '@/lib/fetch';
 import Item from '../../atoms/Item';
 import Pagination from '../../atoms/Pagination/Pagination';
 import { useEffect, useState } from 'react';
-import { stItemList } from './items.css';
+import { stItemList, stPaginationContainer } from './items.css';
 import useChar from '@/app/context/CharCtx';
 
 const Items = ({ q }: { q: string }) => {
@@ -47,9 +47,11 @@ const Items = ({ q }: { q: string }) => {
           })}
       </div>
 
-      {items.metadata && (
-        <Pagination metadata={items.metadata} setPage={setPage} />
-      )}
+      <div className={stPaginationContainer}>
+        {items.metadata && (
+          <Pagination metadata={items.metadata} setPage={setPage} />
+        )}
+      </div>
     </>
   );
 };

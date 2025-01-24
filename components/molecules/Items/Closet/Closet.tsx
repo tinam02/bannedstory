@@ -1,12 +1,10 @@
 'use client';
 
-import DebouncedInput from '@/components/atoms/DebouncedInput';
-import BodyItems from '../Body';
-import Items from '../Items';
-import { useState } from 'react';
-import { classes, style } from 'typestyle';
-import { fontArial, fontRegupix } from '@/app/styles/fonts';
+import { fontRegupix } from '@/app/styles/fonts';
 import { Tabs } from '@mantine/core';
+import { useState } from 'react';
+import { classes } from 'typestyle';
+import Items from '../Items';
 
 const Closet = ({}: {}) => {
   const [nameText, setNameText] = useState('');
@@ -46,7 +44,7 @@ const Closet = ({}: {}) => {
             tab: 'tab',
           }}
         >
-          <Tabs.List>{items}</Tabs.List>
+          <Tabs.List grow>{items}</Tabs.List>
           <hr></hr>
           <Tabs.Panel value='Hat'>
             <Items q={'Hat'} />

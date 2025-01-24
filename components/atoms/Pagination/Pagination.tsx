@@ -1,13 +1,6 @@
 'use client';
 import { useState } from 'react';
-import {
-  stArrow,
-  stLeftArrow,
-  stNumberInput,
-  stPagination,
-} from './pagination.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { stNumberInput, stPagination } from './pagination.css';
 
 const Pagination = ({
   metadata,
@@ -16,16 +9,15 @@ const Pagination = ({
   metadata: any;
   setPage: (page: number) => void;
 }) => {
-  console.log(metadata);
   return (
     <div className={stPagination}>
       {typeof metadata.prevPage === 'number' || true ? (
         <>
-          <Icon
+          {/* <Icon
             defaultImg='/ui/buttons/end/Item.BtSmall.normal.0.png'
             activeImg='/ui/buttons/end/Item.BtSmall.pressed.0.png'
             onClick={() => setPage(0)}
-          />
+          /> */}
           <Icon
             defaultImg='/ui/buttons/arrow/Item.BtGather.normal.0.png'
             activeImg='/ui/buttons/arrow/Item.BtGather.pressed.0.png'
@@ -50,12 +42,12 @@ const Pagination = ({
             onClick={() => setPage(metadata.nextPage)}
             imgStyle={{ transform: 'rotate(90deg)' }}
           />
-          <Icon
+          {/* <Icon
             defaultImg='/ui/buttons/end/Item.BtSmall.normal.0.png'
             activeImg='/ui/buttons/end/Item.BtSmall.pressed.0.png'
             onClick={() => setPage(800)}
             imgStyle={{ transform: 'scaleX(-1)' }}
-          />
+          /> */}
         </>
       )}
     </div>
@@ -78,6 +70,7 @@ const Icon = ({ defaultImg, activeImg, onClick, imgStyle }: any) => {
         border: 'none',
         padding: 0,
         cursor: 'pointer',
+        display: 'contents',
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

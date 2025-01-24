@@ -5,6 +5,8 @@ export const stPagination = style({
   display: 'flex',
   maxWidth: px(600),
   gap: px(8),
+  justifyContent: 'center',
+  alignItems: 'center',
 });
 
 export const stNumberInput = style({
@@ -34,5 +36,3 @@ export const stArrow = style({
     },
   },
 });
-
- 
