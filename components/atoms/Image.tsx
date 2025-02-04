@@ -27,6 +27,7 @@ const DefaultImage = ({
       priority
       {...(title && { title })}
       {...(onClick && { onClick })}
+      draggable='false'
     />
   );
 };

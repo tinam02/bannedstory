@@ -81,6 +81,7 @@ const Icon = ({
         src={disabledImg || (isActive ? activeImg : defaultImg)}
         alt='Arrow button'
         style={imgStyle}
+        draggable='false'
       />
     </button>
   );

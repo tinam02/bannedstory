@@ -32,7 +32,7 @@ const Closet = ({}: {}) => {
   ));
 
   return (
-    <div id='card' className={classes('card')}>
+    <div id='card' className={classes('card closet')}>
       <p className={classes('card-title', fontRegupix)}>INVENTORY</p>
       <div className='card-inner'>
         <Tabs

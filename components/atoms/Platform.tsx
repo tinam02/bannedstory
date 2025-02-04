@@ -5,7 +5,7 @@ const Platform = () => {
   return (
     <>
       {/*  eslint-disable-next-line @next/next/no-img-element */}
-      <img src='/pf.png' alt='platform' />
+      <img src='/pf.png' alt='platform' draggable='false' />
     </>
   );
 };
