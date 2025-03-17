@@ -49,9 +49,10 @@ const Closet = ({}: {}) => {
           <Tabs.Panel value='Hat'>
             <Items q={'Hat'} />
           </Tabs.Panel>
-          {/* <Tabs.Panel value='Top'>
+          <Tabs.Panel value='Top'>
             <Items q={'Top'} />
           </Tabs.Panel>
+          {/* 
           <Tabs.Panel value='Bottom'>
             <Items q={'Bottom'} />
           </Tabs.Panel>

@@ -1,0 +1,96 @@
+'use client';
+
+import { IChar } from '@/types';
+
+const ExportBtn = () => {
+  function exportToJson() {
+    const charData = localStorage.getItem('char');
+    const equipData = localStorage.getItem('equippedItems');
+console.log('charData || !equipData',charData ,equipData)
+    if (!charData && !equipData) return;
+    const data: IChar = JSON.parse(charData);
+    const equippedItems = JSON.parse(equipData);
+
+    let filename = 'json.json';
+    let contentType = 'application/json;charset=utf-8;';
+
+    console.log('ex', data, equippedItems);
+    const selectedItems: any = {
+      Hair: null,
+      Hat: null,
+      Top: null,
+      Bottom: null,
+    };
+
+    equippedItems.forEach(item => {
+      switch (item.subcategory) {
+        case 'Hat':
+          selectedItems.Hat = { id: item.itemId };
+          break;
+        case 'Top':
+          selectedItems.Top = { id: item.itemId };
+          break;
+        case 'Bottom':
+          selectedItems.Bottom = { id: item.itemId };
+          break;
+        case 'Overall':
+          selectedItems.Overall = { id: item.itemId };
+          break;
+        case 'Shoes':
+          selectedItems.Feet = { id: item.itemId };
+          break;
+        case 'Gloves':
+          selectedItems.Hands = { id: item.itemId };
+          break;
+        default:
+          break;
+      }
+    });
+
+    const formattedData: any = {
+      type: 'character',
+      action: 'stand1',
+      emotion: 'default',
+      frame: 0,
+      mercEars: false,
+      illiumEars: false,
+    };
+
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        const v = data[key];
+        console.log('itex', v, key);
+        if (key === 'hairId') {
+          selectedItems.Hair = { id: v };
+        } else if (key === 'faceId') {
+          selectedItems.Face = { id: v };
+        }
+      }
+    }
+
+    formattedData.selectedItems = { ...selectedItems };
+    console.log('ex', formattedData);
+
+    const blob = new Blob([JSON.stringify(formattedData, null, 2)], {
+      type: contentType,
+    });
+
+    // Create a link element to trigger the download
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+
+    // Append the link to the DOM, trigger the click, and then remove the link
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  return (
+    <div>
+      <button onClick={exportToJson}>Export json</button>
+    </div>
+  );
+};
+
+export default ExportBtn;

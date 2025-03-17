@@ -41,7 +41,7 @@ const BodyItems = ({
       setEquippedBodyItems([...newEquippedItems, item]);
     }
   }
-console.log('qq',items,nameText)
+// console.log('qq',items,nameText)
   if (!items) return <>...</>;
   return (
     <>

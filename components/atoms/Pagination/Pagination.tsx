@@ -9,7 +9,6 @@ const Pagination = ({
   metadata: any;
   setPage: (page: number) => void;
 }) => {
-  console.log(metadata);
   return (
     <div className={stPagination}>
       <>
@@ -61,7 +60,6 @@ const Icon = ({
   imgStyle,
 }: any) => {
   const [isActive, setIsActive] = useState(false);
-  console.log('disabledImg', disabledImg, !!disabledImg);
   return (
     <button
       onMouseDown={() => setIsActive(true)}

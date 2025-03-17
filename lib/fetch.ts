@@ -42,20 +42,7 @@ export const fetchCharacter = async ({
     });
 
     //save reqbody in localstorage if different from prev
-    if (
-      !R.equals(reqBody, {
-        itemIds: [],
-        faceId: 20000,
-        hairId: 30000,
-        skin: 'light',
-        ears: 'humanEars',
-        pose: 'standingOneHanded',
-        faceEmote: 'default',
-        faceFrame: 0,
-        poseFrame: 0,
-        effectFrame: 0,
-      })
-    ) {
+    if (!R.equals(reqBody, DEFAULT_CHAR_BODY)) {
       console.log('SET CHAR');
       localStorage.setItem('char', JSON.stringify(reqBody));
     }

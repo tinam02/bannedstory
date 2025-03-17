@@ -9,7 +9,7 @@ import { classes } from 'typestyle';
 const Wearing = ({}: {}) => {
   const [nameText, setNameText] = useState('');
   const { equippedItems, equippedBodyItems } = useChar();
-console.log(equippedBodyItems,equippedItems,'---')
+
   return (
     <div id='wearing' className={classes('card')}>
       <p className={classes('card-title', fontRegupix)}>INVENTORY</p>
