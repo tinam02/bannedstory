@@ -22,6 +22,7 @@
     "normalize.css": "^8.0.1",
     "react": "^18",
     "react-dom": "^18",
+    "react-draggable": "^4.4.6",
     "remeda": "^1.33.0",
     "swr": "^2.2.4",
     "typestyle": "^2.4.0"

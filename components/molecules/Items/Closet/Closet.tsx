@@ -2,11 +2,14 @@
 
 import { fontRegupix } from '@/app/styles/fonts';
 import { Tabs } from '@mantine/core';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { classes } from 'typestyle';
 import Items from '../Items';
+import Draggable from 'react-draggable';
 
 const Closet = ({}: {}) => {
+  const nodeRef = useRef(null);
+
   const [nameText, setNameText] = useState('');
   // return (
   //   <section id='closet'>
@@ -32,27 +35,37 @@ const Closet = ({}: {}) => {
   ));
 
   return (
-    <div id='card' className={classes('card closet')}>
-      <p className={classes('card-title', fontRegupix)}>INVENTORY</p>
-      <div className='card-inner'>
-        <Tabs
-          defaultValue='Hat'
-          variant='outline'
-          classNames={{
-            root: `tabs ${fontRegupix}`,
-            list: 'tabs-list',
-            tab: 'tab',
+    <Draggable nodeRef={nodeRef} handle='.dragHandle'>
+      <div id='card' className={classes('card closet')} ref={nodeRef}>
+        <div
+          className='dragHandle'
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '30px',
+            top: 1,
           }}
-        >
-          <Tabs.List grow>{items}</Tabs.List>
-          <hr></hr>
-          <Tabs.Panel value='Hat'>
-            <Items q={'Hat'} />
-          </Tabs.Panel>
-          <Tabs.Panel value='Top'>
-            <Items q={'Top'} />
-          </Tabs.Panel>
-          {/* 
+        />
+        <p className={classes('card-title', fontRegupix)}>INVENTORY</p>
+        <div className='card-inner'>
+          <Tabs
+            defaultValue='Hat'
+            variant='outline'
+            classNames={{
+              root: `tabs ${fontRegupix}`,
+              list: 'tabs-list',
+              tab: 'tab',
+            }}
+          >
+            <Tabs.List grow>{items}</Tabs.List>
+            <hr></hr>
+            <Tabs.Panel value='Hat'>
+              <Items q={'Hat'} />
+            </Tabs.Panel>
+            <Tabs.Panel value='Top'>
+              <Items q={'Top'} />
+            </Tabs.Panel>
+            {/* 
           <Tabs.Panel value='Bottom'>
             <Items q={'Bottom'} />
           </Tabs.Panel>
@@ -68,9 +81,10 @@ const Closet = ({}: {}) => {
           <Tabs.Panel value='Hair'>
             <BodyItems q={'hair'} />
           </Tabs.Panel> */}
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
-    </div>
+    </Draggable>
   );
 };
 
