@@ -1,15 +1,13 @@
 'use client';
 
 import { fontRegupix } from '@/app/styles/fonts';
+import DragWrapper from '@/components/atoms/DragWrapper';
 import { Tabs } from '@mantine/core';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { classes } from 'typestyle';
 import Items from '../Items';
-import Draggable from 'react-draggable';
 
 const Closet = ({}: {}) => {
-  const nodeRef = useRef(null);
-
   const [nameText, setNameText] = useState('');
   // return (
   //   <section id='closet'>
@@ -35,8 +33,8 @@ const Closet = ({}: {}) => {
   ));
 
   return (
-    <Draggable nodeRef={nodeRef} handle='.dragHandle'>
-      <div id='card' className={classes('card closet')} ref={nodeRef}>
+    <DragWrapper id='closet'>
+      <div id='card' className={classes('card closet')}>
         <div
           className='dragHandle'
           style={{
@@ -84,7 +82,7 @@ const Closet = ({}: {}) => {
           </Tabs>
         </div>
       </div>
-    </Draggable>
+    </DragWrapper>
   );
 };
 
