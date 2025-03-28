@@ -20,17 +20,17 @@ export const CharContext = createContext<{
 });
 
 export function CharProvider({ children }: { children: React.ReactNode }) {
-  const [equippedItems, setEquippedItems] = useState([]);
-  const [equippedBodyItems, setEquippedBodyItems] = useState([]);
+  const [equippedItems, setEquippedItems] = useState(null);
+  const [equippedBodyItems, setEquippedBodyItems] = useState(null);
 
   //save to ls
   useEffect(() => {
-    if (!equippedItems.length) return;
+    if (!equippedItems) return;
     localStorage.setItem('equippedItems', JSON.stringify(equippedItems));
   }, [equippedItems]);
 
   useEffect(() => {
-    if (!equippedBodyItems.length) return;
+    if (!equippedBodyItems) return;
     localStorage.setItem(
       'equippedBodyItems',
       JSON.stringify(equippedBodyItems)

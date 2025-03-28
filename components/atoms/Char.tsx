@@ -19,13 +19,13 @@ const Char = ({ reqBody }: { reqBody: IChar }) => {
     // if empty object, use default body
     if (Object.keys(reqBody).length !== 0) body = reqBody;
 
-    if (equippedItems.length) {
+    if (equippedItems?.length) {
       body.itemIds = equippedItems.map((item: any) => item.itemId);
-    }
-    if (equippedBodyItems.length) {
+    } else if (equippedItems) body.itemIds = [];
+    if (equippedBodyItems?.length) {
       body.faceId = equippedBodyItems.find((item: any) => item.faceId)?.faceId;
       body.hairId = equippedBodyItems.find((item: any) => item.hairId)?.hairId;
-    }
+    } 
     fetchCharacter({
       reqBody: body,
       prev: imageSrc,

@@ -30,8 +30,7 @@ export const fetchCharacter = async ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reqBody),
     });
-    console.log('qqfetc', reqBody);
-    const blob = await response.blob();
+     const blob = await response.blob();
 
     // convert binary data to a b64 string
     const dataUrl = await new Promise((resolve, reject) => {

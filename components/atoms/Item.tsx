@@ -3,13 +3,22 @@ import { useEffect, useState } from 'react';
 import DefaultImage from './Image';
 import { fetchRawIcon } from '@/lib/fetch';
 
-const Item = ({ item, onClick }: { item: any; onClick: () => void }) => {
-  const [imageSrc, setImageSrc] = useState('');
+const Item = ({
+  item,
+  onClick,
+  hasImg,
+}: {
+  item: any;
+  onClick?: (imgSrc: string) => void;
+  hasImg?: string;
+}) => {
+  const [imageSrc, setImageSrc] = useState(hasImg || '');
 
   useEffect(() => {
+    if (hasImg) return;
     const { itemId } = item;
     fetchRawIcon({ itemId }).then((res: any) => setImageSrc(res));
-  }, [item]);
+  }, [item, hasImg]);
 
   if (!imageSrc) return null;
   return (
@@ -18,7 +27,9 @@ const Item = ({ item, onClick }: { item: any; onClick: () => void }) => {
         src={imageSrc}
         alt={item.name}
         title={item.name}
-        onClick={onClick}
+        onClick={() => {
+          onClick && onClick(imageSrc);
+        }}
       />
     </div>
   );

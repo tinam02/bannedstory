@@ -82,6 +82,7 @@ img {
     position: relative;
     outline: 1px solid rgba(255, 255, 255, 0.247);
     outline-offset: 1px;
+    z-index: -1;
   }
 }
 .card::before {
@@ -108,11 +109,17 @@ img {
   width: 100%;
   background-color: #ffffff;
   mask: $noise, radial-gradient(#ffffff 50%, rgba(255, 255, 255, 0.678) 100%);
+  z-index: -1;
 }
 
 .card.closet {
   height: 400px;
   width: 500px;
+}
+
+.card.wearing {
+  height: 400px;
+  width: 200px;
 }
 
 .tabs {

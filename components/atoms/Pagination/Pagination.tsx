@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { Icon } from '../Icon';
 import { stNumberInput, stPagination } from './pagination.css';
 
 const Pagination = ({
@@ -51,36 +51,3 @@ const Pagination = ({
 };
 
 export default Pagination;
-
-const Icon = ({
-  defaultImg,
-  activeImg,
-  disabledImg,
-  onClick,
-  imgStyle,
-}: any) => {
-  const [isActive, setIsActive] = useState(false);
-  return (
-    <button
-      onMouseDown={() => setIsActive(true)}
-      onMouseUp={() => setIsActive(false)}
-      onMouseLeave={() => setIsActive(false)}
-      onClick={onClick}
-      style={{
-        background: 'none',
-        border: 'none',
-        padding: 0,
-        cursor: 'pointer',
-        display: 'contents',
-      }}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={disabledImg || (isActive ? activeImg : defaultImg)}
-        alt='Arrow button'
-        style={imgStyle}
-        draggable='false'
-      />
-    </button>
-  );
-};

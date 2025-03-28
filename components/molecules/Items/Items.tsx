@@ -21,7 +21,8 @@ const Items = ({ q }: { q: string }) => {
     }).then(res => setItems(res));
   }, [page, q, nameText]);
 
-  function addToChar(item: any) {
+  function addToChar(item: any, imgSrc: any) {
+    item.imgSrc = imgSrc;
     if (!equippedItems.includes(item)) {
       //if equipepditems already has the item with this category, remove old
       if (equippedItems.some((i: any) => i.subcategory === item.subcategory)) {
@@ -44,14 +45,14 @@ const Items = ({ q }: { q: string }) => {
           items?.result?.map((item: any) => {
             return (
               <div key={item.itemId} className='closet-item clickable'>
-                <Item item={item} onClick={() => addToChar(item)} />
+                <Item item={item} onClick={imgSrc => addToChar(item, imgSrc)} />
               </div>
             );
           })}
       </div>
 
       <div className={stPaginationContainer}>
-        <Search setNameText={setNameText}  setPage={setPage}/>
+        <Search setNameText={setNameText} setPage={setPage} />
         {items.metadata && (
           <Pagination metadata={items.metadata} setPage={setPage} />
         )}
