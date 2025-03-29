@@ -23,17 +23,18 @@ const Items = ({ q }: { q: string }) => {
 
   function addToChar(item: any, imgSrc: any) {
     item.imgSrc = imgSrc;
-    if (!equippedItems.includes(item)) {
+    const eqI = equippedItems || [];
+    if (!eqI.includes(item)) {
       //if equipepditems already has the item with this category, remove old
-      if (equippedItems.some((i: any) => i.subcategory === item.subcategory)) {
+      if (eqI.some((i: any) => i.subcategory === item.subcategory)) {
         //remove old item
-        const newEquippedItems = equippedItems.filter(
+        const newEquippedItems = eqI.filter(
           (i: any) => i.subcategory !== item.subcategory
         );
         setEquippedItems([...newEquippedItems, item]);
         return;
       }
-      setEquippedItems([...equippedItems, item]);
+      setEquippedItems([...eqI, item]);
     }
   }
 
