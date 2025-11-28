@@ -70,7 +70,7 @@ export const fetchItems = async ({
     const pageQuery = page ? `&page=${pageNumber}` : '';
     const nameQuery = nameText ? `&nameText=${nameText}` : '';
     const subcategoryQuery = subcategory ? `&subcategory=${subcategory}` : '';
-    const url = `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}${subcategoryQuery}&maxEntries=12`;
+    const url = `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}${subcategoryQuery}&maxEntries=50`;
     const response = await fetch(url, { cache: 'force-cache' });
     const { result, metadata } = await response.json();
     console.log(result);
@@ -121,7 +121,7 @@ export const fetchBodyItems = async ({
     const nameQuery = nameText ? `&nameText=${nameText}` : '';
 
     const response = await fetch(
-      `${NW_API_URL}${q}s?${pageQuery}${nameQuery}&maxEntries=12`
+      `${NW_API_URL}${q}s?${pageQuery}${nameQuery}&maxEntries=50`
     );
     const { result, metadata } = await response.json();
     return { result, metadata };

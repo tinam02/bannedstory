@@ -4,21 +4,17 @@ import BodyItem from '@/components/atoms/BodyItem';
 import { fetchBodyItems, IBodyTypes } from '@/lib/fetch';
 import { useEffect, useState } from 'react';
 import Pagination from '../../atoms/Pagination/Pagination';
-import { stItemList } from './items.css';
+import { stItemList, stPaginationContainer } from './items.css';
+import Search from '@/components/atoms/Search/Search';
 
 export const getItemId = (item: any, q: IBodyTypes) => {
   const key = `${q}Id`;
   return item[key];
 };
-const BodyItems = ({
-  q = 'face',
-  nameText = '',
-}: {
-  q: IBodyTypes;
-  nameText?: string;
-}) => {
+const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
   const [items, setItems] = useState<any>({});
   const [page, setPage] = useState(0);
+  const [nameText, setNameText] = useState('');
   const { equippedBodyItems, setEquippedBodyItems } = useChar();
 
   useEffect(() => {
@@ -62,7 +58,7 @@ const BodyItems = ({
           items?.result?.map((item: any) => {
             const itemId = getItemId(item, q);
             return (
-              <div key={itemId}>
+              <div key={itemId} className='closet-item clickable'>
                 <BodyItem
                   item={{
                     ...item,
@@ -74,9 +70,12 @@ const BodyItems = ({
               </div>
             );
           })}
-        {items.metadata && (
-          <Pagination metadata={items.metadata} setPage={setPage} />
-        )}
+        <div className={stPaginationContainer}>
+          <Search setNameText={setNameText} setPage={setPage} />
+          {items.metadata && (
+            <Pagination metadata={items.metadata} setPage={setPage} />
+          )}
+        </div>
       </div>
     </>
   );
