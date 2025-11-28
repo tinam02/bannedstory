@@ -25,14 +25,13 @@ const Char = ({ reqBody }: { reqBody: IChar }) => {
     if (equippedBodyItems?.length) {
       body.faceId = equippedBodyItems.find((item: any) => item.faceId)?.faceId;
       body.hairId = equippedBodyItems.find((item: any) => item.hairId)?.hairId;
-    } 
+    }
     fetchCharacter({
       reqBody: body,
       prev: imageSrc,
     }).then(res => setImageSrc(res));
   }, [imageSrc, reqBody, equippedItems, equippedBodyItems]);
 
-  if (!imageSrc) return <>...</>;
   return (
     <div className={mcCont}>
       <DefaultImage src={imageSrc} alt='Character' />
