@@ -29,19 +29,31 @@ const BodyItems = ({
     }).then(res => setItems(res));
   }, [page, q, nameText]);
 
-  function addToChar(item: any) {
-    if (
-      !equippedBodyItems?.find(
-        (i: any) => getItemId(i, q) === getItemId(item, q)
-      )
-    ) {
-      const newEquippedItems = equippedBodyItems.filter(
-        (i: any) => !getItemId(i, q)
-      );
-      setEquippedBodyItems([...newEquippedItems, item]);
-    }
+  function addToChar(item: any, imgSrc?: any) {
+    item.imgSrc = imgSrc;
+
+    setEquippedBodyItems((prev: any[] | null) => {
+      // normalize previous st
+      const prevArr = Array.isArray(prev) ? prev : [];
+
+      const slotKey = `${q}Id`;
+      const newId = item[slotKey];
+      if (newId == null) return prevArr;
+
+      // if same item already equipped in this slot, do nothing
+      if (prevArr.some(i => i[slotKey] === newId)) {
+        return prevArr;
+      }
+
+      // remove whatever was in this slot before
+      const withoutThisSlot = prevArr.filter(i => i[slotKey] == null);
+
+      // add new item for this slot
+      return [...withoutThisSlot, item];
+    });
   }
-// console.log('qq',items,nameText)
+
+  // console.log('qq',items,nameText)
   if (!items) return <>...</>;
   return (
     <>

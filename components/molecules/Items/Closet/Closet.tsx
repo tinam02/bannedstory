@@ -6,6 +6,7 @@ import { Tabs } from '@mantine/core';
 import { useState } from 'react';
 import { classes } from 'typestyle';
 import Items from '../Items';
+import BodyItems from '../Body';
 
 const Closet = ({}: {}) => {
   const [nameText, setNameText] = useState('');
@@ -63,22 +64,22 @@ const Closet = ({}: {}) => {
             <Tabs.Panel value='Top'>
               <Items q={'Top'} />
             </Tabs.Panel>
-            {/* 
-          <Tabs.Panel value='Bottom'>
-            <Items q={'Bottom'} />
-          </Tabs.Panel>
-          <Tabs.Panel value='Overall'>
-            <Items q={'Overall'} />
-          </Tabs.Panel>
-          <Tabs.Panel value='Shoes'>
-            <Items q={'Shoes'} />
-          </Tabs.Panel>
-          <Tabs.Panel value='Face'>
-            <BodyItems q={'face'} />
-          </Tabs.Panel>
-          <Tabs.Panel value='Hair'>
-            <BodyItems q={'hair'} />
-          </Tabs.Panel> */}
+
+            <Tabs.Panel value='Bottom'>
+              <Items q={'Bottom'} />
+            </Tabs.Panel>
+            <Tabs.Panel value='Overall'>
+              <Items q={'Overall'} />
+            </Tabs.Panel>
+            <Tabs.Panel value='Shoes'>
+              <Items q={'Shoes'} />
+            </Tabs.Panel>
+            <Tabs.Panel value='Face'>
+              <BodyItems q={'face'} />
+            </Tabs.Panel>
+            <Tabs.Panel value='Hair'>
+              <BodyItems q={'hair'} />
+            </Tabs.Panel>
           </Tabs>
         </div>
       </div>
