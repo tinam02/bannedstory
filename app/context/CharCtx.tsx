@@ -44,7 +44,7 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
         JSON.parse(localStorage.getItem('equippedItems') || '[]')
       );
     }
-    if (localStorage.getItem('char')) {
+    if (localStorage.getItem('equippedBodyItems')) {
       setEquippedBodyItems(
         JSON.parse(localStorage.getItem('equippedBodyItems') || '[]')
       );
