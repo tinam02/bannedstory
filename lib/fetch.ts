@@ -1,61 +1,70 @@
 import { IChar } from '@/types';
-import * as R from 'remeda';
-import { DEFAULT_CHAR_BODY } from './utils';
 
-export const API_URL = 'https://maplestory.io/api/GMS/23/';
-export async function loadItems() {
-  try {
-    const res = await fetch(API_URL + 'item/1010000');
-    const data = await res.json();
-    return data;
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
-}
+const REGION = 'GMS';
+const VERSION = '235';
+const API_BASE = `https://maplestory.io/api/${REGION}/${VERSION}`;
+const RENDER_BASE = 'https://maplestory.io/api/character';
+const PER_PAGE = 50;
 
-export const NW_API_URL = 'https://api.maplestory.net/';
-export const fetchCharacter = async ({
-  reqBody,
-  method = 'POST',
-  prev,
+// IChar.pose enum -> maplestory.io stance string. Anything not listed falls back to stand1.
+const POSE_TO_STANCE: Partial<Record<NonNullable<IChar['pose']>, string>> = {
+  standingOneHanded: 'stand1',
+  standingTwoHanded: 'stand2',
+  walkingOneHanded: 'walk1',
+  walkingTwoHanded: 'walk2',
+  alert: 'alert',
+  flying: 'fly',
+  jumping: 'jump',
+  sitting: 'sit',
+  lyingDown: 'prone',
+};
+
+export type IBodyTypes = 'face' | 'hair';
+
+type ItemsListResponse = {
+  result: any[];
+  metadata: { page: number; prevPage: number | null; nextPage: number | null };
+};
+
+const adaptItem = (io: any) => ({
+  itemId: io.id,
+  name: io.name,
+  desc: io.desc,
+  overallCategory: io.typeInfo?.overallCategory,
+  category: io.typeInfo?.category,
+  subcategory: io.typeInfo?.subCategory,
+  requiredJobs: io.requiredJobs,
+  requiredLevel: io.requiredLevel,
+  requiredGender: io.requiredGender,
+  isCash: io.isCash,
+});
+
+export const itemIconUrl = (itemId: number) =>
+  `${API_BASE}/item/${itemId}/iconRaw`;
+
+const buildItemsUrl = ({
+  page,
+  nameText,
+  overallCategory,
+  subcategory,
 }: {
-  reqBody: IChar;
-  method?: string;
-  prev?: string;
+  page: number;
+  nameText?: string;
+  overallCategory: string;
+  subcategory?: string;
 }) => {
-  try {
-    const response = await fetch(`${NW_API_URL}character/render`, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(reqBody),
-    });
-     const blob = await response.blob();
-
-    // convert binary data to a b64 string
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
-    //save reqbody in localstorage if different from prev
-    if (!R.equals(reqBody, DEFAULT_CHAR_BODY)) {
-      console.log('SET CHAR');
-      localStorage.setItem('char', JSON.stringify(reqBody));
-    }
-
-    return dataUrl as string;
-  } catch (error) {
-    console.error('Error fetching char:', error);
-    if (prev) return prev;
-    return 'Error fetching char!';
-  }
+  const params = new URLSearchParams();
+  params.set('overallCategoryFilter', overallCategory);
+  if (subcategory) params.set('subCategoryFilter', subcategory);
+  if (nameText) params.set('searchFor', nameText);
+  params.set('startPosition', String(page * PER_PAGE));
+  // Request one extra so we can detect whether a next page exists.
+  params.set('count', String(PER_PAGE + 1));
+  return `${API_BASE}/item?${params}`;
 };
 
 export const fetchItems = async ({
-  page,
+  page = 0,
   nameText,
   overallCategory = 'Equip',
   subcategory,
@@ -64,97 +73,106 @@ export const fetchItems = async ({
   nameText?: string;
   overallCategory?: string;
   subcategory?: string;
-}) => {
+}): Promise<ItemsListResponse> => {
   try {
-    const pageNumber = page;
-    const pageQuery = page ? `&page=${pageNumber}` : '';
-    const nameQuery = nameText ? `&nameText=${nameText}` : '';
-    const subcategoryQuery = subcategory ? `&subcategory=${subcategory}` : '';
-    const url = `${NW_API_URL}items/?${pageQuery}&overallCategory=${overallCategory}${nameQuery}${subcategoryQuery}&maxEntries=50`;
-    const response = await fetch(url, { cache: 'force-cache' });
-    const { result, metadata } = await response.json();
-    console.log(result);
-    return { result, metadata };
-  } catch (error: any) {
-    console.error('Error fetching items:', error);
-    return error;
+    const res = await fetch(
+      buildItemsUrl({ page, nameText, overallCategory, subcategory }),
+      { cache: 'force-cache' }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const arr = (await res.json()) as any[];
+    const hasNext = arr.length > PER_PAGE;
+    return {
+      result: arr.slice(0, PER_PAGE).map(adaptItem),
+      metadata: {
+        page,
+        prevPage: page > 0 ? page - 1 : null,
+        nextPage: hasNext ? page + 1 : null,
+      },
+    };
+  } catch (err) {
+    console.error('Error fetching items:', err);
+    return { result: [], metadata: { page, prevPage: null, nextPage: null } };
   }
 };
 
-export const fetchRawIcon = async ({ itemId }: { itemId: number }) => {
-  if (!itemId) return null;
-  try {
-    const response = await fetch(`${NW_API_URL}item/${itemId}/iconRaw`, {
-      cache: 'force-cache',
-    });
-    const blob = await response.blob();
-
-    // convert binary data to a b64 string
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
-    return dataUrl;
-  } catch (error: any) {
-    console.error('Error fetching item:' + itemId, error);
-    return error;
-  }
-};
-
-// BODY
-export type IBodyTypes = 'face' | 'hair';
 export const fetchBodyItems = async ({
-  page,
+  page = 0,
   nameText,
   q = 'face',
 }: {
   page?: number;
   nameText?: string;
   q?: IBodyTypes;
-}) => {
-  try {
-    const pageNumber = page;
-    const pageQuery = page ? `page=${pageNumber}` : '';
-    const nameQuery = nameText ? `&nameText=${nameText}` : '';
+}): Promise<ItemsListResponse> => {
+  const subcategory = q === 'face' ? 'Face' : 'Hair';
+  const slotKey = `${q}Id`;
+  const result = await fetchItems({
+    page,
+    nameText,
+    overallCategory: 'Equip',
+    subcategory,
+  });
+  return {
+    ...result,
+    result: result.result.map(item => ({ ...item, [slotKey]: item.itemId })),
+  };
+};
 
-    const response = await fetch(
-      `${NW_API_URL}${q}s?${pageQuery}${nameQuery}&maxEntries=50`
-    );
-    const { result, metadata } = await response.json();
-    return { result, metadata };
-  } catch (error: any) {
-    console.error(`Error fetching ${q}s:`, error);
-    return error;
-  }
+export const fetchRawIcon = async ({
+  itemId,
+}: {
+  itemId: number;
+}): Promise<string | null> => {
+  if (!itemId) return null;
+  return itemIconUrl(itemId);
 };
 
 export const fetchBodyIcon = async ({
   itemId,
-  q = 'face',
 }: {
   itemId: number;
   q: IBodyTypes;
-}) => {
+}): Promise<string | null> => {
   if (!itemId) return null;
-  try {
-    const response = await fetch(`${NW_API_URL}${q}/${itemId}/icon`, {
-      cache: 'force-cache',
-    });
-    const blob = await response.blob();
+  return itemIconUrl(itemId);
+};
 
-    // convert binary data to a b64 string
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-    return dataUrl;
-  } catch (error: any) {
-    console.error('Error fetching item:' + itemId, error);
-    return error;
+export const characterRenderUrl = (body: IChar): string => {
+  const base = { Region: REGION, Version: VERSION };
+  // Body skin (2000) and head (12000) are required base layers.
+  const items: Array<Record<string, unknown>> = [
+    { ...base, ItemId: 2000 },
+    { ...base, ItemId: 12000 },
+  ];
+  if (body.faceId) items.push({ ...base, ItemId: body.faceId });
+  if (body.hairId) items.push({ ...base, ItemId: body.hairId });
+  for (const id of body.itemIds ?? []) {
+    if (id) items.push({ ...base, ItemId: id });
+  }
+  const path = items
+    .map(i => encodeURIComponent(JSON.stringify(i)))
+    .join(',');
+  const stance = POSE_TO_STANCE[body.pose ?? 'standingOneHanded'] ?? 'stand1';
+  const frame = body.poseFrame ?? 0;
+  return `${RENDER_BASE}/${path}/${stance}/${frame}`;
+};
+
+export const fetchCharacter = async ({
+  reqBody,
+  prev,
+}: {
+  reqBody: IChar;
+  prev?: string;
+}): Promise<string> => {
+  try {
+    const url = characterRenderUrl(reqBody);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('char', JSON.stringify(reqBody));
+    }
+    return url;
+  } catch (err) {
+    console.error('Error building char URL:', err);
+    return prev ?? '';
   }
 };

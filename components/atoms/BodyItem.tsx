@@ -24,7 +24,8 @@ const BodyItem = ({
 
   if (!imageSrc) {
     fetchBodyIcon({ itemId, q })
-      .then((res: string) => {
+      .then(res => {
+        if (!res) return;
         imageCache.set(cacheKey, res);
         setImageSrc(res);
       })
