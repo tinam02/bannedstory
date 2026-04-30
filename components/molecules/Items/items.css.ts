@@ -28,7 +28,7 @@ export const stPaginationContainer = style({
   position: 'absolute',
   bottom: 16,
   display: 'flex',
-  justifyContent:'center',
+  justifyContent: 'center',
   flex: 1,
   width: '100%',
   paddingLeft: px(8),

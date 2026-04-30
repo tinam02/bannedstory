@@ -41,6 +41,7 @@ const BodyItem = ({
         src={imageSrc}
         alt={item.name}
         title={item.name}
+        unoptimized
         onClick={onClick}
       />
     </div>

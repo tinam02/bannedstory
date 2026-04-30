@@ -27,6 +27,7 @@ const Item = ({
         src={imageSrc}
         alt={item.name}
         title={item.name}
+        unoptimized
         onClick={() => {
           onClick && onClick(imageSrc);
         }}

@@ -6,12 +6,14 @@ const DefaultImage = ({
   title,
   onClick,
   className,
+  unoptimized,
 }: {
   src: string;
   alt?: string;
   title?: string;
   onClick?: () => void;
   className?: string;
+  unoptimized?: boolean;
 }) => {
   return (
     <NextImage
@@ -25,6 +27,7 @@ const DefaultImage = ({
         height: 'auto',
       }}
       priority
+      unoptimized={unoptimized}
       {...(title && { title })}
       {...(onClick && { onClick })}
       draggable='false'

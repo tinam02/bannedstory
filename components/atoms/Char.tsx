@@ -34,7 +34,7 @@ const Char = ({ reqBody }: { reqBody: IChar }) => {
 
   return (
     <div className={mcCont}>
-      <DefaultImage src={imageSrc} alt='Character' />
+      <DefaultImage src={imageSrc} alt='Character' unoptimized />
     </div>
   );
 };
