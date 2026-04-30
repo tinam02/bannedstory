@@ -41,6 +41,7 @@ const Wearing = ({}: {}) => {
                       src={item.imgSrc}
                       alt={item.name}
                       title={item.name}
+                      unoptimized
                     />
                   </div>
                   <div className='name'>

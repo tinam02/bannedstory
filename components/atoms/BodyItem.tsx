@@ -36,7 +36,7 @@ const BodyItem = ({
 
   if (!imageSrc) return null;
   return (
-    <div>
+    <div style={{ display: 'contents' }}>
       <DefaultImage
         src={imageSrc}
         alt={item.name}

@@ -42,6 +42,10 @@ const adaptItem = (io: any) => ({
 export const itemIconUrl = (itemId: number) =>
   `${API_BASE}/item/${itemId}/iconRaw`;
 
+// Faces / hairs have no /iconRaw on maplestory.io — only /icon works for them.
+export const bodyIconUrl = (itemId: number) =>
+  `${API_BASE}/item/${itemId}/icon`;
+
 const buildItemsUrl = ({
   page,
   nameText,
@@ -135,7 +139,7 @@ export const fetchBodyIcon = async ({
   q: IBodyTypes;
 }): Promise<string | null> => {
   if (!itemId) return null;
-  return itemIconUrl(itemId);
+  return bodyIconUrl(itemId);
 };
 
 export const characterRenderUrl = (body: IChar): string => {
@@ -158,21 +162,3 @@ export const characterRenderUrl = (body: IChar): string => {
   return `${RENDER_BASE}/${path}/${stance}/${frame}`;
 };
 
-export const fetchCharacter = async ({
-  reqBody,
-  prev,
-}: {
-  reqBody: IChar;
-  prev?: string;
-}): Promise<string> => {
-  try {
-    const url = characterRenderUrl(reqBody);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('char', JSON.stringify(reqBody));
-    }
-    return url;
-  } catch (err) {
-    console.error('Error building char URL:', err);
-    return prev ?? '';
-  }
-};

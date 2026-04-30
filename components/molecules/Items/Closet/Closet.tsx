@@ -3,30 +3,11 @@
 import { fontRegupix } from '@/app/styles/fonts';
 import DragWrapper from '@/components/atoms/DragWrapper';
 import { Tabs } from '@mantine/core';
-import { useState } from 'react';
 import { classes } from 'typestyle';
 import Items from '../Items';
 import BodyItems from '../Body';
 
 const Closet = ({}: {}) => {
-  const [nameText, setNameText] = useState('');
-  // return (
-  //   <section id='closet'>
-  //     <DebouncedInput
-  //       onDebouncedChange={(x: string) => {
-  //         setNameText(x);
-  //         return x;
-  //       }}
-  //     />
-
-  //     <Items q={'Hat'} />
-  //     <Items q={'Top'} />
-  //     <Items q={'Bottom'} />
-  //     <BodyItems q={'face'}  />
-  //     <BodyItems q={'hair'} nameText={nameText} />
-  //   </section>
-  // );
-
   const items = tabs.map(tab => (
     <Tabs.Tab value={tab} key={tab}>
       {tab.toUpperCase()}

@@ -8,7 +8,7 @@ import Wearing from '@/components/molecules/Items/Wearing/Wearing';
 export default async function Home() {
   return (
     <main className={fontArial}>
-      <Char reqBody={{}} />
+      <Char />
       <Platform />
       <Closet />
       <Cursor />
