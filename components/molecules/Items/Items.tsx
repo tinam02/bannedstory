@@ -12,12 +12,14 @@ import useChar from '@/app/context/CharCtx';
 import Search from '@/components/atoms/Search/Search';
 import { loadSavedBody } from '@/lib/utils';
 import { IChar } from '@/types';
+import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
 
 const Items = ({ q }: { q: string }) => {
   const [items, setItems] = useState<any>({});
   const [page, setPage] = useState(0);
   const [nameText, setNameText] = useState('');
   const { equippedItems, equippedBodyItems, setEquippedItems } = useChar();
+  const preloader = useSweepDebounce();
 
   useEffect(() => {
     fetchItems({
@@ -70,7 +72,7 @@ const Items = ({ q }: { q: string }) => {
               <div
                 key={item.itemId}
                 className='closet-item clickable'
-                onMouseEnter={() => previewOnHover(item)}
+                onMouseEnter={() => preloader.trigger(() => previewOnHover(item))}
               >
                 <Item item={item} onClick={imgSrc => addToChar(item, imgSrc)} />
               </div>

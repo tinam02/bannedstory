@@ -13,6 +13,7 @@ import { stItemList, stPaginationContainer } from './items.css';
 import Search from '@/components/atoms/Search/Search';
 import { loadSavedBody } from '@/lib/utils';
 import { IChar } from '@/types';
+import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
 
 export const getItemId = (item: any, q: IBodyTypes) => {
   const key = `${q}Id`;
@@ -23,6 +24,7 @@ const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
   const [page, setPage] = useState(0);
   const [nameText, setNameText] = useState('');
   const { equippedItems, equippedBodyItems, setEquippedBodyItems } = useChar();
+  const preloader = useSweepDebounce();
 
   const previewOnHover = (itemId: number) => {
     const saved = loadSavedBody();
@@ -83,7 +85,7 @@ const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
               <div
                 key={itemId}
                 className='closet-item clickable'
-                onMouseEnter={() => previewOnHover(itemId)}
+                onMouseEnter={() => preloader.trigger(() => previewOnHover(itemId))}
               >
                 <BodyItem
                   item={{
