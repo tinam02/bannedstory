@@ -1,11 +1,18 @@
 'use client';
 import useChar from '@/app/context/CharCtx';
 import BodyItem from '@/components/atoms/BodyItem';
-import { fetchBodyItems, IBodyTypes } from '@/lib/fetch';
+import {
+  characterRenderUrl,
+  fetchBodyItems,
+  IBodyTypes,
+  preloadImageUrl,
+} from '@/lib/fetch';
 import { useEffect, useState } from 'react';
 import Pagination from '../../atoms/Pagination/Pagination';
 import { stItemList, stPaginationContainer } from './items.css';
 import Search from '@/components/atoms/Search/Search';
+import { loadSavedBody } from '@/lib/utils';
+import { IChar } from '@/types';
 
 export const getItemId = (item: any, q: IBodyTypes) => {
   const key = `${q}Id`;
@@ -15,7 +22,22 @@ const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
   const [items, setItems] = useState<any>({});
   const [page, setPage] = useState(0);
   const [nameText, setNameText] = useState('');
-  const { equippedBodyItems, setEquippedBodyItems } = useChar();
+  const { equippedItems, equippedBodyItems, setEquippedBodyItems } = useChar();
+
+  const previewOnHover = (itemId: number) => {
+    const saved = loadSavedBody();
+    const slotKey = `${q}Id` as 'faceId' | 'hairId';
+    const preview: IChar = {
+      ...saved,
+      itemIds: equippedItems?.map((i: any) => i.itemId) ?? saved.itemIds ?? [],
+      faceId:
+        equippedBodyItems?.find((i: any) => i.faceId)?.faceId ?? saved.faceId,
+      hairId:
+        equippedBodyItems?.find((i: any) => i.hairId)?.hairId ?? saved.hairId,
+      [slotKey]: itemId,
+    };
+    preloadImageUrl(characterRenderUrl(preview));
+  };
 
   useEffect(() => {
     fetchBodyItems({
@@ -58,7 +80,11 @@ const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
           items?.result?.map((item: any) => {
             const itemId = getItemId(item, q);
             return (
-              <div key={itemId} className='closet-item clickable'>
+              <div
+                key={itemId}
+                className='closet-item clickable'
+                onMouseEnter={() => previewOnHover(itemId)}
+              >
                 <BodyItem
                   item={{
                     ...item,

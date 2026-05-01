@@ -46,6 +46,13 @@ export const itemIconUrl = (itemId: number) =>
 export const bodyIconUrl = (itemId: number) =>
   `${API_BASE}/item/${itemId}/icon`;
 
+// Fire-and-forget: kick off a fetch to populate browser cache.
+export const preloadImageUrl = (url: string) => {
+  if (typeof window === 'undefined' || !url) return;
+  const img = new window.Image();
+  img.src = url;
+};
+
 const buildItemsUrl = ({
   page,
   nameText,
