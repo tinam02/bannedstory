@@ -19,19 +19,20 @@ const Char = () => {
 
   useEffect(() => {
     if (!hydrated) return;
-    setBody(prev => {
-      const next: IChar = {
-        ...prev,
-        itemIds: equippedItems?.map((i: any) => i.itemId) ?? [],
-        faceId:
-          equippedBodyItems?.find((i: any) => i.faceId)?.faceId ?? prev.faceId,
-        hairId:
-          equippedBodyItems?.find((i: any) => i.hairId)?.hairId ?? prev.hairId,
-      };
-      localStorage.setItem('char', JSON.stringify(next));
-      return next;
-    });
+    setBody(prev => ({
+      ...prev,
+      itemIds: equippedItems?.map((i: any) => i.itemId) ?? [],
+      faceId:
+        equippedBodyItems?.find((i: any) => i.faceId)?.faceId ?? prev.faceId,
+      hairId:
+        equippedBodyItems?.find((i: any) => i.hairId)?.hairId ?? prev.hairId,
+    }));
   }, [equippedItems, equippedBodyItems, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem('char', JSON.stringify(body));
+  }, [body, hydrated]);
 
   return (
     <div className={mcCont}>
