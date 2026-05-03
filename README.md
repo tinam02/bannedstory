@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# bannedstory
 
-## Getting Started
+A MapleStory character dress up tool. Pick items from the closet, see your character wearing them, save the outfit.
 
-First, run the development server:
+Inspired by Bannedstory, built on top of the public [maplestory.io](https://maplestory.io/) API.
+
+## Stack
+
+- Next.js 14 (App Router) + TypeScript
+- React 18, Mantine UI, typestyle, SCSS
+- Vercel Blob for uploads
+- All item data and character renders come from `maplestory.io` (no own backend)
+- State persists in `localStorage`
+
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+You'll need a `.env` file with a Vercel Blob token if you want the upload route to work:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```
+BLOB_READ_WRITE_TOKEN=your_token_here
 
-## Learn More
+## Disclaimer
 
-To learn more about Next.js, take a look at the following resources:
+This is an unofficial fan project. **Not affiliated with, endorsed by, or sponsored by Nexon.** MapleStory and all related game assets are property of Nexon. This project pulls assets at runtime from the public `maplestory.io` API and ships none of Nexon's copyrighted material in its source.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+[MIT](LICENSE)
