@@ -30,7 +30,7 @@ export const CharContext = createContext<{
 export function CharProvider({ children }: { children: React.ReactNode }) {
   const [equippedItems, setEquippedItems] = useState(null);
   const [equippedBodyItems, setEquippedBodyItems] = useState(null);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(2);
 
   //save to ls
   useEffect(() => {
