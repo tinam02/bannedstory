@@ -1,7 +1,7 @@
 import { IChar } from '@/types';
 
-const REGION = 'GMS';
-const VERSION = '235';
+export const REGION = 'GMS';
+export const VERSION = '265';
 const API_BASE = `https://maplestory.io/api/${REGION}/${VERSION}`;
 const RENDER_BASE = 'https://maplestory.io/api/character';
 const PER_PAGE = 50;
