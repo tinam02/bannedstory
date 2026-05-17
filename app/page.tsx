@@ -5,11 +5,13 @@ import { fontArial } from './styles/fonts';
 import Cursor from '@/components/atoms/Cursor';
 import Wearing from '@/components/molecules/Items/Wearing/Wearing';
 import ZoomControls from '@/components/atoms/ZoomControls';
+import SkinPicker from '@/components/atoms/SkinPicker';
 
 export default async function Home() {
   return (
     <main className={fontArial}>
       <ZoomControls />
+      <SkinPicker />
       <Char />
       <Platform />
       <Closet />

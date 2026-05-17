@@ -26,7 +26,6 @@ const DefaultImage = ({
         width: 'auto',
         height: 'auto',
       }}
-      priority
       unoptimized={unoptimized}
       {...(title && { title })}
       {...(onClick && { onClick })}

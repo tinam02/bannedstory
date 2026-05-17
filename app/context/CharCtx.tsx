@@ -1,4 +1,5 @@
 'use client';
+import { SelectedItems } from '@/types';
 import React, {
   createContext,
   useContext,
@@ -11,72 +12,54 @@ export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 0.5;
 
+export const DEFAULT_SKIN_ID = 2000;
+
 export const CharContext = createContext<{
-  equippedItems: any;
-  setEquippedItems: any;
-  equippedBodyItems: any;
-  setEquippedBodyItems: any;
+  selectedItems: SelectedItems | null;
+  setSelectedItems: React.Dispatch<
+    React.SetStateAction<SelectedItems | null>
+  >;
   zoom: number;
   setZoom: React.Dispatch<React.SetStateAction<number>>;
+  skinId: number;
+  setSkinId: React.Dispatch<React.SetStateAction<number>>;
 }>({
-  equippedItems: [],
-  setEquippedItems: () => {},
-  equippedBodyItems: [],
-  setEquippedBodyItems: () => {},
+  selectedItems: null,
+  setSelectedItems: () => {},
   zoom: 1,
   setZoom: () => {},
+  skinId: DEFAULT_SKIN_ID,
+  setSkinId: () => {},
 });
 
 export function CharProvider({ children }: { children: React.ReactNode }) {
-  const [equippedItems, setEquippedItems] = useState(null);
-  const [equippedBodyItems, setEquippedBodyItems] = useState(null);
+  const [selectedItems, setSelectedItems] = useState<SelectedItems | null>(
+    null
+  );
   const [zoom, setZoom] = useState(2);
+  const [skinId, setSkinId] = useState(DEFAULT_SKIN_ID);
 
-  //save to ls
+  // save to ls
   useEffect(() => {
-    if (!equippedItems) return;
-    localStorage.setItem('equippedItems', JSON.stringify(equippedItems));
-  }, [equippedItems]);
+    if (!selectedItems) return;
+    localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
+  }, [selectedItems]);
 
   useEffect(() => {
-    if (!equippedBodyItems) return;
-    localStorage.setItem(
-      'equippedBodyItems',
-      JSON.stringify(equippedBodyItems)
-    );
-  }, [equippedBodyItems]);
+    localStorage.setItem('skinId', String(skinId));
+  }, [skinId]);
 
-  //get from ls
+  // load from ls
   useEffect(() => {
-    if (localStorage.getItem('equippedItems')) {
-      setEquippedItems(
-        JSON.parse(localStorage.getItem('equippedItems') || '[]')
-      );
-    }
-    if (localStorage.getItem('equippedBodyItems')) {
-      setEquippedBodyItems(
-        JSON.parse(localStorage.getItem('equippedBodyItems') || '[]')
-      );
-    }
+    const raw = localStorage.getItem('selectedItems');
+    setSelectedItems(raw ? JSON.parse(raw) : {});
+    const savedSkin = Number(localStorage.getItem('skinId'));
+    if (Number.isFinite(savedSkin) && savedSkin > 0) setSkinId(savedSkin);
   }, []);
 
   const value = useMemo(
-    () => ({
-      equippedItems,
-      setEquippedItems,
-      equippedBodyItems,
-      setEquippedBodyItems,
-      zoom,
-      setZoom,
-    }),
-    [
-      equippedItems,
-      setEquippedItems,
-      equippedBodyItems,
-      setEquippedBodyItems,
-      zoom,
-      setZoom,
-    ]
+    () => ({ selectedItems, setSelectedItems, zoom, setZoom, skinId, setSkinId }),
+    [selectedItems, zoom, skinId]
   );
 
   return <CharContext.Provider value={value}>{children}</CharContext.Provider>;

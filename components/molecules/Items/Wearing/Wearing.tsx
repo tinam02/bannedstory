@@ -9,13 +9,17 @@ import { classes } from 'typestyle';
 import { closeIcon, wearingItem, wearingItemContainer } from './style';
 
 const Wearing = ({}: {}) => {
-  const { equippedItems, equippedBodyItems, setEquippedItems } = useChar();
+  const { selectedItems, setSelectedItems } = useChar();
 
-  function removeFromChar(item: any) {
-    const newItems = equippedItems.filter((i: any) => i.itemId !== item.itemId);
-    setEquippedItems(newItems);
-    //TODO body
+  function removeSlot(slot: string) {
+    setSelectedItems(prev => {
+      if (!prev) return prev;
+      const { [slot]: _removed, ...rest } = prev;
+      return rest;
+    });
   }
+
+  const entries = Object.entries(selectedItems ?? {});
 
   return (
     <DragWrapper id='wearing'>
@@ -31,32 +35,30 @@ const Wearing = ({}: {}) => {
         />
         <p className={classes('card-title')}>WEARING</p>
         <div className='card-inner'>
-          {equippedItems?.map((item: any) => {
-            return (
-              <div key={item.itemId} className={classes(wearingItemContainer)}>
-                <div className={classes(wearingItem, 'clickable')}>
-                  <div style={{ display: 'contents' }}>
-                    <DefaultImage
-                      className='item-img'
-                      src={item.imgSrc}
-                      alt={item.name}
-                      title={item.name}
-                      unoptimized
-                    />
-                  </div>
-                  <div className='name'>
-                    <div>{item.name}</div>
-                  </div>
-                  <Icon
-                    className={closeIcon}
-                    defaultImg='/ui/buttons/close/BtClose3.normal.0.png'
-                    activeImg='/ui/buttons/close/BtClose3.pressed.0.png'
-                    onClick={() => removeFromChar(item)}
+          {entries.map(([slot, item]) => (
+            <div key={slot} className={classes(wearingItemContainer)}>
+              <div className={classes(wearingItem, 'clickable')}>
+                <div style={{ display: 'contents' }}>
+                  <DefaultImage
+                    className='item-img'
+                    src={item.imgSrc}
+                    alt={item.name}
+                    title={item.name}
+                    unoptimized
                   />
                 </div>
+                <div className='name'>
+                  <div>{item.name}</div>
+                </div>
+                <Icon
+                  className={closeIcon}
+                  defaultImg='/ui/buttons/close/BtClose3.normal.0.png'
+                  activeImg='/ui/buttons/close/BtClose3.pressed.0.png'
+                  onClick={() => removeSlot(slot)}
+                />
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     </DragWrapper>

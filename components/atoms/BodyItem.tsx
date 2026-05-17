@@ -12,7 +12,7 @@ const BodyItem = ({
   q,
 }: {
   item: any;
-  onClick: () => void;
+  onClick: (imgSrc: string) => void;
   q: IBodyTypes;
 }) => {
   const itemId = getItemId(item, q);
@@ -42,7 +42,7 @@ const BodyItem = ({
         alt={item.name}
         title={item.name}
         unoptimized
-        onClick={onClick}
+        onClick={() => onClick(imageSrc)}
       />
     </div>
   );

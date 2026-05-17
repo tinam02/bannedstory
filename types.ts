@@ -1,7 +1,13 @@
+// Slot-keyed equipped items, matching the export/import JSON shape.
+// Key is the maplestory.io subCategory ("Hat", "Face", "Hair", "Cape", ...).
+export type SelectedItems = Record<string, any>;
+
 export interface IChar {
   itemIds?: number[];
   faceId?: number;
   hairId?: number;
+  // Body item id (2000-series). Head id is always skinId + 10000.
+  skinId?: number;
   skin?: SkinOptions;
   ears?: EarsOptions;
   pose?: PoseOptions;

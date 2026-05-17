@@ -11,34 +11,32 @@ import { useEffect, useState } from 'react';
 import Pagination from '../../atoms/Pagination/Pagination';
 import { stItemList, stPaginationContainer } from './items.css';
 import Search from '@/components/atoms/Search/Search';
-import { loadSavedBody } from '@/lib/utils';
-import { IChar } from '@/types';
+import { loadSavedBody, selectedItemsToBody } from '@/lib/utils';
 import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
 
 export const getItemId = (item: any, q: IBodyTypes) => {
   const key = `${q}Id`;
   return item[key];
 };
+
+// Lowercase API slug (face/hair) → capitalized subcategory used as the slot key.
+const slotForQ = (q: IBodyTypes) => (q === 'face' ? 'Face' : 'Hair');
+
 const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
   const [items, setItems] = useState<any>({});
   const [page, setPage] = useState(0);
   const [nameText, setNameText] = useState('');
-  const { equippedItems, equippedBodyItems, setEquippedBodyItems } = useChar();
+  const { selectedItems, setSelectedItems } = useChar();
   const preloader = useSweepDebounce();
 
   const previewOnHover = (itemId: number) => {
     const saved = loadSavedBody();
-    const slotKey = `${q}Id` as 'faceId' | 'hairId';
-    const preview: IChar = {
-      ...saved,
-      itemIds: equippedItems?.map((i: any) => i.itemId) ?? saved.itemIds ?? [],
-      faceId:
-        equippedBodyItems?.find((i: any) => i.faceId)?.faceId ?? saved.faceId,
-      hairId:
-        equippedBodyItems?.find((i: any) => i.hairId)?.hairId ?? saved.hairId,
-      [slotKey]: itemId,
+    const slot = slotForQ(q);
+    const previewItems = {
+      ...(selectedItems ?? {}),
+      [slot]: { itemId, subcategory: slot },
     };
-    preloadImageUrl(characterRenderUrl(preview));
+    preloadImageUrl(characterRenderUrl(selectedItemsToBody(previewItems, saved)));
   };
 
   useEffect(() => {
@@ -49,31 +47,16 @@ const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
     }).then(res => setItems(res));
   }, [page, q, nameText]);
 
-  function addToChar(item: any, imgSrc?: any) {
-    item.imgSrc = imgSrc;
-
-    setEquippedBodyItems((prev: any[] | null) => {
-      // normalize previous st
-      const prevArr = Array.isArray(prev) ? prev : [];
-
-      const slotKey = `${q}Id`;
-      const newId = item[slotKey];
-      if (newId == null) return prevArr;
-
-      // if same item already equipped in this slot, do nothing
-      if (prevArr.some(i => i[slotKey] === newId)) {
-        return prevArr;
-      }
-
-      // remove whatever was in this slot before
-      const withoutThisSlot = prevArr.filter(i => i[slotKey] == null);
-
-      // add new item for this slot
-      return [...withoutThisSlot, item];
-    });
+  function addToChar(item: any, imgSrc?: string) {
+    const slot = slotForQ(q);
+    const itemId = item[`${q}Id`] ?? item.itemId;
+    if (itemId == null) return;
+    setSelectedItems(prev => ({
+      ...(prev ?? {}),
+      [slot]: { ...item, itemId, subcategory: slot, imgSrc },
+    }));
   }
 
-  // console.log('qq',items,nameText)
   if (!items) return <>...</>;
   return (
     <>
@@ -92,7 +75,7 @@ const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
                     ...item,
                     itemId,
                   }}
-                  onClick={() => addToChar(item)}
+                  onClick={imgSrc => addToChar(item, imgSrc)}
                   q={q}
                 />
               </div>

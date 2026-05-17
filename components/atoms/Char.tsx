@@ -1,14 +1,18 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { characterRenderUrl } from '@/lib/fetch';
-import { DEFAULT_CHAR_BODY, loadSavedBody } from '@/lib/utils';
+import {
+  DEFAULT_CHAR_BODY,
+  loadSavedBody,
+  selectedItemsToBody,
+} from '@/lib/utils';
 import { IChar } from '@/types';
 import DefaultImage from './Image';
 import useChar from '@/app/context/CharCtx';
 import { style } from 'typestyle';
 
 const Char = () => {
-  const { equippedItems, equippedBodyItems, zoom } = useChar();
+  const { selectedItems, zoom, skinId } = useChar();
   const [body, setBody] = useState<IChar>(DEFAULT_CHAR_BODY);
   const [hydrated, setHydrated] = useState(false);
 
@@ -19,15 +23,8 @@ const Char = () => {
 
   useEffect(() => {
     if (!hydrated) return;
-    setBody(prev => ({
-      ...prev,
-      itemIds: equippedItems?.map((i: any) => i.itemId) ?? [],
-      faceId:
-        equippedBodyItems?.find((i: any) => i.faceId)?.faceId ?? prev.faceId,
-      hairId:
-        equippedBodyItems?.find((i: any) => i.hairId)?.hairId ?? prev.hairId,
-    }));
-  }, [equippedItems, equippedBodyItems, hydrated]);
+    setBody(prev => ({ ...selectedItemsToBody(selectedItems, prev), skinId }));
+  }, [selectedItems, skinId, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;

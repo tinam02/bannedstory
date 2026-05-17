@@ -151,10 +151,12 @@ export const fetchBodyIcon = async ({
 
 export const characterRenderUrl = (body: IChar): string => {
   const base = { Region: REGION, Version: VERSION };
-  // Body skin (2000) and head (12000) are required base layers.
+  // Body (2000-series) and head (12000-series) are required base layers.
+  // Head id mirrors the body skin id offset by 10000.
+  const skinId = body.skinId ?? 2000;
   const items: Array<Record<string, unknown>> = [
-    { ...base, ItemId: 2000 },
-    { ...base, ItemId: 12000 },
+    { ...base, ItemId: skinId },
+    { ...base, ItemId: skinId + 10000 },
   ];
   if (body.faceId) items.push({ ...base, ItemId: body.faceId });
   if (body.hairId) items.push({ ...base, ItemId: body.hairId });
