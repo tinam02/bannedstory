@@ -210,6 +210,8 @@ const swatchImg = style({
 const swatchLabel = style({
   marginTop: 1,
   fontSize: 9,
+  lineHeight: 1,
+  textAlign: 'center',
   color: '#fff',
   textShadow: '0 0 2px rgba(0, 0, 0, 0.9)',
 });
