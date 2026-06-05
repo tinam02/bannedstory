@@ -6,12 +6,14 @@ import Cursor from '@/components/atoms/Cursor';
 import Wearing from '@/components/molecules/Items/Wearing/Wearing';
 import ZoomControls from '@/components/atoms/ZoomControls';
 import SkinPicker from '@/components/atoms/SkinPicker';
+import RandomizeButton from '@/components/atoms/RandomizeButton';
 
 export default async function Home() {
   return (
     <main className={fontArial}>
       <ZoomControls />
       <SkinPicker />
+      <RandomizeButton />
       <Char />
       <Platform />
       <Closet />

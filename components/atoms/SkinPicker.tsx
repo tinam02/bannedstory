@@ -16,7 +16,7 @@ const SKIP_SKIN_IDS = new Set<number>([
   2006, 2007, 2008, 2014, 2017, 2024, 2031, 2041, 2042, 2044,
 ]);
 
-const SKIN_IDS = Array.from(
+export const SKIN_IDS = Array.from(
   { length: MAX_SKIN_ID - MIN_SKIN_ID + 1 },
   (_, i) => MIN_SKIN_ID + i,
 ).filter(id => !SKIP_SKIN_IDS.has(id));
