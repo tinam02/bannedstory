@@ -4,6 +4,7 @@ import SkinPicker from '@/components/atoms/SkinPicker';
 import RandomizeButton from '@/components/atoms/RandomizeButton';
 import ExportButton from '@/components/atoms/Export';
 import ImportButton from '@/components/atoms/Import';
+import AnimateToggle from '@/components/atoms/AnimateToggle';
 import { toolbar, toolbarRow } from './toolbar.css';
 
 /**
@@ -12,6 +13,7 @@ const Toolbar = () => (
   <div className={toolbar}>
     <div className={toolbarRow}>
       <RandomizeButton />
+      <AnimateToggle />
       <ImportButton />
       <ExportButton />
       <ZoomControls />

@@ -152,8 +152,11 @@ const renderItem = (slot: string, item: OutfitItem, emotion: string) => {
  * Serializes an outfit into a maplestory.io render URL.
  *
  * `zoom` is deliberately absent: the API's `resize` would refetch a larger
- * PNG on every zoom step, so we scale with CSS instead. `bgColor` is omitted
+ * image on every zoom step, so we scale with CSS instead. `bgColor` is omitted
  * too — transparent is the default and the only background we use.
+ *
+ * The trailing path segment is either a frame number (still PNG) or the
+ * literal `animated`, which returns a looping GIF of the whole stance.
  */
 export const characterRenderUrl = (outfit: Outfit): string => {
   const { selectedItems } = outfit;
@@ -181,7 +184,9 @@ export const characterRenderUrl = (outfit: Outfit): string => {
   if (outfit.name) params.set('name', outfit.name);
   const query = params.toString();
 
-  return `${RENDER_BASE}/${path}/${outfit.action}/${outfit.frame}${
+  const frame = outfit.animating ? 'animated' : outfit.frame;
+
+  return `${RENDER_BASE}/${path}/${outfit.action}/${frame}${
     query ? `?${query}` : ''
   }`;
 };

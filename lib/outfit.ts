@@ -68,7 +68,8 @@ export const createOutfit = (now: number): Outfit => ({
   flipX: false,
   name: '',
   includeBackground: false,
-  animating: true,
+
+  animating: false,
 });
 
 /** Adjustments arrive as both 0.35 and "0.35" in the wild. */

@@ -30,6 +30,11 @@ export const toolbarBtn = style({
       opacity: 0.5,
       cursor: 'wait',
     },
+    '&[data-active]': {
+      background: 'rgba(255, 227, 154, 0.2)',
+      boxShadow:
+        'inset 0 0 0 1px #ffe39a, inset 0 0 0 2px rgba(8, 8, 8, 0.76), 0 0 6px rgba(255, 227, 154, 0.45)',
+    },
   },
 });
 
