@@ -18,6 +18,8 @@ export const stItemList = style({
   flex: 1,
   minHeight: 0,
   overflowY: 'auto',
+  overflowX: 'hidden',
+  scrollbarGutter: 'stable',
   scrollbarWidth: 'thin',
   scrollbarColor: 'rgba(0, 0, 0, 0.35) transparent',
   gap: 4,
