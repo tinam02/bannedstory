@@ -9,7 +9,7 @@ import {
 } from '@/lib/fetch';
 import { useEffect, useState } from 'react';
 import Pagination from '../../atoms/Pagination/Pagination';
-import { stItemList, stPaginationContainer } from './items.css';
+import { stEmpty, stItemList, stPaginationContainer } from './items.css';
 import Search from '@/components/atoms/Search/Search';
 import { loadSavedBody, selectedItemsToBody } from '@/lib/utils';
 import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
@@ -26,6 +26,7 @@ const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
   const [items, setItems] = useState<any>({});
   const [page, setPage] = useState(0);
   const [nameText, setNameText] = useState('');
+  const [loading, setLoading] = useState(true);
   const { selectedItems, setSelectedItems } = useChar();
   const preloader = useSweepDebounce();
 
@@ -36,15 +37,28 @@ const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
       ...(selectedItems ?? {}),
       [slot]: { itemId, subcategory: slot },
     };
-    preloadImageUrl(characterRenderUrl(selectedItemsToBody(previewItems, saved)));
+    preloadImageUrl(
+      characterRenderUrl(selectedItemsToBody(previewItems, saved)),
+    );
   };
 
   useEffect(() => {
+    // ignore
+    // anything that resolves after its query has been superseded
+    let stale = false;
+    setLoading(true);
     fetchBodyItems({
       page,
       q,
       nameText,
-    }).then(res => setItems(res));
+    }).then(res => {
+      if (stale) return;
+      setItems(res);
+      setLoading(false);
+    });
+    return () => {
+      stale = true;
+    };
   }, [page, q, nameText]);
 
   function addToChar(item: any, imgSrc?: string) {
@@ -60,15 +74,22 @@ const BodyItems = ({ q = 'face' }: { q: IBodyTypes }) => {
   if (!items) return <>...</>;
   return (
     <>
-      <div className={stItemList}>
-        {items.result?.length > 1 &&
+      <div className={stItemList} data-loading={loading ? '' : undefined}>
+        {!loading && items.result?.length === 0 && (
+          <div className={stEmpty}>
+            {nameText ? `No items match “${nameText}”` : 'No items found'}
+          </div>
+        )}
+        {items.result?.length > 0 &&
           items?.result?.map((item: any) => {
             const itemId = getItemId(item, q);
             return (
               <div
                 key={itemId}
                 className='closet-item clickable'
-                onMouseEnter={() => preloader.trigger(() => previewOnHover(itemId))}
+                onMouseEnter={() =>
+                  preloader.trigger(() => previewOnHover(itemId))
+                }
               >
                 <BodyItem
                   item={{

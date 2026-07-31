@@ -7,7 +7,9 @@ const RENDER_BASE = 'https://maplestory.io/api/character';
 const PER_PAGE = 50;
 
 // IChar.pose enum -> maplestory.io stance string. Anything not listed falls back to stand1.
-const POSE_TO_STANCE: Partial<Record<NonNullable<IChar['pose']>, string>> = {
+export const POSE_TO_STANCE: Partial<
+  Record<NonNullable<IChar['pose']>, string>
+> = {
   standingOneHanded: 'stand1',
   standingTwoHanded: 'stand2',
   walkingOneHanded: 'walk1',
@@ -37,6 +39,9 @@ const adaptItem = (io: any) => ({
   requiredLevel: io.requiredLevel,
   requiredGender: io.requiredGender,
   isCash: io.isCash,
+  // Kept only so outfit export can round-trip typeInfo verbatim.
+  lowItemId: io.typeInfo?.lowItemId,
+  highItemId: io.typeInfo?.highItemId,
 });
 
 export const itemIconUrl = (itemId: number) =>

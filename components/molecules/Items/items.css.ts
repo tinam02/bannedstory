@@ -8,7 +8,12 @@ export const stItemList = style({
   gap: 4,
   textAlign: 'center',
   marginTop: 8,
+  transition: 'opacity 120ms ease-out',
   $nest: {
+    // Dim the previous results while a new query is loading
+    '&[data-loading]': {
+      opacity: 0.45,
+    },
     '.closet-item': {
       width: px(44),
       height: px(44),
@@ -22,6 +27,16 @@ export const stItemList = style({
       boxShadow: 'inset 1px 6px 4px rgba(170, 170, 170, 0.5)',
     },
   },
+});
+
+// Spans the whole grid so the message centres regardless of column count.
+export const stEmpty = style({
+  gridColumn: '1 / -1',
+  padding: '28px 8px',
+  fontSize: 12,
+  color: '#4a4a4a',
+  textShadow: '0 1px 0 rgba(255, 255, 255, 0.6)',
+  userSelect: 'none',
 });
 
 export const stPaginationContainer = style({

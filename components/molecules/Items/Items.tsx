@@ -1,13 +1,9 @@
 'use client';
-import {
-  characterRenderUrl,
-  fetchItems,
-  preloadImageUrl,
-} from '@/lib/fetch';
+import { characterRenderUrl, fetchItems, preloadImageUrl } from '@/lib/fetch';
 import Item from '../../atoms/Item';
 import Pagination from '../../atoms/Pagination/Pagination';
 import { useEffect, useState } from 'react';
-import { stItemList, stPaginationContainer } from './items.css';
+import { stEmpty, stItemList, stPaginationContainer } from './items.css';
 import useChar from '@/app/context/CharCtx';
 import Search from '@/components/atoms/Search/Search';
 import { loadSavedBody, selectedItemsToBody } from '@/lib/utils';
@@ -17,22 +13,34 @@ const Items = ({ q }: { q: string }) => {
   const [items, setItems] = useState<any>({});
   const [page, setPage] = useState(0);
   const [nameText, setNameText] = useState('');
+  const [loading, setLoading] = useState(true);
   const { selectedItems, setSelectedItems } = useChar();
   const preloader = useSweepDebounce();
 
   useEffect(() => {
+    // Responses can land out of order once queries fire while typing — ignore
+    // anything that resolves after its query has been superseded.
+    let stale = false;
+    setLoading(true);
     fetchItems({
       page,
       subcategory: q,
       nameText,
-    }).then(res => setItems(res));
+    }).then(res => {
+      if (stale) return;
+      setItems(res);
+      setLoading(false);
+    });
+    return () => {
+      stale = true;
+    };
   }, [page, q, nameText]);
 
   const previewOnHover = (item: any) => {
     const saved = loadSavedBody();
     const preview = selectedItemsToBody(
       { ...(selectedItems ?? {}), [item.subcategory]: item },
-      saved
+      saved,
     );
     preloadImageUrl(characterRenderUrl(preview));
   };
@@ -47,14 +55,21 @@ const Items = ({ q }: { q: string }) => {
   if (!items) return <>...</>;
   return (
     <>
-      <div className={stItemList}>
-        {items.result?.length > 1 &&
+      <div className={stItemList} data-loading={loading ? '' : undefined}>
+        {!loading && items.result?.length === 0 && (
+          <div className={stEmpty}>
+            {nameText ? `No items match “${nameText}”` : 'No items found'}
+          </div>
+        )}
+        {items.result?.length > 0 &&
           items?.result?.map((item: any) => {
             return (
               <div
                 key={item.itemId}
                 className='closet-item clickable'
-                onMouseEnter={() => preloader.trigger(() => previewOnHover(item))}
+                onMouseEnter={() =>
+                  preloader.trigger(() => previewOnHover(item))
+                }
               >
                 <Item item={item} onClick={imgSrc => addToChar(item, imgSrc)} />
               </div>

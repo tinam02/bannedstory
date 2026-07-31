@@ -7,6 +7,7 @@ import Wearing from '@/components/molecules/Items/Wearing/Wearing';
 import ZoomControls from '@/components/atoms/ZoomControls';
 import SkinPicker from '@/components/atoms/SkinPicker';
 import RandomizeButton from '@/components/atoms/RandomizeButton';
+import ExportButton from '@/components/atoms/Export';
 
 export default async function Home() {
   return (
@@ -14,6 +15,7 @@ export default async function Home() {
       <ZoomControls />
       <SkinPicker />
       <RandomizeButton />
+      <ExportButton />
       <Char />
       <Platform />
       <Closet />

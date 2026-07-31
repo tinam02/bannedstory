@@ -3,7 +3,7 @@ import useChar from '@/app/context/CharCtx';
 import { randomizeSelectedItems } from '@/lib/random';
 import { useState } from 'react';
 import { style } from 'typestyle';
-import { SKIN_IDS } from './SkinPicker';
+import { SKIN_IDS } from '@/lib/skins';
 
 const RandomizeButton = () => {
   const { setSelectedItems, setSkinId } = useChar();
