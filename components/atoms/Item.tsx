@@ -1,4 +1,5 @@
 'use client';
+import { OutfitItem } from '@/types';
 import DefaultImage from './Image';
 
 /**
@@ -9,9 +10,9 @@ const Item = ({
   iconUrl,
   onClick,
 }: {
-  item: any;
+  item: OutfitItem;
   iconUrl: string;
-  onClick?: (imgSrc: string) => void;
+  onClick?: () => void;
 }) => (
   <div style={{ display: 'contents' }}>
     <DefaultImage
@@ -19,7 +20,7 @@ const Item = ({
       alt={item.name}
       title={item.name}
       unoptimized
-      onClick={() => onClick?.(iconUrl)}
+      onClick={onClick}
     />
   </div>
 );

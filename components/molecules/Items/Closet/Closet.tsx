@@ -5,7 +5,6 @@ import DragWrapper from '@/components/atoms/DragWrapper';
 import { Tabs } from '@mantine/core';
 import { classes } from 'typestyle';
 import ItemList from '../ItemList';
-import { bodyIconUrl } from '@/lib/fetch';
 
 const Closet = ({}: {}) => {
   const items = tabs.map(tab => (
@@ -41,10 +40,7 @@ const Closet = ({}: {}) => {
             <hr></hr>
             {tabs.map(tab => (
               <Tabs.Panel value={tab} key={tab}>
-                <ItemList
-                  subcategory={tab}
-                  iconUrl={BODY_TABS.has(tab) ? bodyIconUrl : undefined}
-                />
+                <ItemList subcategory={tab} />
               </Tabs.Panel>
             ))}
           </Tabs>
@@ -59,6 +55,3 @@ export default Closet;
 // Adding a closet tab is one entry here — the subcategory doubles as the
 // maplestory.io filter and the equipped-slot key.
 const tabs = ['Hat', 'Top', 'Bottom', 'Overall', 'Shoes', 'Face', 'Hair'];
-
-// Faces and hairs only have an /icon endpoint; the rest use /iconRaw
-const BODY_TABS = new Set(['Face', 'Hair']);

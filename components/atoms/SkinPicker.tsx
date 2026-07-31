@@ -59,10 +59,6 @@ const SkinPicker = () => {
 export default SkinPicker;
 
 const picker = style({
-  position: 'fixed',
-  top: 50,
-  right: 12,
-  zIndex: 10,
   userSelect: 'none',
 });
 

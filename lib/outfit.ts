@@ -1,136 +1,14 @@
-import { IChar, SelectedItems } from '@/types';
-import { POSE_TO_STANCE, REGION, VERSION } from './fetch';
+import { Outfit, OutfitItem, SelectedItems } from '@/types';
+import { ADJUSTMENTS, AdjustmentKey, REGION, VERSION } from './fetch';
 import { HEAD_ID_OFFSET, skinFullName } from './skins';
 
+export const DEFAULT_SKIN_ID = 2000;
+
 /**
- * Outfit JSON interchange format.
- *
- * This is deliberately NOT our internal shape — it mirrors the format other
- * MapleStory avatar simulators export, so outfits move between tools. Notes on
- * the format, learned from real exports:
- *
- * - `selectedItems` is keyed by maplestory.io subCategory ("Hat", "Face", ...),
- *   which is the same vocabulary our own SelectedItems uses.
- * - Body and Head are entries in `selectedItems`, not just the top-level
- *   `skin` field. Head id is always Body id + 10000. The top-level `skin`
- *   string can be stale in real exports (seen: skin "2012" alongside Body
- *   2018), so on import the Body entry is authoritative.
- * - `region`/`version` are PER ITEM, and genuinely mix within one outfit
- *   (GMS 268 + JMS 422 + KMST 1170 seen in a single file). Item ids are not
- *   portable across regions, so these must be preserved, not normalized.
- * - Colour adjustments (hue/saturation/brightness/contrast/alpha) are
- *   inconsistently typed — sometimes 0.35, sometimes "0.35". Pass through
- *   verbatim on export; coerce with Number() on import.
+ * Body/Head entries for a skin id. We track one id; the format wants both
+ * layers spelled out, and Head is always Body + 10000.
  */
-export interface OutfitItem {
-  name: string;
-  desc?: string;
-  id: number;
-  region: string;
-  version: string;
-  typeInfo: {
-    overallCategory?: string;
-    category?: string;
-    subCategory?: string;
-    lowItemId?: number;
-    highItemId?: number;
-  };
-  noIcon?: boolean;
-  skinName?: string;
-  isCash?: boolean;
-  requiredJobs?: string[];
-  requiredLevel?: number;
-  requiredGender?: number;
-  // Adjustment fields — numeric in spirit, string in some exports.
-  hue?: number | string;
-  saturation?: number | string;
-  brightness?: number | string;
-  contrast?: number | string;
-  alpha?: number | string;
-  vslot?: string;
-  visible?: boolean;
-  frame?: number;
-  equipFrame?: number;
-}
-
-export interface Outfit {
-  id: number;
-  type: 'character';
-  action: string;
-  emotion: string;
-  skin: string;
-  zoom: number;
-  frame: number;
-  mercEars: boolean;
-  illiumEars: boolean;
-  highFloraEars: boolean;
-  selectedItems: Record<string, OutfitItem>;
-  visible: boolean;
-  position: { x: number; y: number };
-  fhSnap: boolean;
-  flipX: boolean;
-  name: string;
-  includeBackground: boolean;
-  animating: boolean;
-}
-
-// Per-item fields we carry through untouched so an imported outfit can be
-// re-exported without losing anything we don't model ourselves yet.
-const PASSTHROUGH_KEYS = [
-  'hue',
-  'saturation',
-  'brightness',
-  'contrast',
-  'alpha',
-  'vslot',
-  'visible',
-  'frame',
-  'equipFrame',
-] as const;
-
-const pickPassthrough = (item: any) => {
-  const out: Record<string, unknown> = {};
-  for (const key of PASSTHROUGH_KEYS) {
-    if (item?.[key] !== undefined) out[key] = item[key];
-  }
-  return out;
-};
-
-// Our EarsOptions -> the three boolean ear flags the format uses.
-const earFlags = (ears: IChar['ears']) => ({
-  mercEars: ears === 'bigEars',
-  illiumEars: ears === 'lefEars',
-  highFloraEars: ears === 'highlefEars',
-});
-
-// One equipped item, our internal shape -> interchange shape.
-const toOutfitItem = (slot: string, item: any): OutfitItem => ({
-  name: item.name ?? slot,
-  desc: item.desc ?? '',
-  id: item.itemId ?? item.id,
-  region: item.region ?? REGION,
-  version: item.version ?? VERSION,
-  typeInfo: {
-    overallCategory: item.overallCategory,
-    category: item.category,
-    subCategory: item.subcategory ?? slot,
-    lowItemId: item.lowItemId,
-    highItemId: item.highItemId,
-  },
-  ...(item.isCash !== undefined && { isCash: item.isCash }),
-  ...(item.requiredJobs !== undefined && { requiredJobs: item.requiredJobs }),
-  ...(item.requiredLevel !== undefined && {
-    requiredLevel: item.requiredLevel,
-  }),
-  ...(item.requiredGender !== undefined && {
-    requiredGender: item.requiredGender,
-  }),
-  ...pickPassthrough(item),
-});
-
-// Body/Head are synthesized from skinId — we track a single id, the format
-// wants both layers as full entries.
-const skinEntries = (skinId: number): Record<string, OutfitItem> => {
+export const skinEntries = (skinId: number): SelectedItems => {
   const fullName = skinFullName(skinId);
   const base = { noIcon: true, region: REGION, version: VERSION };
   return {
@@ -162,45 +40,150 @@ const skinEntries = (skinId: number): Record<string, OutfitItem> => {
   };
 };
 
-export function buildOutfit({
-  selectedItems,
-  skinId,
-  zoom,
-  body,
-  now,
-}: {
-  selectedItems: SelectedItems | null;
-  skinId: number;
-  zoom: number;
-  body: IChar;
-  now: number;
-}): Outfit {
-  const equipped: Record<string, OutfitItem> = {};
-  for (const [slot, item] of Object.entries(selectedItems ?? {})) {
-    // Body/Head come from skinId; never let a stale equipped entry shadow them.
-    if (!item || slot === 'Body' || slot === 'Head') continue;
-    equipped[slot] = toOutfitItem(slot, item);
+/** The Body entry is authoritative — real exports carry a stale `skin`. */
+export const skinIdOf = (outfit: Outfit) =>
+  outfit.selectedItems.Body?.id ?? Number(outfit.skin) ?? DEFAULT_SKIN_ID;
+
+export const withSkin = (outfit: Outfit, skinId: number): Outfit => ({
+  ...outfit,
+  skin: String(skinId),
+  selectedItems: { ...outfit.selectedItems, ...skinEntries(skinId) },
+});
+
+export const createOutfit = (now: number): Outfit => ({
+  id: now,
+  type: 'character',
+  action: 'stand1',
+  emotion: 'default',
+  skin: String(DEFAULT_SKIN_ID),
+  zoom: 2,
+  frame: 0,
+  mercEars: false,
+  illiumEars: false,
+  highFloraEars: false,
+  selectedItems: skinEntries(DEFAULT_SKIN_ID),
+  visible: true,
+  position: { x: 0, y: 0 },
+  fhSnap: true,
+  flipX: false,
+  name: '',
+  includeBackground: false,
+  animating: true,
+});
+
+/** Adjustments arrive as both 0.35 and "0.35" in the wild. */
+const toNumber = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const parseItem = (slot: string, raw: any): OutfitItem | null => {
+  const id = toNumber(raw?.id);
+  if (id === undefined) return null;
+
+  const item: OutfitItem = {
+    name: raw.name ?? slot,
+    desc: raw.desc ?? '',
+    id,
+    region: raw.region || REGION,
+    version: raw.version ? String(raw.version) : VERSION,
+    typeInfo: {
+      overallCategory: raw.typeInfo?.overallCategory,
+      category: raw.typeInfo?.category,
+      // The key is the authority — some exports disagree with typeInfo.
+      subCategory: slot,
+      lowItemId: toNumber(raw.typeInfo?.lowItemId),
+      highItemId: toNumber(raw.typeInfo?.highItemId),
+    },
+  };
+
+  for (const key of Object.keys(ADJUSTMENTS) as AdjustmentKey[]) {
+    const value = toNumber(raw[key]);
+    if (value !== undefined) item[key] = value;
+  }
+  if (typeof raw.vslot === 'string') item.vslot = raw.vslot;
+  if (raw.visible === false) item.visible = false;
+  const equipFrame = toNumber(raw.equipFrame);
+  if (equipFrame) item.equipFrame = equipFrame;
+  if (raw.noIcon) item.noIcon = true;
+  if (raw.skinName) item.skinName = raw.skinName;
+  if (Array.isArray(raw.requiredJobs)) item.requiredJobs = raw.requiredJobs;
+  if (typeof raw.isCash === 'boolean') item.isCash = raw.isCash;
+  const requiredLevel = toNumber(raw.requiredLevel);
+  if (requiredLevel !== undefined) item.requiredLevel = requiredLevel;
+  const requiredGender = toNumber(raw.requiredGender);
+  if (requiredGender !== undefined) item.requiredGender = requiredGender;
+
+  return item;
+};
+
+/**
+ * Reads an outfit exported by us or another simulator.
+ *
+ * Deliberately tolerant: anything unrecognized falls back to a default rather
+ * than failing the whole import, and `warnings` reports what was dropped so
+ * the UI can say so instead of silently losing a slot.
+ */
+export function parseOutfit(
+  raw: unknown,
+  now: number,
+): { outfit: Outfit; warnings: string[] } {
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('That file is not an outfit — expected a JSON object.');
+  }
+  const src = raw as Record<string, any>;
+  if (!src.selectedItems || typeof src.selectedItems !== 'object') {
+    throw new Error('That file has no `selectedItems`, so there is nothing to wear.');
   }
 
-  return {
-    id: now,
-    type: 'character',
-    action: POSE_TO_STANCE[body.pose ?? 'standingOneHanded'] ?? 'stand1',
-    emotion: body.faceEmote ?? 'default',
+  const warnings: string[] = [];
+  const selectedItems: SelectedItems = {};
+  for (const [slot, rawItem] of Object.entries(src.selectedItems)) {
+    const item = parseItem(slot, rawItem);
+    if (item) selectedItems[slot] = item;
+    else warnings.push(`Skipped “${slot}” — no usable item id.`);
+  }
+
+  // Body is authoritative, but tolerate exports missing it by falling back to
+  // the top-level `skin`, then to the default.
+  const skinId =
+    toNumber(selectedItems.Body?.id) ??
+    toNumber(src.skin) ??
+    DEFAULT_SKIN_ID;
+  if (!selectedItems.Body || !selectedItems.Head) {
+    Object.assign(selectedItems, skinEntries(skinId));
+    warnings.push('Rebuilt the missing body/head layers from the skin id.');
+  }
+
+  const base = createOutfit(now);
+  const outfit: Outfit = {
+    ...base,
+    action: typeof src.action === 'string' ? src.action : base.action,
+    emotion: typeof src.emotion === 'string' ? src.emotion : base.emotion,
     skin: String(skinId),
-    zoom,
-    frame: body.poseFrame ?? 0,
-    ...earFlags(body.ears),
-    selectedItems: { ...skinEntries(skinId), ...equipped },
-    // Fields we don't model yet — emitted at the defaults other tools expect.
-    visible: true,
-    position: { x: 0, y: 0 },
-    fhSnap: true,
-    flipX: false,
-    name: '',
-    includeBackground: false,
-    animating: true,
+    zoom: toNumber(src.zoom) ?? base.zoom,
+    frame: toNumber(src.frame) ?? base.frame,
+    mercEars: !!src.mercEars,
+    illiumEars: !!src.illiumEars,
+    highFloraEars: !!src.highFloraEars,
+    selectedItems,
+    flipX: !!src.flipX,
+    name: typeof src.name === 'string' ? src.name : '',
+    includeBackground: !!src.includeBackground,
+    animating: src.animating !== false,
   };
+
+  const regions = new Set(
+    Object.values(selectedItems).map(i => `${i.region} ${i.version}`),
+  );
+  if (regions.size > 1) {
+    warnings.push(
+      `Outfit mixes regions (${Array.from(regions).join(', ')}) — kept as-is.`,
+    );
+  }
+
+  return { outfit, warnings };
 }
 
 export const outfitFilename = (now: number) => `bannedstory-${now}.json`;

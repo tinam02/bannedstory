@@ -1,4 +1,4 @@
-import { IChar } from '@/types';
+import { Outfit, OutfitItem, PoseOptions } from '@/types';
 
 export const REGION = 'GMS';
 export const VERSION = '265';
@@ -6,10 +6,9 @@ const API_BASE = `https://maplestory.io/api/${REGION}/${VERSION}`;
 const RENDER_BASE = 'https://maplestory.io/api/character';
 const PER_PAGE = 50;
 
-// IChar.pose enum -> maplestory.io stance string. Anything not listed falls back to stand1.
-export const POSE_TO_STANCE: Partial<
-  Record<NonNullable<IChar['pose']>, string>
-> = {
+// Friendly pose name -> maplestory.io stance string. `Outfit.action` stores the
+// stance directly; this is the label source for the pose picker.
+export const POSE_TO_STANCE: Partial<Record<PoseOptions, string>> = {
   standingOneHanded: 'stand1',
   standingTwoHanded: 'stand2',
   walkingOneHanded: 'walk1',
@@ -21,33 +20,49 @@ export const POSE_TO_STANCE: Partial<
   lyingDown: 'prone',
 };
 
+// Adjustments the render URL understands, with the value that means "no
+// change". Sending a neutral value is a no-op, so we drop it to keep URLs
+// short and cacheable — the same thing other simulators do.
+export const ADJUSTMENTS = {
+  hue: 0,
+  saturation: 1,
+  brightness: 1,
+  contrast: 1,
+  alpha: 1,
+} as const;
+
+export type AdjustmentKey = keyof typeof ADJUSTMENTS;
+
+// The emotion is stamped onto these layers as `animationName`.
+const FACE_LAYERS = new Set(['Face', 'Face Accessory']);
+
+// Faces / hairs have no /iconRaw on maplestory.io — only /icon works for them.
+const ICON_ONLY_SLOTS = new Set(['Face', 'Hair']);
+
 type ItemsListResponse = {
-  result: any[];
+  result: OutfitItem[];
   metadata: { page: number; prevPage: number | null; nextPage: number | null };
 };
 
-const adaptItem = (io: any) => ({
-  itemId: io.id,
-  name: io.name,
-  desc: io.desc,
-  overallCategory: io.typeInfo?.overallCategory,
-  category: io.typeInfo?.category,
-  subcategory: io.typeInfo?.subCategory,
-  requiredJobs: io.requiredJobs,
-  requiredLevel: io.requiredLevel,
-  requiredGender: io.requiredGender,
-  isCash: io.isCash,
-  // Kept only so outfit export can round-trip typeInfo verbatim.
-  lowItemId: io.typeInfo?.lowItemId,
-  highItemId: io.typeInfo?.highItemId,
+// The /item response is already in interchange shape — it only lacks the
+// region/version it came from, so that is all we add.
+const adaptItem = (io: any): OutfitItem => ({
+  ...io,
+  region: REGION,
+  version: VERSION,
 });
 
 export const itemIconUrl = (itemId: number) =>
   `${API_BASE}/item/${itemId}/iconRaw`;
 
-// Faces / hairs have no /iconRaw on maplestory.io — only /icon works for them.
 export const bodyIconUrl = (itemId: number) =>
   `${API_BASE}/item/${itemId}/icon`;
+
+/** Icon for an equipped item, picking the endpoint its slot supports. */
+export const iconUrlFor = (item: OutfitItem) =>
+  ICON_ONLY_SLOTS.has(item.typeInfo?.subCategory ?? '')
+    ? bodyIconUrl(item.id)
+    : itemIconUrl(item.id);
 
 // Fire-and-forget: kick off a fetch to populate browser cache.
 export const preloadImageUrl = (url: string) => {
@@ -91,7 +106,7 @@ export const fetchItems = async ({
   try {
     const res = await fetch(
       buildItemsUrl({ page, nameText, overallCategory, subcategory }),
-      { cache: 'force-cache' }
+      { cache: 'force-cache' },
     );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const arr = (await res.json()) as any[];
@@ -110,25 +125,63 @@ export const fetchItems = async ({
   }
 };
 
-export const characterRenderUrl = (body: IChar): string => {
-  const base = { Region: REGION, Version: VERSION };
-  // Body (2000-series) and head (12000-series) are required base layers.
-  // Head id mirrors the body skin id offset by 10000.
-  const skinId = body.skinId ?? 2000;
-  const items: Array<Record<string, unknown>> = [
-    { ...base, ItemId: skinId },
-    { ...base, ItemId: skinId + 10000 },
-  ];
-  if (body.faceId) items.push({ ...base, ItemId: body.faceId });
-  if (body.hairId) items.push({ ...base, ItemId: body.hairId });
-  for (const id of body.itemIds ?? []) {
-    if (id) items.push({ ...base, ItemId: id });
+/** One equipped item as the render URL wants it. */
+const renderItem = (slot: string, item: OutfitItem, emotion: string) => {
+  const out: Record<string, unknown> = {
+    itemId: item.id,
+    region: item.region || REGION,
+    version: item.version || VERSION,
+  };
+  if (FACE_LAYERS.has(slot)) out.animationName = emotion;
+
+  for (const key of Object.keys(ADJUSTMENTS) as AdjustmentKey[]) {
+    const value = item[key];
+    if (typeof value === 'number' && value !== ADJUSTMENTS[key]) {
+      out[key] = value;
+    }
   }
-  const path = items
-    .map(i => encodeURIComponent(JSON.stringify(i)))
-    .join(',');
-  const stance = POSE_TO_STANCE[body.pose ?? 'standingOneHanded'] ?? 'stand1';
-  const frame = body.poseFrame ?? 0;
-  return `${RENDER_BASE}/${path}/${stance}/${frame}`;
+  if (item.vslot) out.vslot = item.vslot;
+  // Only meaningful when hiding a layer; `true` is the default.
+  if (item.visible === false) out.visible = false;
+  if (item.equipFrame) out.equipFrame = item.equipFrame;
+
+  return out;
 };
 
+/**
+ * Serializes an outfit into a maplestory.io render URL.
+ *
+ * `zoom` is deliberately absent: the API's `resize` would refetch a larger
+ * PNG on every zoom step, so we scale with CSS instead. `bgColor` is omitted
+ * too — transparent is the default and the only background we use.
+ */
+export const characterRenderUrl = (outfit: Outfit): string => {
+  const { selectedItems } = outfit;
+  // Body and head are the required base layers and lead the path.
+  const ordered: Array<[string, OutfitItem]> = [];
+  for (const slot of ['Body', 'Head']) {
+    if (selectedItems[slot]) ordered.push([slot, selectedItems[slot]]);
+  }
+  for (const [slot, item] of Object.entries(selectedItems)) {
+    if (slot !== 'Body' && slot !== 'Head' && item) ordered.push([slot, item]);
+  }
+
+  const path = ordered
+    .map(([slot, item]) =>
+      encodeURIComponent(JSON.stringify(renderItem(slot, item, outfit.emotion))),
+    )
+    .join(',');
+
+  // Only non-default flags, so identical looks share a cache entry.
+  const params = new URLSearchParams();
+  if (outfit.mercEars) params.set('showears', 'true');
+  if (outfit.illiumEars) params.set('showLefEars', 'true');
+  if (outfit.highFloraEars) params.set('showHighLefEars', 'true');
+  if (outfit.flipX) params.set('flipX', 'true');
+  if (outfit.name) params.set('name', outfit.name);
+  const query = params.toString();
+
+  return `${RENDER_BASE}/${path}/${outfit.action}/${outfit.frame}${
+    query ? `?${query}` : ''
+  }`;
+};

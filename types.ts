@@ -1,23 +1,83 @@
-// Slot-keyed equipped items, matching the export/import JSON shape.
-// Key is the maplestory.io subCategory ("Hat", "Face", "Hair", "Cape", ...).
-export type SelectedItems = Record<string, any>;
-
-export interface IChar {
-  itemIds?: number[];
-  faceId?: number;
-  hairId?: number;
-  // Body item id (2000-series). Head id is always skinId + 10000.
-  skinId?: number;
-  skin?: SkinOptions;
-  ears?: EarsOptions;
-  pose?: PoseOptions;
-  faceEmote?: FaceEmoteOptions;
-  faceFrame?: number;
-  poseFrame?: number;
-  effectFrame?: number;
+/**
+ * The outfit interchange format, shared with other MapleStory avatar
+ * simulators — and, since it is also our in-app state shape, the single
+ * source of truth for the character.
+ *
+ * It is essentially a serialization of the maplestory.io render URL:
+ *   selectedItems -> the comma-joined item objects in the path
+ *   top level     -> the query string (ears, flipX, name)
+ * See `characterRenderUrl` in lib/fetch.ts for the mapping.
+ *
+ * Notes learned from real exports of other tools:
+ * - `selectedItems` is keyed by maplestory.io subCategory ("Hat", "Face", ...).
+ * - Body and Head are entries here, not just the top-level `skin` field. Head
+ *   id is always Body id + 10000. Real exports carry a stale `skin` string
+ *   (seen: "2012" alongside Body 2018), so the Body entry is authoritative.
+ * - `region`/`version` are per item and genuinely mix within one outfit
+ *   (GMS 268 + JMS 422 + KMST 1170 seen together). Ids are not portable
+ *   across regions, so these must be preserved rather than normalized.
+ * - Adjustments are inconsistently typed in the wild — both 0.35 and "0.35".
+ *   We coerce to numbers on import; see `parseOutfit`.
+ */
+export interface OutfitItem {
+  name: string;
+  desc?: string;
+  id: number;
+  region: string;
+  version: string;
+  typeInfo: {
+    overallCategory?: string;
+    category?: string;
+    subCategory?: string;
+    lowItemId?: number;
+    highItemId?: number;
+  };
+  noIcon?: boolean;
+  skinName?: string;
+  isCash?: boolean;
+  requiredJobs?: string[];
+  requiredLevel?: number;
+  requiredGender?: number;
+  // Adjustments. Neutral values are dropped when building the render URL.
+  hue?: number;
+  saturation?: number;
+  brightness?: number;
+  contrast?: number;
+  alpha?: number;
+  vslot?: string;
+  visible?: boolean;
+  frame?: number;
+  equipFrame?: number;
 }
 
-type PoseOptions =
+export type SelectedItems = Record<string, OutfitItem>;
+
+export interface Outfit {
+  id: number;
+  type: 'character';
+  /** maplestory.io stance string, e.g. "stand1" — not a friendly pose name. */
+  action: string;
+  /** Applied as `animationName` on the Face and Face Accessory layers. */
+  emotion: string;
+  /** Body item id as a string. Kept for compatibility; Body entry wins. */
+  skin: string;
+  /** Display scale only — we scale with CSS, never the API's `resize` bc then the fetched png would be heavier */
+  zoom: number;
+  frame: number;
+  mercEars: boolean;
+  illiumEars: boolean;
+  highFloraEars: boolean;
+  selectedItems: SelectedItems;
+  visible: boolean;
+  position: { x: number; y: number };
+  fhSnap: boolean;
+  flipX: boolean;
+  name: string;
+  includeBackground: boolean;
+  animating: boolean;
+}
+
+export type PoseOptions =
   | 'standingOneHanded'
   | 'standingTwoHanded'
   | 'walkingOneHanded'
@@ -49,23 +109,9 @@ type PoseOptions =
   | 'slashingUpward'
   | 'spinningSlash';
 
-type SkinOptions =
-  | 'light'
-  | 'ashen'
-  | 'palePink'
-  | 'tanned'
-  | 'pale'
-  | 'green'
-  | 'ghostly'
-  | 'dark'
-  | 'clay'
-  | 'white'
-  | 'mercedes'
-  | 'softPetal'
-  | 'blushingPetal';
-
-type FaceEmoteOptions =
+export type FaceEmoteOptions =
   | 'default'
+  | 'blink'
   | 'smile'
   | 'cry'
   | 'bewildered'
@@ -90,4 +136,4 @@ type FaceEmoteOptions =
   | 'dam'
   | 'qBlue';
 
-type EarsOptions = 'humanEars' | 'bigEars' | 'lefEars' | 'highlefEars';
+export type EarsOptions = 'humanEars' | 'bigEars' | 'lefEars' | 'highlefEars';

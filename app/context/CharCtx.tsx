@@ -1,7 +1,15 @@
 'use client';
-import { SelectedItems } from '@/types';
+import { Outfit, OutfitItem } from '@/types';
+import {
+  createOutfit,
+  DEFAULT_SKIN_ID,
+  skinEntries,
+  skinIdOf,
+  withSkin,
+} from '@/lib/outfit';
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -12,54 +20,137 @@ export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 4;
 export const ZOOM_STEP = 0.5;
 
-export const DEFAULT_SKIN_ID = 2000;
+export { DEFAULT_SKIN_ID };
 
-export const CharContext = createContext<{
-  selectedItems: SelectedItems | null;
-  setSelectedItems: React.Dispatch<
-    React.SetStateAction<SelectedItems | null>
-  >;
-  zoom: number;
-  setZoom: React.Dispatch<React.SetStateAction<number>>;
+const STORAGE_KEY = 'outfit';
+// Pre-unification keys, read once so a saved character survives the upgrade.
+const LEGACY_ITEMS_KEY = 'selectedItems';
+const LEGACY_SKIN_KEY = 'skinId';
+
+type CharContextValue = {
+  outfit: Outfit;
+  setOutfit: React.Dispatch<React.SetStateAction<Outfit>>;
+  equip: (slot: string, item: OutfitItem) => void;
+  unequip: (slot: string) => void;
   skinId: number;
-  setSkinId: React.Dispatch<React.SetStateAction<number>>;
-}>({
-  selectedItems: null,
-  setSelectedItems: () => {},
-  zoom: 1,
-  setZoom: () => {},
+  setSkinId: (id: number) => void;
+  zoom: number;
+  setZoom: (update: number | ((zoom: number) => number)) => void;
+  /** False until localStorage has been read, so nothing overwrites it early. */
+  hydrated: boolean;
+};
+
+const FALLBACK = createOutfit(0);
+
+export const CharContext = createContext<CharContextValue>({
+  outfit: FALLBACK,
+  setOutfit: () => {},
+  equip: () => {},
+  unequip: () => {},
   skinId: DEFAULT_SKIN_ID,
   setSkinId: () => {},
+  zoom: FALLBACK.zoom,
+  setZoom: () => {},
+  hydrated: false,
 });
 
+/** Rebuilds an outfit from the old two-key localStorage layout. */
+function migrateLegacy(now: number): Outfit | null {
+  const rawItems = localStorage.getItem(LEGACY_ITEMS_KEY);
+  if (!rawItems) return null;
+  try {
+    const legacy = JSON.parse(rawItems) as Record<string, any>;
+    const skinId =
+      Number(localStorage.getItem(LEGACY_SKIN_KEY)) || DEFAULT_SKIN_ID;
+    const selectedItems = skinEntries(skinId);
+    for (const [slot, item] of Object.entries(legacy)) {
+      // Legacy items keyed the id as `itemId` and had no region/version.
+      if (!item?.itemId || slot === 'Body' || slot === 'Head') continue;
+      selectedItems[slot] = {
+        name: item.name ?? slot,
+        desc: item.desc ?? '',
+        id: item.itemId,
+        region: 'GMS',
+        version: '265',
+        typeInfo: {
+          overallCategory: item.overallCategory,
+          category: item.category,
+          subCategory: slot,
+          lowItemId: item.lowItemId,
+          highItemId: item.highItemId,
+        },
+        ...(item.isCash !== undefined && { isCash: item.isCash }),
+        ...(item.requiredJobs && { requiredJobs: item.requiredJobs }),
+      };
+    }
+    return { ...createOutfit(now), skin: String(skinId), selectedItems };
+  } catch {
+    return null;
+  }
+}
+
 export function CharProvider({ children }: { children: React.ReactNode }) {
-  const [selectedItems, setSelectedItems] = useState<SelectedItems | null>(
-    null
-  );
-  const [zoom, setZoom] = useState(2);
-  const [skinId, setSkinId] = useState(DEFAULT_SKIN_ID);
-
-  // save to ls
-  useEffect(() => {
-    if (!selectedItems) return;
-    localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
-  }, [selectedItems]);
+  const [outfit, setOutfit] = useState<Outfit>(FALLBACK);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('skinId', String(skinId));
-  }, [skinId]);
+    const now = Date.now();
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        setOutfit(JSON.parse(stored));
+      } catch {
+        setOutfit(createOutfit(now));
+      }
+    } else {
+      setOutfit(migrateLegacy(now) ?? createOutfit(now));
+    }
+    setHydrated(true);
+  }, []);
 
-  // load from ls
   useEffect(() => {
-    const raw = localStorage.getItem('selectedItems');
-    setSelectedItems(raw ? JSON.parse(raw) : {});
-    const savedSkin = Number(localStorage.getItem('skinId'));
-    if (Number.isFinite(savedSkin) && savedSkin > 0) setSkinId(savedSkin);
+    if (!hydrated) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(outfit));
+  }, [outfit, hydrated]);
+
+  const equip = useCallback((slot: string, item: OutfitItem) => {
+    setOutfit(prev => ({
+      ...prev,
+      selectedItems: { ...prev.selectedItems, [slot]: item },
+    }));
+  }, []);
+
+  const unequip = useCallback((slot: string) => {
+    setOutfit(prev => {
+      const { [slot]: _removed, ...rest } = prev.selectedItems;
+      return { ...prev, selectedItems: rest };
+    });
+  }, []);
+
+  const setSkinId = useCallback((id: number) => {
+    setOutfit(prev => withSkin(prev, id));
+  }, []);
+
+  const setZoom = useCallback((update: number | ((zoom: number) => number)) => {
+    setOutfit(prev => ({
+      ...prev,
+      zoom: typeof update === 'function' ? update(prev.zoom) : update,
+    }));
   }, []);
 
   const value = useMemo(
-    () => ({ selectedItems, setSelectedItems, zoom, setZoom, skinId, setSkinId }),
-    [selectedItems, zoom, skinId]
+    () => ({
+      outfit,
+      setOutfit,
+      equip,
+      unequip,
+      skinId: skinIdOf(outfit),
+      setSkinId,
+      zoom: outfit.zoom,
+      setZoom,
+      hydrated,
+    }),
+    [outfit, equip, unequip, setSkinId, setZoom, hydrated],
   );
 
   return <CharContext.Provider value={value}>{children}</CharContext.Provider>;

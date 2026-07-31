@@ -4,18 +4,12 @@ import Closet from '@/components/molecules/Items/Closet/Closet';
 import { fontArial } from './styles/fonts';
 import Cursor from '@/components/atoms/Cursor';
 import Wearing from '@/components/molecules/Items/Wearing/Wearing';
-import ZoomControls from '@/components/atoms/ZoomControls';
-import SkinPicker from '@/components/atoms/SkinPicker';
-import RandomizeButton from '@/components/atoms/RandomizeButton';
-import ExportButton from '@/components/atoms/Export';
+import Toolbar from '@/components/molecules/Toolbar/Toolbar';
 
 export default async function Home() {
   return (
     <main className={fontArial}>
-      <ZoomControls />
-      <SkinPicker />
-      <RandomizeButton />
-      <ExportButton />
+      <Toolbar />
       <Char />
       <Platform />
       <Closet />

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   characterRenderUrl,
   fetchItems,
-  itemIconUrl,
+  iconUrlFor,
   preloadImageUrl,
 } from '@/lib/fetch';
 import Item from '../../atoms/Item';
@@ -11,23 +11,19 @@ import Pagination from '../../atoms/Pagination/Pagination';
 import { stEmpty, stItemList, stPaginationContainer } from './items.css';
 import useChar from '@/app/context/CharCtx';
 import Search, { SEARCH_DEBOUNCE_MS } from '@/components/atoms/Search/Search';
-import { loadSavedBody, selectedItemsToBody } from '@/lib/utils';
 import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
 import { useDebouncedValue } from '@/app/hooks/useDebouncedValue';
+import { OutfitItem } from '@/types';
 
 /**
  * One closet tab. `subcategory` is both the maplestory.io filter and the slot
- * key an equipped item lands under, so gear and face/hair only differ in which
- * icon endpoint they use.
+ * key an equipped item lands under.
  */
-const ItemList = ({
-  subcategory,
-  iconUrl = itemIconUrl,
-}: {
-  subcategory: string;
-  iconUrl?: (itemId: number) => string;
-}) => {
-  const [items, setItems] = useState<any>({});
+const ItemList = ({ subcategory }: { subcategory: string }) => {
+  const [items, setItems] = useState<{
+    result?: OutfitItem[];
+    metadata?: any;
+  }>({});
   const [page, setPage] = useState(0);
   // `query` is what's in the box; `nameText` is what the list is fetched for.
   const [query, setQuery] = useState('');
@@ -36,7 +32,7 @@ const ItemList = ({
     SEARCH_DEBOUNCE_MS,
   );
   const [loading, setLoading] = useState(true);
-  const { selectedItems, setSelectedItems } = useChar();
+  const { outfit, equip } = useChar();
   const preloader = useSweepDebounce();
 
   useEffect(() => {
@@ -54,20 +50,13 @@ const ItemList = ({
     };
   }, [page, subcategory, nameText]);
 
-  const previewOnHover = (item: any) => {
-    const preview = selectedItemsToBody(
-      { ...(selectedItems ?? {}), [subcategory]: item },
-      loadSavedBody(),
+  const previewOnHover = (item: OutfitItem) =>
+    preloadImageUrl(
+      characterRenderUrl({
+        ...outfit,
+        selectedItems: { ...outfit.selectedItems, [subcategory]: item },
+      }),
     );
-    preloadImageUrl(characterRenderUrl(preview));
-  };
-
-  const addToChar = (item: any, imgSrc: string) => {
-    setSelectedItems(prev => ({
-      ...(prev ?? {}),
-      [subcategory]: { ...item, subcategory, imgSrc },
-    }));
-  };
 
   return (
     <>
@@ -77,16 +66,16 @@ const ItemList = ({
             {nameText ? `No items match “${nameText}”` : 'No items found'}
           </div>
         )}
-        {items.result?.map((item: any) => (
+        {items.result?.map(item => (
           <div
-            key={item.itemId}
+            key={item.id}
             className='closet-item clickable'
             onMouseEnter={() => preloader.trigger(() => previewOnHover(item))}
           >
             <Item
               item={item}
-              iconUrl={iconUrl(item.itemId)}
-              onClick={imgSrc => addToChar(item, imgSrc)}
+              iconUrl={iconUrlFor(item)}
+              onClick={() => equip(subcategory, item)}
             />
           </div>
         ))}

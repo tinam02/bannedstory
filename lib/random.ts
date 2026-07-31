@@ -1,5 +1,5 @@
 import { SelectedItems } from '@/types';
-import { bodyIconUrl, fetchItems, itemIconUrl } from './fetch';
+import { fetchItems } from './fetch';
 
 // Upper bound for random page selection. Categories vary, so we try a random
 // page in this range and fall back to page 0 if the random one came back empty.
@@ -19,30 +19,17 @@ const randomItem = async (subcategory: string) => {
 export async function randomizeSelectedItems(): Promise<SelectedItems> {
   // Real MapleStory rule: Top+Bottom OR Overall, never both.
   const useOverall = Math.random() < 0.5;
-  const gearSubcategories = useOverall
-    ? ['Hat', 'Overall', 'Shoes']
-    : ['Hat', 'Top', 'Bottom', 'Shoes'];
+  const slots = useOverall
+    ? ['Hat', 'Overall', 'Shoes', 'Face', 'Hair']
+    : ['Hat', 'Top', 'Bottom', 'Shoes', 'Face', 'Hair'];
 
-  const gearPromises = gearSubcategories.map(async sub => {
-    const item = await randomItem(sub);
-    if (!item) return null;
-    return [
-      item.subcategory,
-      { ...item, imgSrc: itemIconUrl(item.itemId) },
-    ] as const;
-  });
+  const results = await Promise.all(
+    slots.map(async slot => {
+      const item = await randomItem(slot);
+      return item ? ([slot, item] as const) : null;
+    }),
+  );
 
-  // Faces and hairs are ordinary items apart from their icon endpoint.
-  const bodyPromises = ['Face', 'Hair'].map(async sub => {
-    const item = await randomItem(sub);
-    if (!item) return null;
-    return [
-      sub,
-      { ...item, subcategory: sub, imgSrc: bodyIconUrl(item.itemId) },
-    ] as const;
-  });
-
-  const results = await Promise.all([...gearPromises, ...bodyPromises]);
   const next: SelectedItems = {};
   for (const r of results) {
     if (r) next[r[0]] = r[1];

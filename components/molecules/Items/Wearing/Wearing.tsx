@@ -5,21 +5,17 @@ import { fontRegupix } from '@/app/styles/fonts';
 import DragWrapper from '@/components/atoms/DragWrapper';
 import { Icon } from '@/components/atoms/Icon';
 import DefaultImage from '@/components/atoms/Image';
+import { iconUrlFor } from '@/lib/fetch';
 import { classes } from 'typestyle';
 import { closeIcon, wearingItem, wearingItemContainer } from './style';
 
 const Wearing = ({}: {}) => {
-  const { selectedItems, setSelectedItems } = useChar();
+  const { outfit, unequip } = useChar();
 
-  function removeSlot(slot: string) {
-    setSelectedItems(prev => {
-      if (!prev) return prev;
-      const { [slot]: _removed, ...rest } = prev;
-      return rest;
-    });
-  }
-
-  const entries = Object.entries(selectedItems ?? {});
+  // Body/head are the skin, not removable equipment — the skin picker owns them.
+  const entries = Object.entries(outfit.selectedItems).filter(
+    ([slot]) => slot !== 'Body' && slot !== 'Head',
+  );
 
   return (
     <DragWrapper id='wearing'>
@@ -41,7 +37,7 @@ const Wearing = ({}: {}) => {
                 <div style={{ display: 'contents' }}>
                   <DefaultImage
                     className='item-img'
-                    src={item.imgSrc}
+                    src={iconUrlFor(item)}
                     alt={item.name}
                     title={item.name}
                     unoptimized
@@ -54,7 +50,7 @@ const Wearing = ({}: {}) => {
                   className={closeIcon}
                   defaultImg='/ui/buttons/close/BtClose3.normal.0.png'
                   activeImg='/ui/buttons/close/BtClose3.pressed.0.png'
-                  onClick={() => removeSlot(slot)}
+                  onClick={() => unequip(slot)}
                 />
               </div>
             </div>

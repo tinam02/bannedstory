@@ -5,6 +5,7 @@ import useChar, {
   ZOOM_STEP,
 } from '@/app/context/CharCtx';
 import { style } from 'typestyle';
+import { toolbarSurface } from '@/components/molecules/Toolbar/toolbar.css';
 
 const ZoomControls = () => {
   const { zoom, setZoom } = useChar();
@@ -40,19 +41,11 @@ const ZoomControls = () => {
 export default ZoomControls;
 
 const zoomControls = style({
-  position: 'fixed',
-  top: 12,
-  right: 12,
+  ...toolbarSurface,
   display: 'flex',
   alignItems: 'center',
   gap: 4,
   padding: '3px 6px',
-  borderRadius: 8,
-  background: 'rgba(0, 0, 0, 0.55)',
-  boxShadow:
-    'inset 0 0 0 1px #eee, inset 0 0 0 2px rgba(8, 8, 8, 0.76), inset 0 0 2px 3px rgba(252, 252, 252, 0.36)',
-  zIndex: 10,
-  userSelect: 'none',
 });
 
 const zoomBtn = style({

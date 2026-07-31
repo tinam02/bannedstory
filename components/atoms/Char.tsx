@@ -1,45 +1,25 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { characterRenderUrl } from '@/lib/fetch';
-import {
-  DEFAULT_CHAR_BODY,
-  loadSavedBody,
-  selectedItemsToBody,
-} from '@/lib/utils';
-import { IChar } from '@/types';
 import DefaultImage from './Image';
 import useChar from '@/app/context/CharCtx';
 import { style } from 'typestyle';
 
 const Char = () => {
-  const { selectedItems, zoom, skinId } = useChar();
-  const [body, setBody] = useState<IChar>(DEFAULT_CHAR_BODY);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setBody(loadSavedBody());
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    setBody(prev => ({ ...selectedItemsToBody(selectedItems, prev), skinId }));
-  }, [selectedItems, skinId, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem('char', JSON.stringify(body));
-  }, [body, hydrated]);
+  const { outfit, zoom, hydrated } = useChar();
 
   return (
     <div className={mcCont}>
-      <div className={charScale} style={{ transform: `scale(${zoom})` }}>
-        <DefaultImage
-          src={characterRenderUrl(body)}
-          alt='Character'
-          unoptimized
-        />
-      </div>
+      {/* Wait for the saved outfit so we don't render, and pay for, a
+          default char that is about to be replaced. */}
+      {hydrated && (
+        <div className={charScale} style={{ transform: `scale(${zoom})` }}>
+          <DefaultImage
+            src={characterRenderUrl(outfit)}
+            alt='Character'
+            unoptimized
+          />
+        </div>
+      )}
     </div>
   );
 };
