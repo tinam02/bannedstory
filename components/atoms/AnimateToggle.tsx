@@ -1,6 +1,6 @@
 'use client';
 import useChar from '@/app/context/CharCtx';
-import { toolbarBtn } from '@/components/molecules/Toolbar/toolbar.css';
+import styles from '@/components/molecules/Toolbar/Toolbar.module.scss';
 
 /**
  * Swaps the render between a still frame (PNG) and the looping stance (GIF)
@@ -10,7 +10,7 @@ const AnimateToggle = () => {
 
   return (
     <button
-      className={toolbarBtn}
+      className={styles.btn}
       onClick={toggleAnimating}
       data-active={animating ? '' : undefined}
       aria-pressed={animating}

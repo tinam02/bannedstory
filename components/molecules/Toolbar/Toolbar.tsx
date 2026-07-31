@@ -5,13 +5,13 @@ import RandomizeButton from '@/components/atoms/RandomizeButton';
 import ExportButton from '@/components/atoms/Export';
 import ImportButton from '@/components/atoms/Import';
 import AnimateToggle from '@/components/atoms/AnimateToggle';
-import { toolbar, toolbarRow } from './toolbar.css';
+import styles from './Toolbar.module.scss';
 
 /**
  * Every tool control lives here, laid out by flexbox */
 const Toolbar = () => (
-  <div className={toolbar}>
-    <div className={toolbarRow}>
+  <div className={styles.toolbar}>
+    <div className={styles.row}>
       <RandomizeButton />
       <AnimateToggle />
       <ImportButton />

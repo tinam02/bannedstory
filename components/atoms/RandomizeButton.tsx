@@ -2,7 +2,7 @@
 import useChar from '@/app/context/CharCtx';
 import { randomizeSelectedItems } from '@/lib/random';
 import { useState } from 'react';
-import { toolbarBtn } from '@/components/molecules/Toolbar/toolbar.css';
+import styles from '@/components/molecules/Toolbar/Toolbar.module.scss';
 import { SKIN_IDS } from '@/lib/skins';
 import { skinEntries } from '@/lib/outfit';
 
@@ -29,7 +29,7 @@ const RandomizeButton = () => {
 
   return (
     <button
-      className={toolbarBtn}
+      className={styles.btn}
       onClick={onClick}
       disabled={busy}
       aria-label='Randomize outfit, face, hair and skin'

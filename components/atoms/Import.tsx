@@ -1,10 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { style } from 'typestyle';
 import useChar from '@/app/context/CharCtx';
 import { parseOutfit } from '@/lib/outfit';
-import { toolbarBtn } from '@/components/molecules/Toolbar/toolbar.css';
+import styles from '@/components/molecules/Toolbar/Toolbar.module.scss';
 
 const ImportButton = () => {
   const { setOutfit } = useChar();
@@ -34,7 +33,7 @@ const ImportButton = () => {
   return (
     <>
       <button
-        className={toolbarBtn}
+        className={styles.btn}
         onClick={() => inputRef.current?.click()}
         aria-label='Import outfit from JSON'
         title='Import an outfit JSON'
@@ -55,7 +54,7 @@ const ImportButton = () => {
       />
       {message && (
         <div
-          className={toast}
+          className={styles.toast}
           data-failed={failed ? '' : undefined}
           role='status'
           onClick={() => setMessage(null)}
@@ -69,23 +68,3 @@ const ImportButton = () => {
 };
 
 export default ImportButton;
-
-const toast = style({
-  position: 'fixed',
-  top: 78,
-  right: 12,
-  maxWidth: 260,
-  padding: '6px 10px',
-  borderRadius: 8,
-  background: 'rgba(0, 0, 0, 0.8)',
-  boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.35)',
-  color: '#ffe39a',
-  fontSize: 11,
-  lineHeight: 1.4,
-  cursor: 'pointer',
-  $nest: {
-    '&[data-failed]': {
-      color: '#ff9a9a',
-    },
-  },
-});

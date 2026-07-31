@@ -2,7 +2,7 @@
 
 import useChar from '@/app/context/CharCtx';
 import { outfitFilename } from '@/lib/outfit';
-import { toolbarBtn } from '@/components/molecules/Toolbar/toolbar.css';
+import styles from '@/components/molecules/Toolbar/Toolbar.module.scss';
 
 const ExportButton = () => {
   const { outfit } = useChar();
@@ -26,7 +26,7 @@ const ExportButton = () => {
 
   return (
     <button
-      className={toolbarBtn}
+      className={styles.btn}
       onClick={exportToJson}
       aria-label='Export outfit as JSON'
       title='Export outfit as JSON'
