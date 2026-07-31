@@ -1,5 +1,13 @@
 import { style } from "typestyle";
 
+export const wearingList = style({
+  flex: 1,
+  minHeight: 0,
+  overflowY: 'auto',
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'rgba(255, 255, 255, 0.5) transparent',
+});
+
 export const wearingItemContainer = style({
     marginTop: 8,
     marginLeft: 8,

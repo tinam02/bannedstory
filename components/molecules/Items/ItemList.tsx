@@ -8,7 +8,12 @@ import {
 } from '@/lib/fetch';
 import Item from '../../atoms/Item';
 import Pagination from '../../atoms/Pagination/Pagination';
-import { stEmpty, stItemList, stPaginationContainer } from './items.css';
+import {
+  stEmpty,
+  stItemList,
+  stPaginationContainer,
+  stPanelInner,
+} from './items.css';
 import useChar from '@/app/context/CharCtx';
 import Search, { SEARCH_DEBOUNCE_MS } from '@/components/atoms/Search/Search';
 import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
@@ -59,7 +64,7 @@ const ItemList = ({ subcategory }: { subcategory: string }) => {
     );
 
   return (
-    <>
+    <div className={stPanelInner}>
       <div className={stItemList} data-loading={loading ? '' : undefined}>
         {!loading && items.result?.length === 0 && (
           <div className={stEmpty}>
@@ -97,7 +102,7 @@ const ItemList = ({ subcategory }: { subcategory: string }) => {
           <Pagination metadata={items.metadata} setPage={setPage} />
         )}
       </div>
-    </>
+    </div>
   );
 };
 

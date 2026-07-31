@@ -1,7 +1,8 @@
 :root {
   --max-width: 1100px;
   --border-radius: 12px;
-  --font-mono: ui-monospace, Menlo, Monaco, 'Cascadia Mono', 'Segoe UI Mono',
+  --font-mono:
+    ui-monospace, Menlo, Monaco, 'Cascadia Mono', 'Segoe UI Mono',
     'Roboto Mono', 'Oxygen Mono', 'Ubuntu Monospace', 'Source Code Pro',
     'Fira Mono', 'Droid Sans Mono', 'Courier New', monospace;
   --card-rgb: 180, 185, 188;
@@ -53,7 +54,9 @@ img {
   position: relative;
   border-radius: 15px;
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px #eee, inset 0 0 0 2px rgba(8, 8, 8, 0.76),
+  box-shadow:
+    inset 0 0 0 1px #eee,
+    inset 0 0 0 2px rgba(8, 8, 8, 0.76),
     inset 0 0 2px 3px #fcfcfc5d;
   display: flex;
   flex-direction: column;
@@ -77,8 +80,11 @@ img {
   .card-inner {
     border-radius: 10px;
     box-shadow: inset 0 -10px 20px 10px rgba(170, 170, 170, 0.644);
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     width: 100%;
+    display: flex;
+    flex-direction: column;
     position: relative;
     outline: 1px solid rgba(255, 255, 255, 0.247);
     outline-offset: 1px;
@@ -114,7 +120,8 @@ img {
 
 .card.closet {
   height: 400px;
-  width: 500px;
+  width: fit-content;
+  min-width: 500px;
 }
 
 .card.wearing {
@@ -122,12 +129,16 @@ img {
   width: 200px;
 }
 
-.tabs {
-  position: absolute;
+.card .tabs {
   border: 0;
-  width: 100%;
-  top: 8px;
-  height: 100%;
+  --tabs-display: flex;
+  --tabs-flex-direction: column;
+  --tabs-panel-grow: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding-top: 8px;
   .tabs-list {
     border: red;
     gap: 1px;
@@ -192,5 +203,11 @@ img {
     left: 0;
     border-bottom-left-radius: 40%;
     border-bottom-right-radius: 40%;
+  }
+  .tab-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 }

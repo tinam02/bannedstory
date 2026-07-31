@@ -1,9 +1,25 @@
 import { style } from 'typestyle';
 
+// Fills the tab panel so the grid scrolls and the pagination bar sits on the
+// closet floor rather than directly under the last row of items.
+export const stPanelInner = style({
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  minHeight: 0,
+});
+
 export const stItemList = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(44px, max-content))',
   justifyContent: 'center',
+  // Rows stack from the top and scroll; the panel gives this its height.
+  alignContent: 'flex-start',
+  flex: 1,
+  minHeight: 0,
+  overflowY: 'auto',
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'rgba(0, 0, 0, 0.35) transparent',
   gap: 4,
   textAlign: 'center',
   marginTop: 8,
@@ -38,14 +54,13 @@ export const stEmpty = style({
   userSelect: 'none',
 });
 
+// Sits below the scrolling grid rather than floating over it.
 export const stPaginationContainer = style({
-  position: 'absolute',
-  bottom: 16,
   display: 'flex',
   justifyContent: 'center',
-  flex: 1,
+  alignItems: 'center',
+  flexShrink: 0,
   width: '100%',
-  paddingLeft: 8,
-  paddingRight: 8,
+  padding: '8px',
   gap: 16,
 });
