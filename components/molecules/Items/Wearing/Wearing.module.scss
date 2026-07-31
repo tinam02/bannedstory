@@ -1,5 +1,20 @@
-// The scrolling list lives inside .card-inner rather than being .card-inner
-// itself, so the card's noise-mask ::before stays put instead of scrolling away.
+@use '../../../../app/styles/card' as *;
+
+.card {
+  @include card-frame;
+  height: 400px;
+  width: 200px;
+}
+
+.title {
+  @include card-title;
+}
+
+.inner {
+  @include card-inner;
+}
+
+// The scrolling list lives inside the inner panel rather than being it, so the panel's noise-mask ::before stays put
 .list {
   flex: 1;
   min-height: 0;

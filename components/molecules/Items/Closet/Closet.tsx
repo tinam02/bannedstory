@@ -4,6 +4,7 @@ import { fontRegupix } from '@/app/styles/fonts';
 import DragWrapper from '@/components/atoms/DragWrapper';
 import { Tabs } from '@mantine/core';
 import ItemList from '../ItemList';
+import styles from './Closet.module.scss';
 
 const Closet = ({}: {}) => {
   const items = tabs.map(tab => (
@@ -14,7 +15,7 @@ const Closet = ({}: {}) => {
 
   return (
     <DragWrapper id='closet'>
-      <div id='card' className='card closet'>
+      <div className={styles.card}>
         <div
           className='dragHandle'
           style={{
@@ -24,20 +25,20 @@ const Closet = ({}: {}) => {
             top: 1,
           }}
         />
-        <p className={`card-title ${fontRegupix}`}>INVENTORY</p>
-        <div className='card-inner'>
+        <p className={`${styles.title} ${fontRegupix}`}>INVENTORY</p>
+        <div className={styles.inner}>
           <Tabs
             defaultValue='Hat'
             variant='outline'
             classNames={{
-              root: `tabs ${fontRegupix}`,
-              list: 'tabs-list',
-              tab: 'tab',
-              panel: 'tab-panel',
+              root: `${styles.tabs} ${fontRegupix}`,
+              list: styles.tabsList,
+              tab: styles.tab,
+              panel: styles.panel,
             }}
           >
             <Tabs.List grow>{items}</Tabs.List>
-            <hr></hr>
+            <hr className={styles.divider} />
             {tabs.map(tab => (
               <Tabs.Panel value={tab} key={tab}>
                 <ItemList subcategory={tab} />

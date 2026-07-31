@@ -1,0 +1,106 @@
+@use '../../../../app/styles/card' as *;
+
+.card {
+  @include card-frame;
+  height: 400px;
+  // adding a tab widens the card
+  width: fit-content;
+  min-width: 500px;
+}
+
+.title {
+  @include card-title;
+}
+
+.inner {
+  @include card-inner;
+}
+
+.card .tabs {
+  border: 0;
+  // Mantine drives its own layout off these, defaulting to block/row for
+  // horizontal tabs. Setting them means its rules agree with ours rather than
+  // competing: the root becomes a column and the panel grows.
+  --tabs-display: flex;
+  --tabs-flex-direction: column;
+  --tabs-panel-grow: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding-top: 8px;
+}
+
+.tabsList {
+  gap: 1px;
+}
+
+.divider {
+  color: #d6810f;
+  border: 0;
+  background-color: #d6810f;
+  height: 2px;
+  box-shadow: #f8ed95 0 1px 3px;
+  width: 100%;
+}
+
+.tab {
+  position: relative;
+  background-color: rgba(0, 0, 0, 0.2);
+  max-height: 28px;
+  border-color: #9f9f9d;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-width: 2px;
+  border-bottom: 0;
+  overflow: hidden;
+  color: white;
+  padding-left: 8px;
+  padding-right: 8px;
+  font-family: inherit;
+  margin-top: auto;
+
+  span {
+    font-size: 12px;
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6))
+      drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+    transform: scale(1, 1.5);
+    letter-spacing: 0.5px;
+  }
+
+  &[aria-selected='true'] {
+    background: linear-gradient(180deg, rgb(255, 227, 154) 30%, rgb(255, 176, 11));
+    border-color: #d6810f;
+    max-height: 32px;
+
+    span {
+      filter: drop-shadow(0 0 1px rgba(144, 82, 26, 0.6))
+        drop-shadow(0 0 3px rgba(144, 82, 26, 1));
+    }
+  }
+
+  // Shine.
+  &::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 15px;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.5) 20%,
+      rgba(255, 255, 255, 0.35)
+    );
+    top: 0;
+    left: 0;
+    border-bottom-left-radius: 40%;
+    border-bottom-right-radius: 40%;
+  }
+}
+
+// Takes the height left over by the tab row
+.panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}

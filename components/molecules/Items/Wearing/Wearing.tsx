@@ -18,7 +18,7 @@ const Wearing = ({}: {}) => {
 
   return (
     <DragWrapper id='wearing'>
-      <div id='wearing' className={`card wearing ${fontRegupix}`}>
+      <div className={`${styles.card} ${fontRegupix}`}>
         <div
           className='dragHandle'
           style={{
@@ -28,8 +28,8 @@ const Wearing = ({}: {}) => {
             top: 1,
           }}
         />
-        <p className='card-title'>WEARING</p>
-        <div className='card-inner'>
+        <p className={styles.title}>WEARING</p>
+        <div className={styles.inner}>
           <div className={styles.list}>
             {entries.map(([slot, item]) => (
               <div key={slot} className={styles.itemContainer}>
