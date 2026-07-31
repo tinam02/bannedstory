@@ -1,46 +1,57 @@
 'use client';
 import useChar from '@/app/context/CharCtx';
 import { SKIN_IDS, skinLabel, skinSwatchUrl } from '@/lib/skins';
-import { useState } from 'react';
+import { Popover } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { style } from 'typestyle';
 
 const SkinPicker = () => {
   const { skinId, setSkinId } = useChar();
-  const [open, setOpen] = useState(false);
+  const [opened, { toggle, close }] = useDisclosure(false);
   const currentLabel = skinLabel(skinId);
   return (
     <div className={picker}>
-      <button
-        className={triggerBtn}
-        onClick={() => setOpen(o => !o)}
-        aria-label='Skin tone'
-        title={`${currentLabel} (${skinId})`}
+      <Popover
+        opened={opened}
+        onChange={close}
+        position='bottom-end'
+        offset={6}
+        classNames={{ dropdown }}
       >
-        <img src={skinSwatchUrl(skinId)} alt='' className={triggerImg} />
-        <span className={triggerLabel}>{currentLabel.toUpperCase()}</span>
-      </button>
-      {open && (
-        <div className={grid}>
-          {SKIN_IDS.map(id => {
-            const label = skinLabel(id);
-            return (
-              <button
-                key={id}
-                className={swatchBtn}
-                data-active={id === skinId ? '' : undefined}
-                onClick={() => {
-                  setSkinId(id);
-                  setOpen(false);
-                }}
-                title={`${label} (${id})`}
-              >
-                <img src={skinSwatchUrl(id)} alt='' className={swatchImg} />
-                <span className={swatchLabel}>{label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+        <Popover.Target>
+          <button
+            className={triggerBtn}
+            onClick={toggle}
+            aria-label='Skin tone'
+            title={`${currentLabel} (${skinId})`}
+          >
+            <img src={skinSwatchUrl(skinId)} alt='' className={triggerImg} />
+            <span className={triggerLabel}>{currentLabel.toUpperCase()}</span>
+          </button>
+        </Popover.Target>
+        <Popover.Dropdown>
+          <div className={grid}>
+            {SKIN_IDS.map(id => {
+              const label = skinLabel(id);
+              return (
+                <button
+                  key={id}
+                  className={swatchBtn}
+                  data-active={id === skinId ? '' : undefined}
+                  onClick={() => {
+                    setSkinId(id);
+                    close();
+                  }}
+                  title={`${label} (${id})`}
+                >
+                  <img src={skinSwatchUrl(id)} alt='' className={swatchImg} />
+                  <span className={swatchLabel}>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Popover.Dropdown>
+      </Popover>
     </div>
   );
 };
@@ -84,8 +95,15 @@ const triggerLabel = style({
   // text styling inherited from triggerBtn
 });
 
+// Strip Mantine's default dropdown chrome — the grid brings its own skin.
+const dropdown = style({
+  padding: 0,
+  border: 0,
+  background: 'transparent',
+  boxShadow: 'none',
+});
+
 const grid = style({
-  marginTop: 6,
   display: 'grid',
   gridTemplateColumns: 'repeat(5, 44px)',
   gap: 4,
