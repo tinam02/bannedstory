@@ -21,8 +21,6 @@ export const POSE_TO_STANCE: Partial<
   lyingDown: 'prone',
 };
 
-export type IBodyTypes = 'face' | 'hair';
-
 type ItemsListResponse = {
   result: any[];
   metadata: { page: number; prevPage: number | null; nextPage: number | null };
@@ -110,48 +108,6 @@ export const fetchItems = async ({
     console.error('Error fetching items:', err);
     return { result: [], metadata: { page, prevPage: null, nextPage: null } };
   }
-};
-
-export const fetchBodyItems = async ({
-  page = 0,
-  nameText,
-  q = 'face',
-}: {
-  page?: number;
-  nameText?: string;
-  q?: IBodyTypes;
-}): Promise<ItemsListResponse> => {
-  const subcategory = q === 'face' ? 'Face' : 'Hair';
-  const slotKey = `${q}Id`;
-  const result = await fetchItems({
-    page,
-    nameText,
-    overallCategory: 'Equip',
-    subcategory,
-  });
-  return {
-    ...result,
-    result: result.result.map(item => ({ ...item, [slotKey]: item.itemId })),
-  };
-};
-
-export const fetchRawIcon = async ({
-  itemId,
-}: {
-  itemId: number;
-}): Promise<string | null> => {
-  if (!itemId) return null;
-  return itemIconUrl(itemId);
-};
-
-export const fetchBodyIcon = async ({
-  itemId,
-}: {
-  itemId: number;
-  q: IBodyTypes;
-}): Promise<string | null> => {
-  if (!itemId) return null;
-  return bodyIconUrl(itemId);
 };
 
 export const characterRenderUrl = (body: IChar): string => {

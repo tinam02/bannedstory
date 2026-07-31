@@ -1,40 +1,24 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { style, classes } from 'typestyle';
 import { stNumberInput } from '../Pagination/pagination.css';
 
-const DEBOUNCE_MS = 350;
+export const SEARCH_DEBOUNCE_MS = 350;
 
 const Search = ({
-  setNameText,
-  setPage,
+  value,
+  onChange,
+  onSubmit,
 }: {
-  setNameText: (q: string) => void;
-  setPage: (page: number) => void;
+  value: string;
+  onChange: (q: string) => void;
+  onSubmit: (q: string) => void;
 }) => {
-  const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  // The query already reflected in the list, so we can skip redundant fetches
-  // (mount, Enter-after-debounce, whitespace-only edits)
-  const applied = useRef('');
-
-  const apply = (next: string) => {
-    const q = next.trim();
-    if (q === applied.current) return;
-    applied.current = q;
-    setNameText(q);
-    setPage(0);
-  };
-
-  useEffect(() => {
-    const t = setTimeout(() => apply(value), DEBOUNCE_MS);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
 
   const clear = () => {
-    setValue('');
-    apply('');
+    onChange('');
+    onSubmit('');
     inputRef.current?.focus();
   };
 
@@ -46,10 +30,10 @@ const Search = ({
         value={value}
         className={classes(stNumberInput, input)}
         placeholder='Search Items'
-        onChange={e => setValue(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         onKeyDown={e => {
           // Don't make people wait out the debounce if they know what they want.
-          if (e.key === 'Enter') apply(value);
+          if (e.key === 'Enter') onSubmit(value);
           if (e.key === 'Escape') clear();
         }}
       />

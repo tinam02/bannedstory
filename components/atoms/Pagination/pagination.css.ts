@@ -1,17 +1,16 @@
-import { px } from 'csx';
 import { style } from 'typestyle';
 
 export const stPagination = style({
   display: 'flex',
-  maxWidth: px(600),
-  gap: px(8),
+  maxWidth: 600,
+  gap: 8,
   justifyContent: 'center',
   alignItems: 'center',
 });
 
 export const stNumberInput = style({
   textAlign: 'center',
-  borderRadius: px(4),
+  borderRadius: 4,
   borderTop: '1px solid rgba(170, 170, 170, 0.9)',
   borderLeft: '1px solid rgba(170, 170, 170, 0.7)',
   borderRight: '1px solid rgba(170, 170, 170, 0.2)',

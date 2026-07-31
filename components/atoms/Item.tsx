@@ -1,39 +1,27 @@
 'use client';
-import { useEffect, useState } from 'react';
 import DefaultImage from './Image';
-import { fetchRawIcon } from '@/lib/fetch';
 
+/**
+ * A closet icon
+ */
 const Item = ({
   item,
+  iconUrl,
   onClick,
-  hasImg,
 }: {
   item: any;
+  iconUrl: string;
   onClick?: (imgSrc: string) => void;
-  hasImg?: string;
-}) => {
-  const [imageSrc, setImageSrc] = useState(hasImg || '');
-
-  useEffect(() => {
-    if (hasImg) return;
-    const { itemId } = item;
-    fetchRawIcon({ itemId }).then((res: any) => setImageSrc(res));
-  }, [item, hasImg]);
-
-  if (!imageSrc) return null;
-  return (
-    <div style={{ display: 'contents' }}>
-      <DefaultImage
-        src={imageSrc}
-        alt={item.name}
-        title={item.name}
-        unoptimized
-        onClick={() => {
-          onClick && onClick(imageSrc);
-        }}
-      />
-    </div>
-  );
-};
+}) => (
+  <div style={{ display: 'contents' }}>
+    <DefaultImage
+      src={iconUrl}
+      alt={item.name}
+      title={item.name}
+      unoptimized
+      onClick={() => onClick?.(iconUrl)}
+    />
+  </div>
+);
 
 export default Item;

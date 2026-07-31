@@ -1,11 +1,10 @@
-import { px } from "csx";
 import { style } from "typestyle";
 
 export const wearingItemContainer = style({
     marginTop: 8,
     marginLeft: 8,
     marginRight: 8,
-    height: px(44),
+    height: 44,
     borderTop: '1px solid rgba(184, 202, 226, 0.9)',
     borderLeft: '1px solid rgba(161, 179, 204, 0.7)',
     borderRight: '1px solid rgba(139, 154, 185, 0.2)',

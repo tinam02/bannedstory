@@ -4,8 +4,8 @@ import { fontRegupix } from '@/app/styles/fonts';
 import DragWrapper from '@/components/atoms/DragWrapper';
 import { Tabs } from '@mantine/core';
 import { classes } from 'typestyle';
-import Items from '../Items';
-import BodyItems from '../Body';
+import ItemList from '../ItemList';
+import { bodyIconUrl } from '@/lib/fetch';
 
 const Closet = ({}: {}) => {
   const items = tabs.map(tab => (
@@ -39,28 +39,14 @@ const Closet = ({}: {}) => {
           >
             <Tabs.List grow>{items}</Tabs.List>
             <hr></hr>
-            <Tabs.Panel value='Hat'>
-              <Items q={'Hat'} />
-            </Tabs.Panel>
-            <Tabs.Panel value='Top'>
-              <Items q={'Top'} />
-            </Tabs.Panel>
-
-            <Tabs.Panel value='Bottom'>
-              <Items q={'Bottom'} />
-            </Tabs.Panel>
-            <Tabs.Panel value='Overall'>
-              <Items q={'Overall'} />
-            </Tabs.Panel>
-            <Tabs.Panel value='Shoes'>
-              <Items q={'Shoes'} />
-            </Tabs.Panel>
-            <Tabs.Panel value='Face'>
-              <BodyItems q={'face'} />
-            </Tabs.Panel>
-            <Tabs.Panel value='Hair'>
-              <BodyItems q={'hair'} />
-            </Tabs.Panel>
+            {tabs.map(tab => (
+              <Tabs.Panel value={tab} key={tab}>
+                <ItemList
+                  subcategory={tab}
+                  iconUrl={BODY_TABS.has(tab) ? bodyIconUrl : undefined}
+                />
+              </Tabs.Panel>
+            ))}
           </Tabs>
         </div>
       </div>
@@ -70,4 +56,9 @@ const Closet = ({}: {}) => {
 
 export default Closet;
 
+// Adding a closet tab is one entry here — the subcategory doubles as the
+// maplestory.io filter and the equipped-slot key.
 const tabs = ['Hat', 'Top', 'Bottom', 'Overall', 'Shoes', 'Face', 'Hair'];
+
+// Faces and hairs only have an /icon endpoint; the rest use /iconRaw
+const BODY_TABS = new Set(['Face', 'Hair']);
