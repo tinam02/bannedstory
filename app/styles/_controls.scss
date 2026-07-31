@@ -1,0 +1,19 @@
+// Shared skins for small form controls
+
+// The inset pixel-art input used by the pagination page box and the search box
+@mixin pixel-input {
+  text-align: center;
+  border-radius: 4px;
+  border-top: 1px solid rgba(170, 170, 170, 0.9);
+  border-left: 1px solid rgba(170, 170, 170, 0.7);
+  border-right: 1px solid rgba(170, 170, 170, 0.2);
+  border-bottom: 1px solid rgba(170, 170, 170, 0.2);
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}

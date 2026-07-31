@@ -16,8 +16,7 @@
     "normalize.css": "^8.0.1",
     "react": "^18",
     "react-dom": "^18",
-    "react-draggable": "^4.4.6",
-    "typestyle": "^2.4.0"
+    "react-draggable": "^4.4.6"
   },
   "devDependencies": {
     "@types/node": "^20",

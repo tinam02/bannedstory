@@ -1,0 +1,30 @@
+@use '../../../app/styles/controls' as *;
+
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  @include pixel-input;
+  padding-right: 16px;
+}
+
+.clearBtn {
+  position: absolute;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #666;
+  font-size: 13px;
+  line-height: 12px;
+  cursor: pointer;
+
+  &:hover {
+    color: #000;
+  }
+}

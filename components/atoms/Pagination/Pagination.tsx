@@ -1,6 +1,6 @@
 'use client';
 import { Icon } from '../Icon';
-import { stNumberInput, stPagination } from './pagination.css';
+import styles from './Pagination.module.scss';
 
 const Pagination = ({
   metadata,
@@ -10,7 +10,7 @@ const Pagination = ({
   setPage: (page: number) => void;
 }) => {
   return (
-    <div className={stPagination}>
+    <div className={styles.pagination}>
       <>
         {/* <Icon
             defaultImg='/ui/buttons/end/Item.BtSmall.normal.0.png'
@@ -33,7 +33,7 @@ const Pagination = ({
         placeholder={metadata.page}
         onBlur={e => setPage(parseInt(e.target.value))}
         type='number'
-        className={stNumberInput}
+        className={styles.numberInput}
         style={{ maxWidth: 50 }}
       />
 

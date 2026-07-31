@@ -1,0 +1,15 @@
+.stage {
+  min-height: 300px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.scale {
+  display: flex;
+  align-items: flex-end;
+  transform-origin: bottom center;
+  transition: transform 120ms ease-out;
+  image-rendering: pixelated;
+}

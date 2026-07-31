@@ -1,10 +1,13 @@
 'use client';
 import { useRef } from 'react';
-import { style, classes } from 'typestyle';
-import { stNumberInput } from '../Pagination/pagination.css';
+import styles from './Search.module.scss';
 
 export const SEARCH_DEBOUNCE_MS = 350;
 
+/**
+ * Presentational only — the owner holds the query and decides when it takes
+ * effect. `onSubmit` means "apply this now, skip the debounce"
+ */
 const Search = ({
   value,
   onChange,
@@ -23,12 +26,12 @@ const Search = ({
   };
 
   return (
-    <div className={wrap}>
+    <div className={styles.wrap}>
       <input
         ref={inputRef}
         type='text'
         value={value}
-        className={classes(stNumberInput, input)}
+        className={styles.input}
         placeholder='Search Items'
         onChange={e => onChange(e.target.value)}
         onKeyDown={e => {
@@ -40,7 +43,7 @@ const Search = ({
       {value && (
         <button
           type='button'
-          className={clearBtn}
+          className={styles.clearBtn}
           onClick={clear}
           aria-label='Clear search'
           title='Clear search'
@@ -53,32 +56,3 @@ const Search = ({
 };
 
 export default Search;
-
-const wrap = style({
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-});
-
-const input = style({
-  paddingRight: 16,
-});
-
-const clearBtn = style({
-  position: 'absolute',
-  right: 2,
-  width: 14,
-  height: 14,
-  padding: 0,
-  border: 0,
-  background: 'transparent',
-  color: '#666',
-  fontSize: 13,
-  lineHeight: '12px',
-  cursor: 'pointer',
-  $nest: {
-    '&:hover': {
-      color: '#000',
-    },
-  },
-});

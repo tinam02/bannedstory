@@ -3,7 +3,6 @@
 import { fontRegupix } from '@/app/styles/fonts';
 import DragWrapper from '@/components/atoms/DragWrapper';
 import { Tabs } from '@mantine/core';
-import { classes } from 'typestyle';
 import ItemList from '../ItemList';
 
 const Closet = ({}: {}) => {
@@ -15,7 +14,7 @@ const Closet = ({}: {}) => {
 
   return (
     <DragWrapper id='closet'>
-      <div id='card' className={classes('card closet')}>
+      <div id='card' className='card closet'>
         <div
           className='dragHandle'
           style={{
@@ -25,7 +24,7 @@ const Closet = ({}: {}) => {
             top: 1,
           }}
         />
-        <p className={classes('card-title', fontRegupix)}>INVENTORY</p>
+        <p className={`card-title ${fontRegupix}`}>INVENTORY</p>
         <div className='card-inner'>
           <Tabs
             defaultValue='Hat'
@@ -71,7 +70,7 @@ const tabs = [
   'Glove',
 ];
 
-// where the API's name is too wide for the tab strip.
+// where the API's name is too wide for the tab strip
 const TAB_LABELS: Record<string, string> = {
   'Eye Decoration': 'EYE ACC',
   'Face Accessory': 'FACE ACC',

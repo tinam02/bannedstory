@@ -6,13 +6,7 @@ import DragWrapper from '@/components/atoms/DragWrapper';
 import { Icon } from '@/components/atoms/Icon';
 import DefaultImage from '@/components/atoms/Image';
 import { iconUrlFor } from '@/lib/fetch';
-import { classes } from 'typestyle';
-import {
-  closeIcon,
-  wearingItem,
-  wearingItemContainer,
-  wearingList,
-} from './style';
+import styles from './Wearing.module.scss';
 
 const Wearing = ({}: {}) => {
   const { outfit, unequip } = useChar();
@@ -24,7 +18,7 @@ const Wearing = ({}: {}) => {
 
   return (
     <DragWrapper id='wearing'>
-      <div id='wearing' className={classes('card wearing', fontRegupix)}>
+      <div id='wearing' className={`card wearing ${fontRegupix}`}>
         <div
           className='dragHandle'
           style={{
@@ -34,26 +28,26 @@ const Wearing = ({}: {}) => {
             top: 1,
           }}
         />
-        <p className={classes('card-title')}>WEARING</p>
+        <p className='card-title'>WEARING</p>
         <div className='card-inner'>
-          <div className={wearingList}>
+          <div className={styles.list}>
             {entries.map(([slot, item]) => (
-              <div key={slot} className={classes(wearingItemContainer)}>
-                <div className={classes(wearingItem, 'clickable')}>
+              <div key={slot} className={styles.itemContainer}>
+                <div className={styles.item}>
                   <div style={{ display: 'contents' }}>
                     <DefaultImage
-                      className='item-img'
+                      className={styles.itemImg}
                       src={iconUrlFor(item)}
                       alt={item.name}
                       title={item.name}
                       unoptimized
                     />
                   </div>
-                  <div className='name'>
+                  <div className={styles.name}>
                     <div>{item.name}</div>
                   </div>
                   <Icon
-                    className={closeIcon}
+                    className={styles.closeIcon}
                     defaultImg='/ui/buttons/close/BtClose3.normal.0.png'
                     activeImg='/ui/buttons/close/BtClose3.pressed.0.png'
                     onClick={() => unequip(slot)}

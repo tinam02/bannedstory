@@ -8,12 +8,7 @@ import {
 } from '@/lib/fetch';
 import Item from '../../atoms/Item';
 import Pagination from '../../atoms/Pagination/Pagination';
-import {
-  stEmpty,
-  stItemList,
-  stPaginationContainer,
-  stPanelInner,
-} from './items.css';
+import styles from './Items.module.scss';
 import useChar from '@/app/context/CharCtx';
 import Search, { SEARCH_DEBOUNCE_MS } from '@/components/atoms/Search/Search';
 import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
@@ -64,17 +59,17 @@ const ItemList = ({ subcategory }: { subcategory: string }) => {
     );
 
   return (
-    <div className={stPanelInner}>
-      <div className={stItemList} data-loading={loading ? '' : undefined}>
+    <div className={styles.panelInner}>
+      <div className={styles.itemList} data-loading={loading ? '' : undefined}>
         {!loading && items.result?.length === 0 && (
-          <div className={stEmpty}>
+          <div className={styles.empty}>
             {nameText ? `No items match “${nameText}”` : 'No items found'}
           </div>
         )}
         {items.result?.map(item => (
           <div
             key={item.id}
-            className='closet-item clickable'
+            className={styles.item}
             onMouseEnter={() => preloader.trigger(() => previewOnHover(item))}
           >
             <Item
@@ -86,7 +81,7 @@ const ItemList = ({ subcategory }: { subcategory: string }) => {
         ))}
       </div>
 
-      <div className={stPaginationContainer}>
+      <div className={styles.paginationBar}>
         <Search
           value={query}
           onChange={next => {

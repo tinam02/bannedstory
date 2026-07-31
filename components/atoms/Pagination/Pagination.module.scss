@@ -1,0 +1,24 @@
+@use '../../../app/styles/controls' as *;
+
+.pagination {
+  display: flex;
+  max-width: 600px;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.numberInput {
+  @include pixel-input;
+}
+
+.arrow {
+  transition: all 0.1s ease-in-out;
+  color: lightgray;
+
+  &:hover {
+    color: #fff;
+    cursor: pointer;
+    filter: drop-shadow(0 0 0.07rem #fff);
+  }
+}
