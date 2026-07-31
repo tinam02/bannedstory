@@ -51,6 +51,7 @@ const SkinPicker = () => {
                   <img
                     src={skinSwatchUrl(id)}
                     alt=''
+                    loading='lazy'
                     className={styles.swatchImg}
                   />
                   <span className={styles.swatchLabel}>{label}</span>

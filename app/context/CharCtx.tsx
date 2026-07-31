@@ -38,6 +38,8 @@ type CharContextValue = {
   setZoom: (update: number | ((zoom: number) => number)) => void;
   animating: boolean;
   toggleAnimating: () => void;
+  emotion: string;
+  setEmotion: (emotion: string) => void;
   /** False until localStorage has been read, so nothing overwrites it early. */
   hydrated: boolean;
 };
@@ -55,6 +57,8 @@ export const CharContext = createContext<CharContextValue>({
   setZoom: () => {},
   animating: FALLBACK.animating,
   toggleAnimating: () => {},
+  emotion: FALLBACK.emotion,
+  setEmotion: () => {},
   hydrated: false,
 });
 
@@ -146,6 +150,10 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
     setOutfit(prev => ({ ...prev, animating: !prev.animating }));
   }, []);
 
+  const setEmotion = useCallback((emotion: string) => {
+    setOutfit(prev => ({ ...prev, emotion }));
+  }, []);
+
   const value = useMemo(
     () => ({
       outfit,
@@ -158,9 +166,20 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
       setZoom,
       animating: outfit.animating,
       toggleAnimating,
+      emotion: outfit.emotion,
+      setEmotion,
       hydrated,
     }),
-    [outfit, equip, unequip, setSkinId, setZoom, toggleAnimating, hydrated],
+    [
+      outfit,
+      equip,
+      unequip,
+      setSkinId,
+      setZoom,
+      toggleAnimating,
+      setEmotion,
+      hydrated,
+    ],
   );
 
   return <CharContext.Provider value={value}>{children}</CharContext.Provider>;

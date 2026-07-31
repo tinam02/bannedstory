@@ -5,6 +5,7 @@ import RandomizeButton from '@/components/atoms/RandomizeButton';
 import ExportButton from '@/components/atoms/Export';
 import ImportButton from '@/components/atoms/Import';
 import AnimateToggle from '@/components/atoms/AnimateToggle';
+import EmotePicker from '@/components/atoms/EmotePicker';
 import styles from './Toolbar.module.scss';
 
 /**
@@ -18,7 +19,10 @@ const Toolbar = () => (
       <ExportButton />
       <ZoomControls />
     </div>
-    <SkinPicker />
+    <div className={styles.row}>
+      <EmotePicker />
+      <SkinPicker />
+    </div>
   </div>
 );
 

@@ -4,6 +4,36 @@ import { HEAD_ID_OFFSET, skinFullName } from './skins';
 
 export const DEFAULT_SKIN_ID = 2000;
 
+const DEFAULT_FACE: OutfitItem = {
+  name: 'Defiant Face',
+  desc: '',
+  id: 20000,
+  region: REGION,
+  version: VERSION,
+  typeInfo: {
+    overallCategory: 'Equip',
+    category: 'Character',
+    subCategory: 'Face',
+    lowItemId: 20000,
+    highItemId: 29999,
+  },
+};
+
+const DEFAULT_HAIR: OutfitItem = {
+  name: 'Toben Hair',
+  desc: '',
+  id: 30000,
+  region: REGION,
+  version: VERSION,
+  typeInfo: {
+    overallCategory: 'Equip',
+    category: 'Character',
+    subCategory: 'Hair',
+    lowItemId: 30000,
+    highItemId: 49999,
+  },
+};
+
 /**
  * Body/Head entries for a skin id. We track one id; the format wants both
  * layers spelled out, and Head is always Body + 10000.
@@ -61,7 +91,11 @@ export const createOutfit = (now: number): Outfit => ({
   mercEars: false,
   illiumEars: false,
   highFloraEars: false,
-  selectedItems: skinEntries(DEFAULT_SKIN_ID),
+  selectedItems: {
+    ...skinEntries(DEFAULT_SKIN_ID),
+    Face: DEFAULT_FACE,
+    Hair: DEFAULT_HAIR,
+  },
   visible: true,
   position: { x: 0, y: 0 },
   fhSnap: true,
