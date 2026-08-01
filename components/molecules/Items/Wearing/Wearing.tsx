@@ -8,9 +8,10 @@ import DefaultImage from '@/components/atoms/Image';
 import ItemAdjust, { isAdjusted } from '@/components/atoms/ItemAdjust';
 import { iconUrlFor } from '@/lib/fetch';
 import { OutfitItem } from '@/types';
+import { warmDominantHue } from '@/app/hooks/useDominantHue';
 import { Popover } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { MouseEvent } from 'react';
+import { MouseEvent, useEffect } from 'react';
 import styles from './Wearing.module.scss';
 
 /** One equipped item: icon, name, adjust popover, remove. */
@@ -18,6 +19,12 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
   const { unequip, adjustItem } = useChar();
   const [opened, { toggle, close }] = useDisclosure(false);
   const edited = isAdjusted(item);
+  const iconUrl = iconUrlFor(item);
+
+  // Sample the hue while the row is just sitting there
+  useEffect(() => {
+    void warmDominantHue(iconUrl);
+  }, [iconUrl]);
 
   return (
     <Popover
@@ -46,7 +53,7 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
             <div style={{ display: 'contents' }}>
               <DefaultImage
                 className={styles.itemImg}
-                src={iconUrlFor(item)}
+                src={iconUrl}
                 alt={item.name}
                 title={item.name}
                 unoptimized
