@@ -69,6 +69,8 @@ const tabs = [
   'Overall',
   'Shoes',
   'Glove',
+  'Cape',
+  'Shield',
 ];
 
 // where the API's name is too wide for the tab strip
