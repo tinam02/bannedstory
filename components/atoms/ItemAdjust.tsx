@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { CSSProperties, useState } from 'react';
 import { Slider } from '@mantine/core';
-import { ADJUSTMENTS, AdjustmentKey } from '@/lib/fetch';
+import { useDominantHue } from '@/app/hooks/useDominantHue';
+import { ADJUSTMENTS, AdjustmentKey, iconUrlFor } from '@/lib/fetch';
 import { OutfitItem } from '@/types';
 import styles from './ItemAdjust.module.scss';
 
@@ -36,6 +37,19 @@ export const isAdjusted = (item: OutfitItem) =>
 
 const format = (key: AdjustmentKey, value: number) =>
   key === 'hue' ? `${Math.round(value)}°` : `${Math.round(value * 100)}%`;
+
+/**
+ * A spectrum starting at the item's own hue, so slider position 0 shows the
+ * colour the item actually is and the thumb always sits on its current colour.
+ * `hue` is a rotation, not an absolute — a track that starts at red would be
+ * wrong for everything that isn't already red.
+ */
+const HUE_STOPS = 12;
+const hueGradientFrom = (base: number) =>
+  `linear-gradient(90deg, ${Array.from({ length: HUE_STOPS + 1 }, (_, i) => {
+    const offset = (i * 360) / HUE_STOPS;
+    return `hsl(${(base + offset) % 360} 100% 50%) ${(i / HUE_STOPS) * 100}%`;
+  }).join(', ')})`;
 
 /**
  * One slider. Dragging updates local state only; the outfit is committed on
@@ -103,6 +117,8 @@ const ItemAdjust = ({
   onChange: (patch: Partial<OutfitItem>) => void;
 }) => {
   const hidden = item.visible === false;
+  // Read off the icon, which is the item in its unmodified colours
+  const baseHue = useDominantHue(iconUrlFor(item));
 
   // `undefined` for every key, so a reset removes them rather than writing
   // neutral numbers the export would then carry around.
@@ -113,7 +129,14 @@ const ItemAdjust = ({
   };
 
   return (
-    <div className={styles.panel}>
+    <div
+      className={styles.panel}
+      style={
+        baseHue === null
+          ? undefined
+          : ({ '--hue-gradient': hueGradientFrom(baseHue) } as CSSProperties)
+      }
+    >
       <p className={styles.name}>{item.name}</p>
 
       {KEYS.map(key => (

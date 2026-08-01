@@ -59,16 +59,22 @@
   background-color: rgba(255, 255, 255, 0.2);
 }
 
+// Anchored to the item's own hue by `--hue-gradient` (see hueGradientFrom), so
+// position 0 is the colour it already is. The plain spectrum below is the
+// fallback for greyscale items and icons that can't be sampled.
 .panel .hueTrack::before {
-  background-image: linear-gradient(
-    90deg,
-    #f00 0%,
-    #ff0 17%,
-    #0f0 33%,
-    #0ff 50%,
-    #00f 67%,
-    #f0f 83%,
-    #f00 100%
+  background-image: var(
+    --hue-gradient,
+    linear-gradient(
+      90deg,
+      #f00 0%,
+      #ff0 17%,
+      #0f0 33%,
+      #0ff 50%,
+      #00f 67%,
+      #f0f 83%,
+      #f00 100%
+    )
   );
 }
 

@@ -22,10 +22,14 @@
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
 }
 
 .itemContainer {
-  margin: 8px 8px 0;
+  flex: none;
   height: 44px;
   border-top: 1px solid rgba(184, 202, 226, 0.9);
   border-left: 1px solid rgba(161, 179, 204, 0.7);
