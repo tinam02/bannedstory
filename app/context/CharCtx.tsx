@@ -32,6 +32,8 @@ type CharContextValue = {
   setOutfit: React.Dispatch<React.SetStateAction<Outfit>>;
   equip: (slot: string, item: OutfitItem) => void;
   unequip: (slot: string) => void;
+  /** Merge a partial into one equipped item */
+  adjustItem: (slot: string, patch: Partial<OutfitItem>) => void;
   skinId: number;
   setSkinId: (id: number) => void;
   zoom: number;
@@ -51,6 +53,7 @@ export const CharContext = createContext<CharContextValue>({
   setOutfit: () => {},
   equip: () => {},
   unequip: () => {},
+  adjustItem: () => {},
   skinId: DEFAULT_SKIN_ID,
   setSkinId: () => {},
   zoom: FALLBACK.zoom,
@@ -135,6 +138,26 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // An `undefined` in the patch *removes* the key rather than storing it, so a
+  // value reset to neutral leaves no trace in the render URL or the export.
+  const adjustItem = useCallback(
+    (slot: string, patch: Partial<OutfitItem>) => {
+      setOutfit(prev => {
+        const item = prev.selectedItems[slot];
+        if (!item) return prev;
+        const next = { ...item, ...patch };
+        for (const [key, value] of Object.entries(patch)) {
+          if (value === undefined) delete next[key as keyof OutfitItem];
+        }
+        return {
+          ...prev,
+          selectedItems: { ...prev.selectedItems, [slot]: next },
+        };
+      });
+    },
+    [],
+  );
+
   const setSkinId = useCallback((id: number) => {
     setOutfit(prev => withSkin(prev, id));
   }, []);
@@ -160,6 +183,7 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
       setOutfit,
       equip,
       unequip,
+      adjustItem,
       skinId: skinIdOf(outfit),
       setSkinId,
       zoom: outfit.zoom,
@@ -174,6 +198,7 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
       outfit,
       equip,
       unequip,
+      adjustItem,
       setSkinId,
       setZoom,
       toggleAnimating,

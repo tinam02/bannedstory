@@ -141,8 +141,18 @@ const renderItem = (slot: string, item: OutfitItem, emotion: string) => {
     }
   }
   if (item.vslot) out.vslot = item.vslot;
-  // Only meaningful when hiding a layer; `true` is the default.
-  if (item.visible === false) out.visible = false;
+  // alpha:0 rather than dropping the item from the URL: both are pixel
+  // identical, but the item still contributes to the canvas bounds, so toggling
+  // a hat off doesn't collapse the render from 105x113 to 43x68 and make the
+  // whole character jump. The item's own `alpha` is left untouched in state, so
+  // unhiding restores whatever opacity it had.
+  //
+  // `visible` is still sent: it costs nothing, keeps the URL a faithful
+  // serialization of the outfit, and would take over if the API ever honours it for real
+  if (item.visible === false) {
+    out.visible = false;
+    out.alpha = 0;
+  }
   if (item.equipFrame) out.equipFrame = item.equipFrame;
 
   return out;

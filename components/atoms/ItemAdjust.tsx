@@ -1,0 +1,157 @@
+'use client';
+import { useState } from 'react';
+import { Slider } from '@mantine/core';
+import { ADJUSTMENTS, AdjustmentKey } from '@/lib/fetch';
+import { OutfitItem } from '@/types';
+import styles from './ItemAdjust.module.scss';
+
+// Slider bounds. The neutral value itself lives in ADJUSTMENTS — landing on it
+// stores `undefined` rather than the number, which is what keeps the value out
+// of the render URL and out of the exported JSON.
+const RANGES: Record<AdjustmentKey, { min: number; max: number; step: number }> =
+  {
+    hue: { min: 0, max: 360, step: 1 },
+    saturation: { min: 0, max: 2, step: 0.05 },
+    brightness: { min: 0, max: 2, step: 0.05 },
+    contrast: { min: 0, max: 2, step: 0.05 },
+    alpha: { min: 0, max: 1, step: 0.05 },
+  };
+
+const LABELS: Record<AdjustmentKey, string> = {
+  hue: 'Hue',
+  saturation: 'Saturation',
+  brightness: 'Brightness',
+  contrast: 'Contrast',
+  alpha: 'Opacity',
+};
+
+const KEYS = Object.keys(RANGES) as AdjustmentKey[];
+
+const valueOf = (item: OutfitItem, key: AdjustmentKey) =>
+  typeof item[key] === 'number' ? (item[key] as number) : ADJUSTMENTS[key];
+
+/** Any non-neutral adjustment, or a hidden layer. Drives the "edited" marker. */
+export const isAdjusted = (item: OutfitItem) =>
+  item.visible === false || KEYS.some(k => valueOf(item, k) !== ADJUSTMENTS[k]);
+
+const format = (key: AdjustmentKey, value: number) =>
+  key === 'hue' ? `${Math.round(value)}°` : `${Math.round(value * 100)}%`;
+
+/**
+ * One slider. Dragging updates local state only; the outfit is committed on
+ * release, so a drag costs one render request instead of one per step
+ */
+const Row = ({
+  item,
+  adjustment,
+  disabled,
+  onCommit,
+}: {
+  item: OutfitItem;
+  adjustment: AdjustmentKey;
+  disabled?: boolean;
+  onCommit: (value: number) => void;
+}) => {
+  const [dragged, setDragged] = useState<number | null>(null);
+  const committed = valueOf(item, adjustment);
+  const shown = dragged ?? committed;
+  const { min, max, step } = RANGES[adjustment];
+
+  return (
+    <div className={styles.row} data-disabled={disabled ? '' : undefined}>
+      <div className={styles.rowHead}>
+        <span>{LABELS[adjustment]}</span>
+        <span
+          className={styles.value}
+          data-neutral={shown === ADJUSTMENTS[adjustment] ? '' : undefined}
+        >
+          {format(adjustment, shown)}
+        </span>
+      </div>
+      <Slider
+        value={shown}
+        onChange={setDragged}
+        onChangeEnd={value => {
+          setDragged(null);
+          onCommit(value);
+        }}
+        min={min}
+        max={max}
+        step={step}
+        disabled={disabled}
+        label={null}
+        size='md'
+        thumbSize={15}
+        classNames={{
+          root: styles.slider,
+          track:
+            adjustment === 'hue'
+              ? `${styles.track} ${styles.hueTrack}`
+              : styles.track,
+          ...(adjustment === 'hue' && { bar: styles.hueBar }),
+        }}
+      />
+    </div>
+  );
+};
+
+const ItemAdjust = ({
+  item,
+  onChange,
+}: {
+  item: OutfitItem;
+  onChange: (patch: Partial<OutfitItem>) => void;
+}) => {
+  const hidden = item.visible === false;
+
+  // `undefined` for every key, so a reset removes them rather than writing
+  // neutral numbers the export would then carry around.
+  const reset = () => {
+    const patch: Partial<OutfitItem> = { visible: undefined };
+    for (const key of KEYS) patch[key] = undefined;
+    onChange(patch);
+  };
+
+  return (
+    <div className={styles.panel}>
+      <p className={styles.name}>{item.name}</p>
+
+      {KEYS.map(key => (
+        <Row
+          key={key}
+          item={item}
+          adjustment={key}
+          // A hidden layer is forced to alpha 0 in the render URL, so a live
+          // opacity slider would contradict what you see.
+          disabled={hidden && key === 'alpha'}
+          onCommit={value =>
+            onChange({
+              [key]: value === ADJUSTMENTS[key] ? undefined : value,
+            } as Partial<OutfitItem>)
+          }
+        />
+      ))}
+
+      <div className={styles.foot}>
+        <button
+          type='button'
+          className={styles.footBtn}
+          onClick={() => onChange({ visible: hidden ? undefined : false })}
+          data-on={hidden ? '' : undefined}
+        >
+          {hidden ? 'Hidden' : 'Visible'}
+        </button>
+        <button
+          type='button'
+          className={styles.footBtn}
+          onClick={reset}
+          disabled={!isAdjusted(item)}
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ItemAdjust;

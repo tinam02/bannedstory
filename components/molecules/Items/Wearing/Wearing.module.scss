@@ -38,6 +38,28 @@
     inset -1px -5px 8px rgba(142, 175, 212, 0.6);
   border-radius: 10px;
   background-color: rgba(101, 174, 216, 0.61);
+  // The whole row opens the adjust panel.
+  cursor: pointer;
+  outline: none;
+
+  &:hover,
+  &[data-open] {
+    background-color: rgba(131, 197, 236, 0.72);
+  }
+
+  &[data-open] {
+    box-shadow:
+      inset 1px 6px 8px rgba(224, 240, 253, 0.5),
+      inset -1px -5px 8px rgba(142, 175, 212, 0.6),
+      0 0 0 1px #ffe39a;
+  }
+
+  &:focus-visible {
+    box-shadow:
+      inset 1px 6px 8px rgba(224, 240, 253, 0.5),
+      inset -1px -5px 8px rgba(142, 175, 212, 0.6),
+      0 0 0 2px #ffe39a;
+  }
 }
 
 .item {
@@ -56,6 +78,7 @@
   align-self: center;
   line-height: 0.85;
   flex: 1;
+  min-width: 0;
 
   div {
     max-width: 95%;
@@ -65,6 +88,32 @@
     -webkit-line-clamp: 2;
     overflow: hidden;
   }
+
+  // A hidden layer is still equipped, so it stays listed but reads as inactive.
+  &[data-hidden] {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+}
+
+// Status 
+.editedDot {
+  align-self: center;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #ffe39a;
+  box-shadow: 0 0 5px rgba(255, 227, 154, 0.8);
+}
+
+// Strip Mantine's dropdown chrome
+.adjustDropdown {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .closeIcon img {

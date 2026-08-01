@@ -1,0 +1,113 @@
+.panel {
+  width: 248px;
+  padding: 11px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  box-shadow:
+    inset 0 0 0 1px #eee,
+    inset 0 0 0 2px rgba(8, 8, 8, 0.76),
+    inset 0 0 2px 3px rgba(252, 252, 252, 0.36);
+  user-select: none;
+}
+
+.name {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.15;
+  text-align: center;
+  color: #ffe39a;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  &[data-disabled] {
+    opacity: 0.4;
+  }
+}
+
+.rowHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+}
+
+// Neutral reads as "untouched", so it recedes; anything else is highlighted.
+.value {
+  color: #ffe39a;
+
+  &[data-neutral] {
+    color: rgba(255, 255, 255, 0.45);
+  }
+}
+
+.panel .slider {
+  --slider-color: #ffe39a;
+}
+
+.panel .track::before {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.panel .hueTrack::before {
+  background-image: linear-gradient(
+    90deg,
+    #f00 0%,
+    #ff0 17%,
+    #0f0 33%,
+    #0ff 50%,
+    #00f 67%,
+    #f0f 83%,
+    #f00 100%
+  );
+}
+
+.panel .hueBar {
+  background-color: transparent;
+}
+
+.foot {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.footBtn {
+  flex: 1;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  // The visibility button is a toggle - lit means the layer is hidden
+  &[data-on] {
+    background: rgba(255, 227, 154, 0.18);
+    box-shadow: inset 0 0 0 1px #ffe39a;
+    color: #ffe39a;
+  }
+}
