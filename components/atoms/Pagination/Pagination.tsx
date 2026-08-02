@@ -2,6 +2,12 @@
 import { Icon } from '../Icon';
 import styles from './Pagination.module.scss';
 
+/**
+ * Parked
+ *  these are the in-game BtGather arrows and they're worth keeping for the next thing that steps through a
+ * sequence (frames, poses, saved outfits). Whatever that turns out to be will
+ * probably want just the arrow pair without the page-number input
+ */
 const Pagination = ({
   metadata,
   setPage,

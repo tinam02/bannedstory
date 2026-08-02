@@ -19,7 +19,7 @@
   scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
   gap: 4px;
   text-align: center;
-  margin-top: 8px;
+  padding-bottom: 8px;
   transition: opacity 120ms ease-out;
 
   // Dim the previous results while a new query is loading
@@ -54,13 +54,26 @@
   user-select: none;
 }
 
-// Sits below the scrolling grid
-.paginationBar {
+// Sits above the scrolling grid
+.searchBar {
   display: flex;
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
   width: 100%;
   padding: 8px;
-  gap: 16px;
+}
+
+// Full-width row the observer watches. Needs real height, or it can sit
+// permanently inside the root margin and pull every page at once
+.sentinel {
+  grid-column: 1 / -1;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #4a4a4a;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  user-select: none;
 }
