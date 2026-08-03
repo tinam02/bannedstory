@@ -7,28 +7,34 @@ const Cursor = () => {
   const [cursorImage, setCursorImage] = useState('/cursor/point/point.png');
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
       setPosition({ x: e.clientX, y: e.clientY });
     };
 
-    const handleMouseDown = () => {
+    const handlePointerDown = () => {
       setCursorImage('/cursor/point/point_low.png');
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setCursorImage('/cursor/point/point.png');
     };
 
-    
-    // Attach event listeners
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mouseup', handleMouseUp);
+    // pointer events, not mouse events
+    //
+    // stage has to call preventDefault() on pointerdown, otherwise the browser starts its own image-drag
+    // Side effect: this kills compatibility mouse events for the whole gesture
+    // mousemove goes silent while dragging, cursor freezes at press position
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointerup', handlePointerUp);
+    // Or a gesture taken over elsewhere leaves the pressed sprite showing
+    window.addEventListener('pointercancel', handlePointerUp);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
     };
   }, []);
 
