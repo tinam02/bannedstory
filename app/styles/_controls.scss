@@ -1,5 +1,18 @@
 // Shared skins for small form controls
 
+// For any container that pairs with <ScrollBar>. The native bar has to go, not
+// just be restyled: the browser paints it outside the element tree and swallows
+// mousemove over it, so `* { cursor: none }` can't reach it and the OS arrow
+// stacks on top of the custom one. Reserves the gutter the custom bar sits in.
+@mixin hide-native-scrollbar($gutter: 10px) {
+  scrollbar-width: none;
+  padding-right: $gutter;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 // The inset pixel-art input used by the pagination page box and the search box
 @mixin pixel-input {
   text-align: center;

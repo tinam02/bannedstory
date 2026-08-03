@@ -1,6 +1,16 @@
+@use '../../../app/styles/controls' as *;
+
 .panelInner {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+// Anchors the custom scrollbar to the grid alone, not the search bar above it
+.listWrap {
+  position: relative;
+  display: flex;
   flex: 1;
   min-height: 0;
 }
@@ -14,9 +24,8 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+  // 11px of bar plus a little air between it and the icons.
+  @include hide-native-scrollbar(14px);
   gap: 4px;
   text-align: center;
   padding-bottom: 8px;

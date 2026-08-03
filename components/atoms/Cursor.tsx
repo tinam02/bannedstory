@@ -7,7 +7,7 @@ const Cursor = () => {
   const [cursorImage, setCursorImage] = useState('/cursor/point/point.png');
 
   useEffect(() => {
-    const handleMouseMove = (e: any) => {
+    const handleMouseMove = (e: MouseEvent) => {
       setPosition({ x: e.clientX, y: e.clientY });
     };
 
