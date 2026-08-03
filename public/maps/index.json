@@ -1,5 +1,45 @@
 [
   {
+    "id": "211000000",
+    "name": "El Nath",
+    "street": "El Nath",
+    "w": 4840,
+    "h": 1284,
+    "front": false
+  },
+  {
+    "id": "103000007",
+    "name": "Kerning City Night Market",
+    "street": "Kerning City",
+    "w": 1530,
+    "h": 780,
+    "front": false
+  },
+  {
+    "id": "103000002",
+    "name": "Kerning City Pharmacy",
+    "street": "Kerning City",
+    "w": 800,
+    "h": 650,
+    "front": false
+  },
+  {
+    "id": "103000001",
+    "name": "Kerning City Self-Defense Item Store",
+    "street": "Kerning City",
+    "w": 800,
+    "h": 670,
+    "front": false
+  },
+  {
+    "id": "993212251",
+    "name": "Somewhere in Ellinia",
+    "street": "Maple Chronicle",
+    "w": 2020,
+    "h": 770,
+    "front": false
+  },
+  {
     "id": "211042000",
     "name": "The Cave of Trials I",
     "street": "El Nath",

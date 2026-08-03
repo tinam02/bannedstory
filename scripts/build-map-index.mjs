@@ -44,8 +44,8 @@ for (const dir of entries) {
   const meta = byId.get(dir.name);
   maps.push({
     id: dir.name,
-    name: meta?.name ?? dir.name,
-    street: meta?.streetName ?? '',
+    name: meta?.name?.trim() || dir.name,
+    street: meta?.streetName?.trim() ?? '',
     ...pngSize(await readFile(back)),
     front: await exists(join(MAPS_DIR, dir.name, 'front.png')),
   });
