@@ -7,15 +7,18 @@
   overflow: hidden;
   // Behind every panel, which sit later in the document and win on source order.
   z-index: 0;
+  // Dragging the map is our gesture, not the browsers scroll
+  touch-action: none;
 }
 
 // Centred both ways in the viewport, sized to the map *after* zoom. Whatever it
 // doesn't cover is the frame's bg colour.
+// `transform` is set inline: it carries the centring *and* the pan offset
+// together, so they can't fight each other over the same property.
 .scene {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
 }
 
 // Holds the map at its true pixel size and scales as a unit. Keeping the scale
