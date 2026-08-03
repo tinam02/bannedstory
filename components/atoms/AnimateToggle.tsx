@@ -17,7 +17,7 @@ const AnimateToggle = () => {
       aria-label='Animate character'
       title={animating ? 'Stop animating' : 'Animate character'}
     >
-      ANIMATE
+      Animate
     </button>
   );
 };

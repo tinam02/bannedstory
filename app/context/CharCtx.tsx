@@ -18,7 +18,7 @@ import React, {
 
 export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 4;
-export const ZOOM_STEP = 0.5;
+export const ZOOM_STEP = 1;
 
 export { DEFAULT_SKIN_ID };
 

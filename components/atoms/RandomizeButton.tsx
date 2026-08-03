@@ -35,7 +35,7 @@ const RandomizeButton = () => {
       aria-label='Randomize outfit, face, hair and skin'
       title='Randomize everything'
     >
-      {busy ? '...' : 'RANDOMIZE'}
+      {busy ? '...' : 'Randomize'}
     </button>
   );
 };

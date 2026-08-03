@@ -38,7 +38,7 @@ const ImportButton = () => {
         aria-label='Import outfit from JSON'
         title='Import an outfit JSON'
       >
-        IMPORT
+        Import
       </button>
       <input
         ref={inputRef}

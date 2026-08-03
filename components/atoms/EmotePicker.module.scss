@@ -24,14 +24,11 @@
     0 0 1px rgba(0, 0, 0, 0.9);
 }
 
-// A character render is a full body, so the swatch is a window onto the top of
-// it — `object-fit: none` keeps the sprite at native size and `top` anchors the
-// head, rather than scaling the whole character down to something unreadable.
 .triggerImg {
   width: 26px;
   height: 22px;
   object-fit: none;
-  object-position: center top;
+  object-position: center;
   image-rendering: pixelated;
 }
 

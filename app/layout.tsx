@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import '@mantine/core/styles.css';
 import './globals.scss';
 import { CharProvider } from './context/CharCtx';
+import { SceneProvider } from './context/SceneCtx';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 
 const DISCLAIMER =
@@ -26,14 +27,16 @@ export default function RootLayout({
 }) {
   return (
     <CharProvider>
-      <html lang='en'>
-        <head>
-          <ColorSchemeScript />
-        </head>
-        <body className={'bgImg'}>
-          <MantineProvider>{children}</MantineProvider>
-        </body>
-      </html>
+      <SceneProvider>
+        <html lang='en'>
+          <head>
+            <ColorSchemeScript />
+          </head>
+          <body>
+            <MantineProvider>{children}</MantineProvider>
+          </body>
+        </html>
+      </SceneProvider>
     </CharProvider>
   );
 }

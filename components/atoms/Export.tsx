@@ -31,7 +31,7 @@ const ExportButton = () => {
       aria-label='Export outfit as JSON'
       title='Export outfit as JSON'
     >
-      EXPORT
+      Export
     </button>
   );
 };

@@ -13,7 +13,7 @@ const POKE_MS = 2000;
 const DRAG_SLOP_PX = 4;
 
 const Char = () => {
-  const { outfit, zoom, hydrated } = useChar();
+  const { outfit, hydrated } = useChar();
   const [poked, setPoked] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressedAt = useRef<{ x: number; y: number } | null>(null);
@@ -40,7 +40,6 @@ const Char = () => {
       {hydrated && (
         <div
           className={styles.scale}
-          style={{ transform: `scale(${zoom})` }}
           // Warm the hum render on dwell so the reaction is instant
           onMouseEnter={() =>
             preloader.trigger(() =>
