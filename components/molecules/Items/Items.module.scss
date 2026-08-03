@@ -38,6 +38,10 @@
 }
 
 .item {
+  appearance: none;
+  background: none;
+  padding: 0;
+  color: inherit;
   width: 44px;
   height: 44px;
   border-top: 1px solid rgba(170, 170, 170, 0.9);
@@ -51,6 +55,21 @@
   //alt txt
   font-size: 12px;
   line-height: 1;
+  transition:
+    background-color 60ms linear,
+    box-shadow 60ms linear;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.432);
+    box-shadow: inset 1px 6px 4px rgba(177, 133, 116, 0.2);
+    border-top-color: rgba(218, 192, 176, 0.95);
+    border-left-color: rgba(190, 165, 142, 0.8);
+  }
+
+  &:focus-visible {
+    outline: 1px solid #6a6a6a;
+    outline-offset: -1px;
+  }
 }
 
 // Spans the whole grid so the message centres
