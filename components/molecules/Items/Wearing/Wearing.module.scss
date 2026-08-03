@@ -76,6 +76,8 @@
 .itemImg {
   margin-right: 8px;
   align-self: center;
+  min-width: 40px;
+  object-fit: none;
 }
 
 .name {
@@ -100,7 +102,7 @@
   }
 }
 
-// Status 
+// Status
 .editedDot {
   align-self: center;
   flex: none;

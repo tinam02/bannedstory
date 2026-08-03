@@ -27,7 +27,7 @@ const Cursor = () => {
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('pointerup', handlePointerUp);
-    // Or a gesture taken over elsewhere leaves the pressed sprite showing
+    // pointercancel too, or a stolen gesture leaves the pressed sprite showing
     window.addEventListener('pointercancel', handlePointerUp);
 
     return () => {
