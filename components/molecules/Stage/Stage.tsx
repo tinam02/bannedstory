@@ -2,7 +2,7 @@
 import useChar from '@/app/context/CharCtx';
 import useScene from '@/app/context/SceneCtx';
 import Char from '@/components/atoms/Char';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './Stage.module.scss';
 
 /**
@@ -14,10 +14,10 @@ import styles from './Stage.module.scss';
  * no foothold no snapping
  */
 
-// Native pixel size of the captured plates
-const MAP = { id: '211042000', w: 3040, h: 590 };
-
 // Scene state deliberately does NOT live in `outfit`
+//
+// both are keyed by map id, a position on a 3040x590 cave means nothing on a
+// square town map
 const POS_KEY = 'scene-char-pos';
 const PAN_KEY = 'scene-pan';
 
@@ -29,7 +29,7 @@ const clamp = (v: number, lo: number, hi: number) =>
 
 const Stage = () => {
   const { zoom } = useChar();
-  const { bg } = useScene();
+  const { bg, mapId, maps } = useScene();
   const sceneRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   // Map coordinates, not screen ones, so the character stays put on the map
@@ -42,22 +42,39 @@ const Stage = () => {
   // Pointer offset from the character's anchor at grab time, in map space.
   const grab = useRef<{ dx: number; dy: number } | null>(null);
   // Where the pointer and the map were when a pan started, in screen pixels.
-  const panGrab = useRef<{ px: number; py: number; ox: number; oy: number } | null>(
-    null,
+  const panGrab = useRef<{
+    px: number;
+    py: number;
+    ox: number;
+    oy: number;
+  } | null>(null);
+
+  const map = useMemo(
+    () => maps.find(m => m.id === mapId) ?? null,
+    [maps, mapId],
   );
+
+  // with no map picked the viewport itself is the coordinate space
+  //
+  // keeps one code path instead of a second "no map" mode
+  const space = map ?? { w: Math.max(view.w, 1), h: Math.max(view.h, 1) };
 
   // Mirrors, so the pointerup handler can save the final value without either going stale in its closure or re-subscribing on every mouse move
   const posRef = useRef(pos);
   posRef.current = pos;
   const panRef = useRef(pan);
   panRef.current = pan;
+  const spaceRef = useRef(space);
+  spaceRef.current = space;
 
   useEffect(() => {
-    const saved = localStorage.getItem(POS_KEY);
-    setPos(saved ? JSON.parse(saved) : { x: MAP.w / 2, y: MAP.h - 30 });
-    const savedPan = localStorage.getItem(PAN_KEY);
-    if (savedPan) setPan(JSON.parse(savedPan));
-  }, []);
+    const key = mapId ?? 'none';
+    const s = spaceRef.current;
+    const saved = localStorage.getItem(`${POS_KEY}:${key}`);
+    setPos(saved ? JSON.parse(saved) : { x: s.w / 2, y: s.h - 30 });
+    const savedPan = localStorage.getItem(`${PAN_KEY}:${key}`);
+    setPan(savedPan ? JSON.parse(savedPan) : { x: 0, y: 0 });
+  }, [mapId]);
 
   useEffect(() => {
     const el = frameRef.current;
@@ -74,14 +91,14 @@ const Stage = () => {
   // centred rather than drifting into the backdrop colour.
   const limit = useCallback(
     (p: { x: number; y: number }) => {
-      const slackX = Math.max(0, (MAP.w * zoom - view.w) / 2);
-      const slackY = Math.max(0, (MAP.h * zoom - view.h) / 2);
+      const slackX = Math.max(0, (space.w * zoom - view.w) / 2);
+      const slackY = Math.max(0, (space.h * zoom - view.h) / 2);
       return {
         x: clamp(p.x, -slackX, slackX),
         y: clamp(p.y, -slackY, slackY),
       };
     },
-    [zoom, view],
+    [zoom, view, space.w, space.h],
   );
 
   // Zooming out or shrinking the window can leave an old pan out of bounds.
@@ -89,16 +106,20 @@ const Stage = () => {
 
   // Screen pixels to map pixels. Measuring the scaled element and normalising
   // by its rect means dragging is correct at any zoom with no extra maths.
-  const toMap = useCallback((clientX: number, clientY: number) => {
-    const r = sceneRef.current?.getBoundingClientRect();
-    if (!r) return null;
-    return {
-      x: ((clientX - r.left) / r.width) * MAP.w,
-      y: ((clientY - r.top) / r.height) * MAP.h,
-    };
-  }, []);
+  const toMap = useCallback(
+    (clientX: number, clientY: number) => {
+      const r = sceneRef.current?.getBoundingClientRect();
+      if (!r) return null;
+      return {
+        x: ((clientX - r.left) / r.width) * space.w,
+        y: ((clientY - r.top) / r.height) * space.h,
+      };
+    },
+    [space.w, space.h],
+  );
 
   useEffect(() => {
+    const key = mapId ?? 'none';
     const onMove = (e: PointerEvent) => {
       if (panGrab.current) {
         const g = panGrab.current;
@@ -113,18 +134,19 @@ const Stage = () => {
       if (!grab.current) return;
       const p = toMap(e.clientX, e.clientY);
       if (!p) return;
+      const s = spaceRef.current;
       setPos({
-        x: clamp(p.x - grab.current.dx, EDGE_PAD, MAP.w - EDGE_PAD),
-        y: clamp(p.y - grab.current.dy, EDGE_PAD, MAP.h),
+        x: clamp(p.x - grab.current.dx, EDGE_PAD, s.w - EDGE_PAD),
+        y: clamp(p.y - grab.current.dy, EDGE_PAD, s.h),
       });
     };
     // Saved here rather than in an effect on the value: a drag ends without
     // changing it again, so an effect would never see the final position.
     const onUp = () => {
       if (grab.current && posRef.current)
-        localStorage.setItem(POS_KEY, JSON.stringify(posRef.current));
+        localStorage.setItem(`${POS_KEY}:${key}`, JSON.stringify(posRef.current));
       if (panGrab.current)
-        localStorage.setItem(PAN_KEY, JSON.stringify(panRef.current));
+        localStorage.setItem(`${PAN_KEY}:${key}`, JSON.stringify(panRef.current));
       grab.current = null;
       panGrab.current = null;
     };
@@ -137,7 +159,7 @@ const Stage = () => {
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
-  }, [toMap, limit]);
+  }, [toMap, limit, mapId]);
 
   return (
     <div
@@ -162,8 +184,8 @@ const Stage = () => {
       <div
         className={styles.scene}
         style={{
-          width: MAP.w * zoom,
-          height: MAP.h * zoom,
+          width: space.w * zoom,
+          height: space.h * zoom,
           transform: `translate(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px))`,
         }}
       >
@@ -172,15 +194,21 @@ const Stage = () => {
         <div
           ref={sceneRef}
           className={styles.plates}
-          style={{ width: MAP.w, height: MAP.h, transform: `scale(${zoom})` }}
+          style={{
+            width: space.w,
+            height: space.h,
+            transform: `scale(${zoom})`,
+          }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className={styles.plate}
-            src={`/maps/${MAP.id}.back.png`}
-            alt=''
-            draggable={false}
-          />
+          {map && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className={styles.plate}
+              src={`/maps/${map.id}/back.png`}
+              alt=''
+              draggable={false}
+            />
+          )}
 
           {pos && (
             <div
@@ -200,14 +228,16 @@ const Stage = () => {
             </div>
           )}
 
-          {/* Drawn over the character, and never a drag target. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className={`${styles.plate} ${styles.front}`}
-            src={`/maps/${MAP.id}.front.png`}
-            alt=''
-            draggable={false}
-          />
+          {/* drawn over the character, and never a drag target */}
+          {map?.front && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className={`${styles.plate} ${styles.front}`}
+              src={`/maps/${map.id}/front.png`}
+              alt=''
+              draggable={false}
+            />
+          )}
         </div>
       </div>
     </div>

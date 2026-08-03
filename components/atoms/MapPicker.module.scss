@@ -1,0 +1,68 @@
+// two classes, or Mantine's own single-class rules tie and win on source order
+.dropdown.dropdown {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  max-height: 320px;
+  overflow-y: auto;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.82);
+  box-shadow:
+    inset 0 0 0 1px #eee,
+    inset 0 0 0 2px rgba(8, 8, 8, 0.76),
+    inset 0 0 2px 3px rgba(252, 252, 252, 0.36);
+  padding: 4px;
+  user-select: none;
+}
+
+.row {
+  appearance: none;
+  border: 0;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 5px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  &[data-active] {
+    background: rgba(255, 227, 154, 0.2);
+    box-shadow: inset 0 0 0 1px #ffe39a;
+  }
+}
+
+.name {
+  color: #ffe39a;
+  font-size: 11px;
+  font-weight: bold;
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.9),
+    0 0 1px rgba(0, 0, 0, 0.9);
+}
+
+.street {
+  color: rgba(255, 227, 154, 0.55);
+  font-size: 10px;
+}
+
+.empty {
+  padding: 10px 8px;
+  color: rgba(255, 227, 154, 0.7);
+  font-size: 10px;
+  line-height: 1.4;
+}
