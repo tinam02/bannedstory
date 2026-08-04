@@ -27,6 +27,8 @@ export type MapInfo = {
   h: number;
   front: boolean;
   layers: boolean;
+  /** MapRender's camera centre at capture time, from an optional camera.json */
+  cam?: { x: number; y: number };
 };
 
 type Scene = { bg: string; mapId: string | null };

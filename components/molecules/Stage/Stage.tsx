@@ -66,14 +66,23 @@ const Stage = () => {
   // need to go over the top
   //
   // sorted by wz draw order, obj layer then z, backs first since they are scenery
+  // backs also get the parallax shift MapRender baked into the plate, see
+  // BackPatch.cs. objs are pinned to the map and need nothing
   const anim = useMemo(() => {
     if (!layers) return [];
-    return [...layers.back, ...layers.obj]
+    const cam = map?.cam;
+    const backs = layers.back.map(s => ({
+      ...s,
+      dx: cam ? (cam.x * (100 + (s.rx ?? 0))) / 100 : 0,
+      dy: cam ? (cam.y * (100 + (s.ry ?? 0))) / 100 : 0,
+    }));
+    const objs = layers.obj.map(s => ({ ...s, dx: 0, dy: 0 }));
+    return [...backs, ...objs]
       .filter(s => s.frames > 1)
       .sort(
         (a, b) => (a.layer ?? -1) - (b.layer ?? -1) || (a.z ?? 0) - (b.z ?? 0),
       );
-  }, [layers]);
+  }, [layers, map]);
 
   // Mirrors, so the pointerup handler can save the final value without either going stale in its closure or re-subscribing on every mouse move
   const posRef = useRef(pos);
@@ -239,8 +248,8 @@ const Stage = () => {
                 alt=''
                 draggable={false}
                 style={{
-                  left: s.x + s.ox - layers.vr.l,
-                  top: s.y + s.oy - layers.vr.t,
+                  left: s.x + s.ox + s.dx - layers.vr.l,
+                  top: s.y + s.oy + s.dy - layers.vr.t,
                   width: s.w,
                   height: s.h,
                   transform: s.f ? 'scaleX(-1)' : undefined,

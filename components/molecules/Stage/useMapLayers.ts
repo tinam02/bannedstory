@@ -23,8 +23,11 @@ export type MapSprite = {
   // obj only
   layer?: number;
   z?: number;
-  // back only
+  // back only. rx/ry are parallax rates, so a back's drawn position depends on
+  // where the camera was, unlike an obj which is pinned to the map
   front?: number;
+  rx?: number;
+  ry?: number;
 };
 
 export type MapLayers = {

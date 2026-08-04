@@ -28,6 +28,19 @@ const exists = async p =>
     () => false,
   );
 
+// optional, hand written, survives re-running the lua dump
+//
+// where MapRender's camera was pointing when the plate was captured, which is
+// what parallax back layers were drawn against
+const readCam = async dir => {
+  try {
+    const cam = JSON.parse(await readFile(join(MAPS_DIR, dir, 'camera.json')));
+    return { x: cam.x ?? 0, y: cam.y ?? 0 };
+  } catch {
+    return null;
+  }
+};
+
 const names = JSON.parse(await readFile(NAMES, 'utf8'));
 const byId = new Map(names.map(m => [String(m.id), m]));
 
@@ -42,6 +55,7 @@ for (const dir of entries) {
     continue;
   }
   const meta = byId.get(dir.name);
+  const cam = await readCam(dir.name);
   maps.push({
     id: dir.name,
     name: meta?.name?.trim() || dir.name,
@@ -50,6 +64,7 @@ for (const dir of entries) {
     front: await exists(join(MAPS_DIR, dir.name, 'front.png')),
     // written by scripts/wz/dump-map-layers.lua, holds the animated sprites
     layers: await exists(join(MAPS_DIR, dir.name, 'layers', 'layers.json')),
+    ...(cam ? { cam } : {}),
   });
   if (!meta) console.warn(`${dir.name}: no name in maps.json, using the id`);
 }
