@@ -73,6 +73,18 @@ const Stage = () => {
     [map],
   );
 
+  // some maps carry sprites we don't want, tutorial arrows and click hints etc, find and list by hand in "hide"
+  const hidden = useCallback(
+    (file: string) => {
+      const base = file.replace(/\.(apng|png)$/, '');
+      const match = (pat: string) =>
+        pat.endsWith('*') ? base.startsWith(pat.slice(0, -1)) : base === pat;
+      if (map?.keep?.some(match)) return false;
+      return map?.hide?.some(match) ?? false;
+    },
+    [map],
+  );
+
   // what the plate already contains decides what we have to draw
   //
   // backs are always still in it, so only the moving ones go over the top. they
@@ -96,10 +108,12 @@ const Stage = () => {
     const objs = (
       map?.objsHidden ? layers.obj : layers.obj.filter(s => s.frames > 1)
     ).map(s => ({ ...s, dx: 0, dy: 0 }));
-    return [...backs, ...objs].sort(
-      (a, b) => (a.layer ?? -1) - (b.layer ?? -1) || (a.z ?? 0) - (b.z ?? 0),
-    );
-  }, [layers, map]);
+    return [...backs, ...objs]
+      .filter(s => !hidden(s.file))
+      .sort(
+        (a, b) => (a.layer ?? -1) - (b.layer ?? -1) || (a.z ?? 0) - (b.z ?? 0),
+      );
+  }, [layers, map, hidden]);
 
   // Mirrors, so the pointerup handler can save the final value without either going stale in its closure or re-subscribing on every mouse move
   const posRef = useRef(pos);

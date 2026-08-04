@@ -34,6 +34,9 @@ export type MapInfo = {
   cam?: { x: number; y: number };
   /** plate was captured with ctrl+3, so objects come from the manifest instead */
   objsHidden?: boolean;
+  /** sprite files to drop, a trailing * matches a prefix. `keep` wins over `hide` */
+  hide?: string[];
+  keep?: string[];
 };
 
 type Scene = { bg: string; mapId: string | null };

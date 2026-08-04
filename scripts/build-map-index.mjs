@@ -41,9 +41,13 @@ const readCapture = async dir => {
     return {
       cam: c.cam ? { x: c.cam.x ?? 0, y: c.cam.y ?? 0 } : null,
       objsHidden: c.objsHidden === true,
+      // sprites to drop, and exceptions to that. a trailing * matches a prefix
+      // redundant things like tutorial arrows
+      hide: Array.isArray(c.hide) ? c.hide : null,
+      keep: Array.isArray(c.keep) ? c.keep : null,
     };
   } catch {
-    return { cam: null, objsHidden: false };
+    return { cam: null, objsHidden: false, hide: null, keep: null };
   }
 };
 
@@ -102,6 +106,8 @@ for (const dir of entries) {
     webp: await exists(join(MAPS_DIR, dir.name, 'back.webp')),
     ...(cap.cam ? { cam: cap.cam } : {}),
     ...(cap.objsHidden ? { objsHidden: true } : {}),
+    ...(cap.hide ? { hide: cap.hide } : {}),
+    ...(cap.keep ? { keep: cap.keep } : {}),
   });
   if (!meta) console.warn(`${dir.name}: no name in maps.json, using the id`);
   if (lay.parallax && !cap.cam)

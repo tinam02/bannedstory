@@ -1,4 +1,6 @@
 {
   "cam": { "x": 0, "y": 0 },
-  "objsHidden": true
+  "objsHidden": true,
+  "hide": ["obj-7-*"],
+  "keep": ["obj-7-0"]
 }
