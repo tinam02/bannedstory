@@ -26,6 +26,7 @@ export type MapInfo = {
   w: number;
   h: number;
   front: boolean;
+  layers: boolean;
 };
 
 type Scene = { bg: string; mapId: string | null };

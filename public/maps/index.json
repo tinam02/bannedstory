@@ -5,7 +5,8 @@
     "street": "El Nath",
     "w": 4840,
     "h": 1284,
-    "front": false
+    "front": false,
+    "layers": false
   },
   {
     "id": "450005000",
@@ -13,7 +14,8 @@
     "street": "Arcana",
     "w": 3326,
     "h": 880,
-    "front": true
+    "front": true,
+    "layers": true
   },
   {
     "id": "867111006",
@@ -21,7 +23,8 @@
     "street": "Henesys",
     "w": 5830,
     "h": 1172,
-    "front": false
+    "front": false,
+    "layers": false
   },
   {
     "id": "103000007",
@@ -29,7 +32,8 @@
     "street": "Kerning City",
     "w": 1530,
     "h": 780,
-    "front": false
+    "front": false,
+    "layers": false
   },
   {
     "id": "103000002",
@@ -37,7 +41,8 @@
     "street": "Kerning City",
     "w": 800,
     "h": 650,
-    "front": false
+    "front": false,
+    "layers": false
   },
   {
     "id": "103000001",
@@ -45,7 +50,8 @@
     "street": "Kerning City",
     "w": 800,
     "h": 670,
-    "front": false
+    "front": false,
+    "layers": false
   },
   {
     "id": "993165701",
@@ -53,7 +59,8 @@
     "street": "Karote",
     "w": 2274,
     "h": 858,
-    "front": true
+    "front": true,
+    "layers": false
   },
   {
     "id": "402000620",
@@ -61,7 +68,8 @@
     "street": "Sandstorm Zone",
     "w": 2679,
     "h": 980,
-    "front": true
+    "front": true,
+    "layers": false
   },
   {
     "id": "993212251",
@@ -69,7 +77,8 @@
     "street": "Maple Chronicle",
     "w": 2020,
     "h": 770,
-    "front": false
+    "front": false,
+    "layers": false
   },
   {
     "id": "211042000",
@@ -77,6 +86,7 @@
     "street": "El Nath",
     "w": 3040,
     "h": 590,
-    "front": true
+    "front": true,
+    "layers": false
   }
 ]

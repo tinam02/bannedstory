@@ -3,6 +3,7 @@ import useChar from '@/app/context/CharCtx';
 import useScene from '@/app/context/SceneCtx';
 import Char from '@/components/atoms/Char';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import useMapLayers from './useMapLayers';
 import styles from './Stage.module.scss';
 
 /**
@@ -58,6 +59,21 @@ const Stage = () => {
   //
   // keeps one code path instead of a second "no map" mode
   const space = map ?? { w: Math.max(view.w, 1), h: Math.max(view.h, 1) };
+
+  const layers = useMapLayers(mapId, map?.layers ?? false);
+
+  // back.png already has every still sprite baked in, so only the moving ones
+  // need to go over the top
+  //
+  // sorted by wz draw order, obj layer then z, backs first since they are scenery
+  const anim = useMemo(() => {
+    if (!layers) return [];
+    return [...layers.back, ...layers.obj]
+      .filter(s => s.frames > 1)
+      .sort(
+        (a, b) => (a.layer ?? -1) - (b.layer ?? -1) || (a.z ?? 0) - (b.z ?? 0),
+      );
+  }, [layers]);
 
   // Mirrors, so the pointerup handler can save the final value without either going stale in its closure or re-subscribing on every mouse move
   const posRef = useRef(pos);
@@ -209,6 +225,28 @@ const Stage = () => {
               draggable={false}
             />
           )}
+
+          {/* vr.l/vr.t is the map's own origin, and back.png is exactly the vr
+              rect, so subtracting it puts wz coords into plate pixels */}
+          {map &&
+            layers &&
+            anim.map(s => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={s.file}
+                className={styles.sprite}
+                src={`/maps/${map.id}/layers/${s.file}`}
+                alt=''
+                draggable={false}
+                style={{
+                  left: s.x + s.ox - layers.vr.l,
+                  top: s.y + s.oy - layers.vr.t,
+                  width: s.w,
+                  height: s.h,
+                  transform: s.f ? 'scaleX(-1)' : undefined,
+                }}
+              />
+            ))}
 
           {pos && (
             <div

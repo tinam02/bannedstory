@@ -39,6 +39,16 @@
   user-select: none;
 }
 
+// An animated sprite sitting on top of back.png. No z-index, so it stays under
+// charAnchor, and never a drag target for the same reason as .front
+.sprite {
+  position: absolute;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
 // The `front=1` bg entries. Sits above the character and must never
 // swallow a drag, or the parts of the map that overhang char would be dead zones
 .front {

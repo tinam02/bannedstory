@@ -48,6 +48,8 @@ for (const dir of entries) {
     street: meta?.streetName?.trim() ?? '',
     ...pngSize(await readFile(back)),
     front: await exists(join(MAPS_DIR, dir.name, 'front.png')),
+    // written by scripts/wz/dump-map-layers.lua, holds the animated sprites
+    layers: await exists(join(MAPS_DIR, dir.name, 'layers', 'layers.json')),
   });
   if (!meta) console.warn(`${dir.name}: no name in maps.json, using the id`);
 }
