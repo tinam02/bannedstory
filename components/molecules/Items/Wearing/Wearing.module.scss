@@ -42,6 +42,7 @@
     inset -1px -5px 8px rgba(142, 175, 212, 0.6);
   border-radius: 10px;
   background-color: rgba(101, 174, 216, 0.61);
+  overflow: hidden;
   // The whole row opens the adjust panel.
   cursor: pointer;
   outline: none;
@@ -71,6 +72,7 @@
   margin-left: 8px;
   position: relative;
   flex: 1;
+  min-width: 0;
 }
 
 .itemImg {
@@ -125,4 +127,5 @@
 .closeIcon img {
   align-self: center;
   margin-right: 8px;
+  flex: none;
 }
