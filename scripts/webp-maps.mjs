@@ -152,6 +152,42 @@ console.log(`${mb(before)} -> ${mb(after)}  (${Math.round((1 - after / before) *
 
 for (const f of failed) console.warn(`failed ${f}`);
 
+// sprites the renderer will never ask for, because capture.json hides them.
+// they still sit in the folder and still deploy, so clear them out
+//
+// same prefix matching as the Stage, keep wins over hide
+if (process.argv.includes('--prune-hidden')) {
+  let freed = 0, gone = 0;
+  for (const dir of await readdir(MAPS_DIR, { withFileTypes: true })) {
+    if (!dir.isDirectory()) continue;
+    const mapDir = join(MAPS_DIR, dir.name);
+    let cap, manifest;
+    try {
+      cap = JSON.parse(await readFile(join(mapDir, 'capture.json'), 'utf8'));
+      manifest = JSON.parse(await readFile(join(mapDir, 'layers', 'layers.json'), 'utf8'));
+    } catch {
+      continue;
+    }
+    if (!Array.isArray(cap.hide)) continue;
+
+    const match = (base, pat) =>
+      pat.endsWith('*') ? base.startsWith(pat.slice(0, -1)) : base === pat;
+    for (const s of [...manifest.back, ...manifest.obj]) {
+      const base = s.file.replace(/\.(apng|png)$/, '');
+      if ((cap.keep ?? []).some(p => match(base, p))) continue;
+      if (!cap.hide.some(p => match(base, p))) continue;
+      for (const ext of [s.file, `${base}.webp`]) {
+        const p = join(mapDir, 'layers', ext);
+        if (!(await exists(p))) continue;
+        freed += await size(p);
+        await unlink(p);
+        gone++;
+      }
+    }
+  }
+  console.log(`pruned ${gone} hidden sprite file(s), freed ${mb(freed)}`);
+}
+
 // only ever offered for the layer sprites. plates are hand captured screenshots
 // and re-taking them is real work, the sprites are one F5 away
 if (PRUNE) {
