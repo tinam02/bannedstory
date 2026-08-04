@@ -73,26 +73,32 @@ const Stage = () => {
     [map],
   );
 
-  // back.png already has every still sprite baked in, so only the moving ones
-  // need to go over the top
+  // what the plate already contains decides what we have to draw
   //
-  // sorted by wz draw order, obj layer then z, backs first since they are scenery
-  // backs also get the parallax shift MapRender baked into the plate, see
-  // BackPatch.cs. objs are pinned to the map and need nothing
-  const anim = useMemo(() => {
+  // backs are always still in it, so only the moving ones go over the top. they
+  // also get the parallax shift MapRender baked in, see BackPatch.cs
+  //
+  // objects depend on how the plate was captured. with ctrl+3 held off they are
+  // absent and we draw all of them, which is what stops an animated one ghosting
+  // over its own baked still. otherwise only the moving ones
+  //
+  // sorted by wz draw order, obj layer then z, backs first since they're scenery
+  const sprites = useMemo(() => {
     if (!layers) return [];
     const cam = map?.cam;
-    const backs = layers.back.map(s => ({
-      ...s,
-      dx: cam && !scrollsH(s) ? (cam.x * (100 + (s.rx ?? 0))) / 100 : 0,
-      dy: cam && !scrollsV(s) ? (cam.y * (100 + (s.ry ?? 0))) / 100 : 0,
-    }));
-    const objs = layers.obj.map(s => ({ ...s, dx: 0, dy: 0 }));
-    return [...backs, ...objs]
+    const backs = layers.back
       .filter(s => s.frames > 1)
-      .sort(
-        (a, b) => (a.layer ?? -1) - (b.layer ?? -1) || (a.z ?? 0) - (b.z ?? 0),
-      );
+      .map(s => ({
+        ...s,
+        dx: cam && !scrollsH(s) ? (cam.x * (100 + (s.rx ?? 0))) / 100 : 0,
+        dy: cam && !scrollsV(s) ? (cam.y * (100 + (s.ry ?? 0))) / 100 : 0,
+      }));
+    const objs = (
+      map?.objsHidden ? layers.obj : layers.obj.filter(s => s.frames > 1)
+    ).map(s => ({ ...s, dx: 0, dy: 0 }));
+    return [...backs, ...objs].sort(
+      (a, b) => (a.layer ?? -1) - (b.layer ?? -1) || (a.z ?? 0) - (b.z ?? 0),
+    );
   }, [layers, map]);
 
   // Mirrors, so the pointerup handler can save the final value without either going stale in its closure or re-subscribing on every mouse move
@@ -250,7 +256,7 @@ const Stage = () => {
               rect, so subtracting it puts wz coords into plate pixels */}
           {map &&
             layers &&
-            anim.map(s => (
+            sprites.map(s => (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={s.file}

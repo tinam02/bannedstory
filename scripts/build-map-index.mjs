@@ -30,14 +30,20 @@ const exists = async p =>
 
 // optional, hand written, survives re-running the lua dump
 //
-// where MapRender's camera was pointing when the plate was captured, which is
-// what parallax back layers were drawn against
-const readCam = async dir => {
+// how the plate was captured, which the renderer can't work out by looking:
+// where MapRender's camera was pointing, since that is what parallax backs were
+// drawn against, and whether objects were hidden with ctrl+3
+const readCapture = async dir => {
   try {
-    const cam = JSON.parse(await readFile(join(MAPS_DIR, dir, 'camera.json')));
-    return { x: cam.x ?? 0, y: cam.y ?? 0 };
+    const c = JSON.parse(
+      await readFile(join(MAPS_DIR, dir, 'capture.json'), 'utf8'),
+    );
+    return {
+      cam: c.cam ? { x: c.cam.x ?? 0, y: c.cam.y ?? 0 } : null,
+      objsHidden: c.objsHidden === true,
+    };
   } catch {
-    return null;
+    return { cam: null, objsHidden: false };
   }
 };
 
@@ -81,7 +87,7 @@ for (const dir of entries) {
     continue;
   }
   const meta = byId.get(dir.name);
-  const cam = await readCam(dir.name);
+  const cap = await readCapture(dir.name);
   const lay = await readLayers(dir.name);
   maps.push({
     id: dir.name,
@@ -90,13 +96,15 @@ for (const dir of entries) {
     ...pngSize(await readFile(back)),
     front: await exists(join(MAPS_DIR, dir.name, 'front.png')),
     // written by scripts/wz/dump-map-layers.lua, holds the animated sprites
-    layers: lay.animated > 0,
+    // the manifest is also needed when objects come from it rather than the plate
+    layers: lay.animated > 0 || cap.objsHidden,
     // npm run webp converts a whole map at once, so one plate is enough to tell
     webp: await exists(join(MAPS_DIR, dir.name, 'back.webp')),
-    ...(cam ? { cam } : {}),
+    ...(cap.cam ? { cam: cap.cam } : {}),
+    ...(cap.objsHidden ? { objsHidden: true } : {}),
   });
   if (!meta) console.warn(`${dir.name}: no name in maps.json, using the id`);
-  if (lay.parallax && !cam)
+  if (lay.parallax && !cap.cam)
     console.warn(`${dir.name}: animated parallax backs, wants a camera.json`);
 }
 

@@ -71,7 +71,12 @@
     "h": 1557,
     "front": true,
     "layers": true,
-    "webp": true
+    "webp": true,
+    "cam": {
+      "x": 0,
+      "y": 0
+    },
+    "objsHidden": true
   },
   {
     "id": "993165701",

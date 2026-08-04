@@ -89,7 +89,19 @@ end
 -- ox/oy are the sprite rect offset, so the draw position is entry.x + ox
 local function saveSprite(node, dirPath, baseName)
   local gif = Gif.CreateFromNode(node, findNodeFunc)
-  if not gif then return nil end
+
+  -- CreateFromNode walks numbered children, so it only works on a container.
+  -- an obj path is always one, even for a single frame, but a static back path
+  -- points straight at the canvas, so it found no frames and returned nil
+  --
+  -- CreateFrameFromNode takes a bare canvas and still resolves uol and links
+  if not gif then
+    local frame = Gif.CreateFrameFromNode(node, findNodeFunc)
+    if not frame then return nil end
+    gif = Gif()
+    gif.Frames:Add(frame)
+  end
+
   local rect = gif:GetRect()
   if rect.Width < 1 or rect.Height < 1 then return nil end
 
@@ -211,6 +223,11 @@ if backRoot then
             .. '}')
           env:WriteLine('back ' .. entry.Text .. ' -> ' .. base .. ext
             .. ' (' .. string.format('%d', frames) .. 'f)')
+        else
+          -- saveSprite came back empty. used to be silent, which is how 54 of
+          -- these went missing without a word
+          env:WriteLine('EMPTY back ' .. entry.Text .. '  ani=' .. string.format('%d', ani)
+            .. '  ' .. spritePath)
         end
       end
     end
@@ -357,6 +374,29 @@ local function screenMap(MAP_ID)
     num(info, 'VRRight', 0) - num(info, 'VRLeft', 0),
     num(info, 'VRBottom', 0) - num(info, 'VRTop', 0),
     nBack, nBackAni, nSpine, nObj, nObjAni, nCam))
+
+  -- back and obj are only 2 of the 12 things MapData.Load reads, so list what
+  -- else is in here. particle and effect are the ones we currently ignore
+  local kids = {}
+  for c in each_node(mapNode) do table.insert(kids, c.Text) end
+  table.sort(kids)
+  local link = num(info, 'link', 0)
+  env:WriteLine('   nodes: ' .. table.concat(kids, ' ')
+    .. (link ~= 0 and ('   LINK -> ' .. string.format('%d', link)) or ''))
+
+  -- particles are emitters rather than sprite sequences, so print the raw
+  -- fields and we can work out whether they are reproducible at all
+  local particle = child(mapNode, 'particle')
+  if particle then
+    for p in each_node(particle) do
+      local fields = {}
+      for f in each_node(p) do
+        local v = f.Value
+        table.insert(fields, f.Text .. (v ~= nil and ('=' .. tostring(v)) or ''))
+      end
+      env:WriteLine('   particle ' .. p.Text .. ':  ' .. table.concat(fields, '  '))
+    end
+  end
 end
 
 ------------------------------------------------------------

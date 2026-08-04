@@ -29,8 +29,11 @@ export type MapInfo = {
   layers: boolean;
   /** true once npm run webp has converted this map's plates and sprites */
   webp: boolean;
-  /** MapRender's camera centre at capture time, from an optional camera.json */
+  // both from an optional capture.json
+  /** MapRender's camera centre at capture time */
   cam?: { x: number; y: number };
+  /** plate was captured with ctrl+3, so objects come from the manifest instead */
+  objsHidden?: boolean;
 };
 
 type Scene = { bg: string; mapId: string | null };
