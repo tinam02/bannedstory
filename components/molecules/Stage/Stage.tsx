@@ -62,6 +62,17 @@ const Stage = () => {
 
   const layers = useMapLayers(mapId, map?.layers ?? false);
 
+  // layers.json is written by the lua dump and always names the png, so the
+  // extension gets swapped here rather than rewritten on disk. that way
+  // re-running the dump doesn't undo the conversion
+  const asset = useCallback(
+    (file: string) =>
+      map
+        ? `/maps/${map.id}/${map.webp ? file.replace(/\.(apng|png)$/, '.webp') : file}`
+        : '',
+    [map],
+  );
+
   // back.png already has every still sprite baked in, so only the moving ones
   // need to go over the top
   //
@@ -229,7 +240,7 @@ const Stage = () => {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               className={styles.plate}
-              src={`/maps/${map.id}/back.png`}
+              src={asset('back.png')}
               alt=''
               draggable={false}
             />
@@ -244,7 +255,7 @@ const Stage = () => {
               <img
                 key={s.file}
                 className={styles.sprite}
-                src={`/maps/${map.id}/layers/${s.file}`}
+                src={asset(`layers/${s.file}`)}
                 alt=''
                 draggable={false}
                 style={{
@@ -280,7 +291,7 @@ const Stage = () => {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               className={`${styles.plate} ${styles.front}`}
-              src={`/maps/${map.id}/front.png`}
+              src={asset('front.png')}
               alt=''
               draggable={false}
             />

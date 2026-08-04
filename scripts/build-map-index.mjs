@@ -91,6 +91,8 @@ for (const dir of entries) {
     front: await exists(join(MAPS_DIR, dir.name, 'front.png')),
     // written by scripts/wz/dump-map-layers.lua, holds the animated sprites
     layers: lay.animated > 0,
+    // npm run webp converts a whole map at once, so one plate is enough to tell
+    webp: await exists(join(MAPS_DIR, dir.name, 'back.webp')),
     ...(cam ? { cam } : {}),
   });
   if (!meta) console.warn(`${dir.name}: no name in maps.json, using the id`);

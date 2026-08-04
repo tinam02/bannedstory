@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "maps": "node scripts/build-map-index.mjs"
+    "maps": "node scripts/build-map-index.mjs",
+    "webp": "node scripts/webp-maps.mjs"
   },
   "dependencies": {
     "@mantine/core": "^7.13.3",

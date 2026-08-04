@@ -27,6 +27,8 @@ export type MapInfo = {
   h: number;
   front: boolean;
   layers: boolean;
+  /** true once npm run webp has converted this map's plates and sprites */
+  webp: boolean;
   /** MapRender's camera centre at capture time, from an optional camera.json */
   cam?: { x: number; y: number };
 };

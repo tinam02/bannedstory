@@ -6,7 +6,8 @@
     "w": 4840,
     "h": 1284,
     "front": false,
-    "layers": false
+    "layers": false,
+    "webp": true
   },
   {
     "id": "450005000",
@@ -16,6 +17,7 @@
     "h": 880,
     "front": true,
     "layers": true,
+    "webp": true,
     "cam": {
       "x": -1013,
       "y": 0
@@ -28,7 +30,8 @@
     "w": 5830,
     "h": 1172,
     "front": false,
-    "layers": false
+    "layers": false,
+    "webp": true
   },
   {
     "id": "103000007",
@@ -37,7 +40,8 @@
     "w": 1530,
     "h": 780,
     "front": false,
-    "layers": false
+    "layers": false,
+    "webp": true
   },
   {
     "id": "103000002",
@@ -46,7 +50,8 @@
     "w": 800,
     "h": 650,
     "front": false,
-    "layers": false
+    "layers": false,
+    "webp": true
   },
   {
     "id": "103000001",
@@ -55,7 +60,8 @@
     "w": 800,
     "h": 670,
     "front": false,
-    "layers": true
+    "layers": true,
+    "webp": true
   },
   {
     "id": "120000000",
@@ -64,7 +70,8 @@
     "w": 4613,
     "h": 1557,
     "front": true,
-    "layers": true
+    "layers": true,
+    "webp": true
   },
   {
     "id": "993165701",
@@ -73,7 +80,8 @@
     "w": 2274,
     "h": 858,
     "front": true,
-    "layers": false
+    "layers": false,
+    "webp": true
   },
   {
     "id": "402000620",
@@ -82,7 +90,8 @@
     "w": 2679,
     "h": 980,
     "front": true,
-    "layers": false
+    "layers": false,
+    "webp": true
   },
   {
     "id": "993212251",
@@ -91,7 +100,8 @@
     "w": 2020,
     "h": 770,
     "front": false,
-    "layers": true
+    "layers": true,
+    "webp": true
   },
   {
     "id": "993215098",
@@ -100,7 +110,8 @@
     "w": 2230,
     "h": 1167,
     "front": false,
-    "layers": false
+    "layers": false,
+    "webp": true
   },
   {
     "id": "211042000",
@@ -109,6 +120,7 @@
     "w": 3040,
     "h": 590,
     "front": true,
-    "layers": true
+    "layers": true,
+    "webp": true
   }
 ]
