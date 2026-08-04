@@ -8,6 +8,22 @@
     "front": false
   },
   {
+    "id": "450005000",
+    "name": "Grove of the Spirit Tree",
+    "street": "Arcana",
+    "w": 3326,
+    "h": 880,
+    "front": true
+  },
+  {
+    "id": "867111006",
+    "name": "Henesys",
+    "street": "Henesys",
+    "w": 5830,
+    "h": 1172,
+    "front": false
+  },
+  {
     "id": "103000007",
     "name": "Kerning City Night Market",
     "street": "Kerning City",
@@ -30,6 +46,22 @@
     "w": 800,
     "h": 670,
     "front": false
+  },
+  {
+    "id": "993165701",
+    "name": "Railroad Way Station",
+    "street": "Karote",
+    "w": 2274,
+    "h": 858,
+    "front": true
+  },
+  {
+    "id": "402000620",
+    "name": "Refuge Border",
+    "street": "Sandstorm Zone",
+    "w": 2679,
+    "h": 980,
+    "front": true
   },
   {
     "id": "993212251",
