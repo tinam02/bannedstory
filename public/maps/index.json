@@ -55,7 +55,7 @@
     "w": 800,
     "h": 670,
     "front": false,
-    "layers": false
+    "layers": true
   },
   {
     "id": "993165701",
@@ -82,6 +82,15 @@
     "w": 2020,
     "h": 770,
     "front": false,
+    "layers": true
+  },
+  {
+    "id": "993215098",
+    "name": "Somewhere in Ristonia",
+    "street": "Maple Chronicle",
+    "w": 2230,
+    "h": 1167,
+    "front": false,
     "layers": false
   },
   {
@@ -91,6 +100,6 @@
     "w": 3040,
     "h": 590,
     "front": true,
-    "layers": false
+    "layers": true
   }
 ]
