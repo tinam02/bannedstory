@@ -22,6 +22,13 @@ import 'System.Drawing.Imaging'
 local MAP_IDS = {}
 local OUT_ROOT = 'C:\\TINA\\CODE\\bannedstory\\bannedstory\\public\\maps'
 
+-- true reports what each map holds and writes nothing, for deciding which ones
+-- are worth screenshotting before you do the manual work
+--
+-- set both of these back (empty MAP_IDS, SCREEN_ONLY false) to go back to
+-- dumping every map that has plates
+local SCREEN_ONLY = false
+
 ------------------------------------------------------------
 -- node helpers
 
@@ -270,6 +277,89 @@ env:WriteLine('-------- wrote ' .. outDir .. ' --------')
 end
 
 ------------------------------------------------------------
+-- screening
+--
+-- counts what a map holds without exporting anything, so you can pick which
+-- ones are worth the manual screenshotting
+
+-- a still png node has named children like origin and _inlink, an animation has
+-- numbered ones
+local function frameCount(node)
+  if not node then return 0 end
+  local n = 0
+  for c in each_node(node) do
+    if tonumber(c.Text) then n = n + 1 end
+  end
+  if n == 0 then return 1 end
+  return n
+end
+
+local function screenMap(MAP_ID)
+  local mapPath = 'Map/Map/Map' .. MAP_ID:sub(1, 1) .. '/' .. MAP_ID .. '.img'
+  local mapNode = resolve(mapPath)
+  if not mapNode then
+    env:WriteLine(MAP_ID .. '  not found')
+    return
+  end
+
+  local nBack, nBackAni, nSpine, nCam = 0, 0, 0, 0
+  local backRoot = child(mapNode, 'back')
+  if backRoot then
+    for entry in each_node(backRoot) do
+      local bS = str(entry, 'bS', '')
+      if bS ~= '' then
+        nBack = nBack + 1
+        local ani = num(entry, 'ani', 0)
+        if ani == 2 then
+          nSpine = nSpine + 1
+        else
+          local sub = (ani == 1) and 'ani' or 'back'
+          local sprite = resolve('Map/Back/' .. bS .. '.img/' .. sub .. '/'
+            .. string.format('%d', num(entry, 'no', 0)))
+          if frameCount(sprite) > 1 then
+            nBackAni = nBackAni + 1
+            local t = num(entry, 'type', 0)
+            -- same rule the index builder uses, a timer driven or map pinned
+            -- axis does not care where the camera was
+            --
+            -- both axes, they are independent. a type 4 back scrolls on X but
+            -- still takes the camera on Y
+            local camX = t ~= 4 and t ~= 6 and (100 + num(entry, 'rx', 0)) ~= 0
+            local camY = t ~= 5 and t ~= 7 and (100 + num(entry, 'ry', 0)) ~= 0
+            if camX or camY then nCam = nCam + 1 end
+          end
+        end
+      end
+    end
+  end
+
+  local nObj, nObjAni = 0, 0
+  for layer = 0, 7 do
+    local objRoot = child(child(mapNode, string.format('%d', layer)), 'obj')
+    if objRoot then
+      for entry in each_node(objRoot) do
+        local oS = str(entry, 'oS', '')
+        if oS ~= '' then
+          nObj = nObj + 1
+          local sprite = resolve('Map/Obj/' .. oS .. '.img/'
+            .. str(entry, 'l0', '') .. '/' .. str(entry, 'l1', '') .. '/'
+            .. str(entry, 'l2', ''))
+          if frameCount(sprite) > 1 then nObjAni = nObjAni + 1 end
+        end
+      end
+    end
+  end
+
+  local info = child(mapNode, 'info')
+  env:WriteLine(string.format(
+    '%s  %dx%d  back %d (ani %d, spine %d)  obj %d (ani %d)  needsCam %d',
+    MAP_ID,
+    num(info, 'VRRight', 0) - num(info, 'VRLeft', 0),
+    num(info, 'VRBottom', 0) - num(info, 'VRTop', 0),
+    nBack, nBackAni, nSpine, nObj, nObjAni, nCam))
+end
+
+------------------------------------------------------------
 
 -- an empty MAP_IDS means every folder under public/maps, which is exactly the
 -- maps that already have plates
@@ -280,9 +370,14 @@ if #MAP_IDS == 0 then
 end
 
 for _, id in ipairs(MAP_IDS) do
-  env:WriteLine('======== ' .. id .. ' ========')
-  local ok, err = pcall(dumpMap, id)
-  if not ok then env:WriteLine('failed: ' .. tostring(err)) end
+  if SCREEN_ONLY then
+    local ok, err = pcall(screenMap, id)
+    if not ok then env:WriteLine(id .. '  failed: ' .. tostring(err)) end
+  else
+    env:WriteLine('======== ' .. id .. ' ========')
+    local ok, err = pcall(dumpMap, id)
+    if not ok then env:WriteLine('failed: ' .. tostring(err)) end
+  end
 end
 
 env:WriteLine('======== all done ========')

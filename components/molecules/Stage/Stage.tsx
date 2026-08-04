@@ -3,7 +3,7 @@ import useChar from '@/app/context/CharCtx';
 import useScene from '@/app/context/SceneCtx';
 import Char from '@/components/atoms/Char';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import useMapLayers from './useMapLayers';
+import useMapLayers, { scrollsH, scrollsV } from './useMapLayers';
 import styles from './Stage.module.scss';
 
 /**
@@ -73,8 +73,8 @@ const Stage = () => {
     const cam = map?.cam;
     const backs = layers.back.map(s => ({
       ...s,
-      dx: cam ? (cam.x * (100 + (s.rx ?? 0))) / 100 : 0,
-      dy: cam ? (cam.y * (100 + (s.ry ?? 0))) / 100 : 0,
+      dx: cam && !scrollsH(s) ? (cam.x * (100 + (s.rx ?? 0))) / 100 : 0,
+      dy: cam && !scrollsV(s) ? (cam.y * (100 + (s.ry ?? 0))) / 100 : 0,
     }));
     const objs = layers.obj.map(s => ({ ...s, dx: 0, dy: 0 }));
     return [...backs, ...objs]

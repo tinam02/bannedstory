@@ -28,7 +28,15 @@ export type MapSprite = {
   front?: number;
   rx?: number;
   ry?: number;
+  /** 0 none, 1-3 tiling, 4-7 tiling plus an auto scroll */
+  type?: number;
+  cx?: number;
+  cy?: number;
 };
+
+// a scrolling axis is driven by a timer rather than the camera, see BackPatch.cs
+export const scrollsH = (s: MapSprite) => s.type === 4 || s.type === 6;
+export const scrollsV = (s: MapSprite) => s.type === 5 || s.type === 7;
 
 export type MapLayers = {
   id: string;

@@ -51,10 +51,16 @@ const readLayers = async dir => {
     const backs = l.back.filter(s => s.frames > 1);
     return {
       animated: backs.length + l.obj.filter(s => s.frames > 1).length,
-      // a back's shift is camX * (100 + rx) / 100, so rx -100 means pinned to
-      // the map and needs nothing. anything else is drawn against wherever the
-      // camera was and sits wrong until the map has a camera.json
-      parallax: backs.some(s => 100 + (s.rx ?? -100) !== 0),
+      // a back needs calibrating if either axis is driven by the camera. an
+      // axis is off the hook when it scrolls on a timer (4 and 6 horizontally,
+      // 5 and 7 vertically) or when the rate is -100, which zeroes the shift
+      //
+      // the axes are independent, a type 4 back still takes the camera on Y
+      parallax: backs.some(
+        s =>
+          (s.type !== 4 && s.type !== 6 && 100 + (s.rx ?? -100) !== 0) ||
+          (s.type !== 5 && s.type !== 7 && 100 + (s.ry ?? -100) !== 0),
+      ),
     };
   } catch {
     return { animated: 0, parallax: false };

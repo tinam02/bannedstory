@@ -58,6 +58,15 @@
     "layers": true
   },
   {
+    "id": "120000000",
+    "name": "Nautilus Harbor",
+    "street": "Nautilus",
+    "w": 4613,
+    "h": 1557,
+    "front": true,
+    "layers": true
+  },
+  {
     "id": "993165701",
     "name": "Railroad Way Station",
     "street": "Karote",
