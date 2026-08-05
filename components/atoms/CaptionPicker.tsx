@@ -76,7 +76,7 @@ const CaptionPanel = ({
         className={styles.search}
         value={query}
         placeholder={
-          sprites ? `Search ${all.length} styles by name or id` : 'Loading...'
+          sprites ? `Search` : 'Loading...'
         }
         onChange={e => setQuery(e.target.value)}
       />
