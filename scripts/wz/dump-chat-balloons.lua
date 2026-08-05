@@ -4,11 +4,11 @@
 -- (opening Base.wz pulls in its sibling wz files, so UI.wz comes along)
 --
 -- a balloon is a 9-slice, nw/n/ne over w/c/e over sw/s/se, plus an arrow tail.
--- n is the same width as c and w is the same height as c, so c is the tile unit
--- and the box grows to fit whatever the user types
+-- n is as wide as c and w is as tall as c, so c is the tile unit and the box
+-- grows around whatever the user types
 --
--- rather than 4600 tiny piece files, each style becomes one strip png with the
--- piece rects in the manifest. animated styles get one row per frame
+-- each style becomes one strip png with the piece rects in the manifest, rather
+-- than 4600 tiny files. animated styles get one row per frame
 
 import 'WzComparerR2.PluginBase'
 import 'WzComparerR2.WzLib'
@@ -35,12 +35,13 @@ local SETS = {
     path = 'UI/ChatBalloon.img',
     name = 'balloons',
     -- head is a topper some of the newer styles have. its width tracks arrow
-    -- rather than c, so it is not a tiling strip like n is. dumped so we can
-    -- look at it, not yet drawn
+    -- rather than c, so it isn't a tiling strip like n is. dumped to look at,
+    -- not yet drawn
     pieces = { 'nw', 'n', 'ne', 'w', 'c', 'e', 'sw', 's', 'se', 'arrow', 'head' },
-    -- the named entries that are still character balloons. the rest of the
-    -- named ones (miniroom, messenger, popupSay, medal, nick, pet) are other
-    -- UI entirely and would come out as nonsense
+    -- the named entries that are still character balloons
+    --
+    -- the rest of the named ones (miniroom, messenger, popupSay, medal, nick,
+    -- pet) are other UI entirely and would come out as nonsense
     extra = { dead = true, npc = true, tutorial = true },
   },
   {
@@ -91,9 +92,9 @@ local function findNodeFunc(path)
   return PluginManager.FindWz(path)
 end
 
--- every balloon piece is a bare canvas, so CreateFromNode finds no numbered
--- children and returns nil. CreateFrameFromNode is the path that actually runs,
--- the same trap that silently ate 54 static map backs
+-- every piece is a bare canvas, so CreateFromNode finds no numbered children and
+-- returns nil. CreateFrameFromNode is the path that actually runs, same trap
+-- that silently ate 54 static map backs
 local function toGif(node)
   local gif = Gif.CreateFromNode(node, findNodeFunc)
   if not gif then
@@ -120,8 +121,8 @@ local function ki(k, v) return kv(k, string.format('%d', v)) end
 local function ks(k, v) return kv(k, q(v)) end
 
 ------------------------------------------------------------
--- a style is one balloon design. static ones hold the pieces directly, animated
--- ones hold a contiguous run of numbered children that are each a full set
+-- a style is one design. static ones hold the pieces directly, animated ones
+-- hold a run of numbered children that are each a full set
 
 local function frameNodesOf(styleNode)
   -- pieces sitting directly on the style means a single frame
@@ -145,7 +146,7 @@ end
 -- lays every piece of every frame into one bitmap, a row per frame, and returns
 -- the manifest entry for it
 local function packStyle(styleNode, frameNodes, pieceNames, outDir, baseName)
-  -- measure first so we know how big the strip has to be
+  -- measure first, the strip size isn't known until everything is sized
   local rows = {}
   local stripW, stripH = 0, 0
 
@@ -183,8 +184,8 @@ local function packStyle(styleNode, frameNodes, pieceNames, outDir, baseName)
   for _, row in ipairs(rows) do
     for _, p in ipairs(row.pieces) do
       g:TranslateTransform(p.x, row.y)
-      -- a piece is a single canvas so there is only ever one frame here, but
-      -- iterate rather than index, indexing a .NET list from lua is not a
+      -- a piece is a single canvas so there's only ever one frame here. still
+      -- iterate rather than index, indexing a .NET list from lua isn't a
       -- binding the map script ever leaned on
       for _, frame in each(p.gif.Frames) do
         t_IGifFrame.Draw(frame, g, p.rect)
@@ -196,9 +197,9 @@ local function packStyle(styleNode, frameNodes, pieceNames, outDir, baseName)
   bmp:Save(Path.Combine(outDir, baseName .. '.png'), ImageFormat.Png)
   bmp:Dispose()
 
-  -- manifest. ox/oy is the sprite origin offset, which is what says where the
-  -- piece sits relative to the content box. nw is @-6,-6 so it hangs off the
-  -- top left corner, c is @0,0 so it fills the box
+  -- manifest. ox/oy is the origin offset, which says where the piece sits
+  -- relative to the content box. nw is @-6,-6 so it hangs off the top left
+  -- corner, c is @0,0 so it fills
   local frameJson = {}
   for _, row in ipairs(rows) do
     local parts = {}
@@ -212,7 +213,7 @@ local function packStyle(styleNode, frameNodes, pieceNames, outDir, baseName)
     table.insert(frameJson, '{' .. table.concat(parts, ',') .. '}')
   end
 
-  -- clr is the text colour the balloon was designed for, so it travels with it
+  -- clr is the text colour the style was drawn for, so it travels with it
   local clrNode = child(styleNode, 'clr')
   local clr = clrNode and clrNode.Value ~= nil and tonumber(tostring(clrNode.Value)) or nil
 

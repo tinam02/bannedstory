@@ -64,8 +64,7 @@
   touch-action: none;
 }
 
-// Centred on the character, one above and one below. A caption's own border box
-// is the whole drawn thing, tail included, so these only have to place a corner.
+// Centred on the character, one above and one below. A caption's border box is the whole drawn thing, tail included, so these only place a corner
 .speechSlot,
 .nametagSlot {
   position: absolute;

@@ -33,7 +33,7 @@ const clamp = (v: number, lo: number, hi: number) =>
 const Stage = () => {
   const { zoom } = useChar();
   const { bg, mapId, maps, speech, setSpeech, nametag, setNametag } = useScene();
-  // only fetched when something actually wants one, both are off by default
+  // both off by default, so nothing gets fetched until one is asked for
   const balloons = useUiSprites(speech.on ? 'balloons' : null);
   const nametags = useUiSprites(nametag.on ? 'nametags' : null);
   const sceneRef = useRef<HTMLDivElement>(null);
@@ -307,9 +307,9 @@ const Stage = () => {
                 grab.current = { dx: p.x - pos.x, dy: p.y - pos.y };
               }}
             >
-              {/* above the sprite whatever height it happens to be. both
-                  captions swallow their own pointerdown, or typing in one would
-                  drag the character out from under it */}
+              {/* above the sprite whatever height it is. both captions swallow
+                  their own pointerdown, or typing in one would drag the
+                  character out from under it */}
               {speech.on && balloons?.styles[speech.style] && (
                 <div className={styles.speechSlot}>
                   <Caption

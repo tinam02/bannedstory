@@ -1,13 +1,13 @@
 import { SpriteFrame } from './useUiSprites';
 
-// Geometry and painting for a wz caption, shared by the live one on the stage
-// and the little previews in the picker.
+// where every piece of a wz caption goes, and how to paint it. shared by the
+// live one on the stage and the previews in the picker
 //
-// Each piece is anchored to a different corner of the content box, which is why
-// this can't be a css border-image grid. The left column sits at x 0 and the
-// right at x W, the top row at y 0 and the bottom at y H, and n/s/w/e/c tile
-// across the span between. So `s` having oy 0 doesn't mean "at the top", it
-// means "at H, unshifted".
+// each piece is anchored to a different corner of the content box, which is why
+// this can't be a css border-image grid. left column at x 0, right at x W, top
+// row at y 0, bottom at y H, and n/s/w/e/c tile across the span between
+//
+// so `s` having oy 0 doesn't mean "at the top", it means "at H, unshifted"
 
 export type Placed = {
   /** where in the strip */
@@ -57,21 +57,18 @@ const placeNine = (f: SpriteFrame, W: number, H: number) => {
   }
 
   // head is a topper about a third of the styles carry. its width tracks arrow
-  // rather than c, so it is not a tiling strip like n is, and on the styles
-  // where it happens to match c we can't tell which it means. left undrawn
-  // until we've looked at a few
+  // rather than c, so it isn't a tiling strip like n is, and where it matches c
+  // we can't tell which it means. left undrawn until we've looked at a few
 
   return out;
 };
 
-/**
- * The name tag, one row that only stretches sideways.
- *
- * Nothing tiles vertically here, so the content box *is* `c`'s own rect and the
- * caps hang off it. Their `oy` is measured from the same anchor as `c`'s, so the
- * offset between the two is what makes a decorated cap stick up above the plate
- * (style 40 has `c` at -3 and `w` at -12, so the cap clears it by 9).
- */
+// the name tag, one row that only stretches sideways
+//
+// nothing tiles vertically, so the content box is c's own rect and the caps
+// hang off it. w and e measure oy from the same anchor c does, so the gap
+// between them is what lifts a decorated cap above the plate. style 40 has c at
+// -3 and w at -12, so its cap clears by 9
 const placeThree = (f: SpriteFrame, W: number) => {
   const out: Placed[] = [];
   const base = f.c?.oy ?? 0;
@@ -88,13 +85,11 @@ export const placePieces = (
   H: number,
 ) => (kind === 'balloon' ? placeNine(f, W, H) : placeThree(f, W));
 
-/**
- * The line box the style was drawn around, which is `c` either way.
- *
- * A balloon tiles `c` vertically, so one line of text is exactly one tile tall
- * and the tiling comes out seamless. A tag doesn't tile vertically at all, so
- * one `c` is the whole plate and the text centres in it.
- */
+// the line box the style was drawn around, which is c either way
+//
+// a balloon tiles c vertically, so one line of text is one tile tall and the
+// tiling lands seamless. a tag doesn't tile vertically at all, so one c is the
+// whole plate and the text centres in it
 export const lineBox = (f: SpriteFrame | undefined) => f?.c?.h ?? 14;
 
 /** the full drawn rect, which is always at least the content box */
@@ -112,13 +107,11 @@ export const boundsOf = (placed: Placed[], W: number, H: number) => {
   return { l, t, r, b };
 };
 
-/**
- * Paints onto a canvas whose top left is (l, t) in content box coordinates.
- *
- * Canvas rather than css because a spritesheet can't tile a sub-rect,
- * background-repeat repeats the whole sheet, so n/s/w/e/c would smear their
- * neighbours into view.
- */
+// paints onto a canvas whose top left is (l, t) in content box coords
+//
+// canvas and not css because a spritesheet can't tile a sub-rect,
+// background-repeat repeats the whole sheet, so n/s/w/e/c would smear their
+// neighbours into view
 export const paint = (
   ctx: CanvasRenderingContext2D,
   img: CanvasImageSource,

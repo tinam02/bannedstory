@@ -4,12 +4,9 @@ import { boundsOf, CaptionKind, lineBox, paint, placePieces } from './captionDra
 import { SpriteStyle, spriteUrl, UiSetName, useStripImage } from './useUiSprites';
 
 /**
- * One style's frame at a fixed sample width, for the picker grid.
+ * One style's frame at a fixed width, for the picker grid.
  *
- * Deliberately not the real Caption: there are ~450 of these and none of them
- * need text measuring, a resize observer or an editable node. It also holds off
- * loading its strip png until it scrolls into view, so opening the picker
- * fetches the dozen you can see rather than all 450.
+ * Not the real Caption. There are ~450 of these and none need text measuring,a resize observer or an editable node
  */
 const CaptionPreview = ({
   set,
@@ -27,6 +24,8 @@ const CaptionPreview = ({
   const [seen, setSeen] = useState(false);
   const img = useStripImage(seen ? spriteUrl(set, style.file) : null);
 
+  // holds off loading the strip png until the tile scrolls into view, so opening
+  // the picker fetches the dozen you can see and not all 450
   useEffect(() => {
     const el = canvasRef.current;
     if (!el || seen) return;
@@ -42,7 +41,7 @@ const CaptionPreview = ({
 
   const height = lineBox(style.frames[0]);
 
-  // always the first frame, an animated preview grid would be a lot of timers
+  // always frame 0, an animated grid would be 450 timers
   const { placed, bb } = useMemo(() => {
     const f = style.frames[0];
     const p = f ? placePieces(kind, f, width, height) : [];

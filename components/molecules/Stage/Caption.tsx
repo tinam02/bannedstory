@@ -17,14 +17,13 @@ import {
 import styles from './Caption.module.scss';
 
 /**
- * A UI.wz chat balloon or name tag with the text typed straight into it.
+ * A UI.wz chat balloon or name tag, typed straight into.
  *
- * The text element *is* the content box, so its measured size is what every
- * piece position is derived from. Same as the game: the frame has no size of
- * its own, it grows around whatever was said.
+ * The text element is the content box, so what it measures is where every
+ * piece goes. Same as the game, the frame has no size of its own
  */
 
-/** how fast the 8 animated balloons cycle. wz carries no delay for these */
+/** wz carries no delay for these, so it's a guess that reads about right */
 const FRAME_MS = 120;
 
 const Caption = ({
@@ -45,7 +44,7 @@ const Caption = ({
   text: string;
   /** left off for the picker previews, which aren't editable */
   onChange?: (next: string) => void;
-  /** stands in when the text is empty, and sizes the box so it isn't a sliver */
+  /** stands in while the text is empty, and sizes the box with it */
   placeholder?: string;
   /** where the text starts wrapping, in map pixels. a tag never wraps */
   maxWidth?: number;
@@ -69,8 +68,7 @@ const Caption = ({
 
   const height = lineBox(style.frames[0]);
 
-  // the sizer holds the text, so it decides the content box and everything else
-  // follows from it
+  // the sizer holds the text, so it sets the content box and the rest follows
   useLayoutEffect(() => {
     const el = sizerRef.current;
     if (!el) return;
@@ -83,8 +81,8 @@ const Caption = ({
   }, []);
 
   const placed = useMemo(() => {
-    // resolved in here rather than outside, an empty fallback object would be a
-    // new identity every render and the memo would never hold
+    // picked in here, not outside. an empty fallback object would be a new
+    // identity every render and the memo would never hold
     const f = style.frames[Math.min(frame, frames - 1)];
     return f && box.w > 0 ? placePieces(kind, f, box.w, box.h) : [];
   }, [kind, style, frame, frames, box.w, box.h]);
@@ -100,8 +98,9 @@ const Caption = ({
     paint(ctx, img, placed, bb.l, bb.t);
   }, [img, placed, bb.l, bb.t]);
 
-  // react must not own the text node or it fights the caret on every keystroke,
-  // so it stays out of the jsx and is only written back in when something other
+  // react must not own the text node or it fights the caret on every keystroke
+  //
+  // so it stays out of the jsx, and only gets written back when something other
   // than typing changed it
   useEffect(() => {
     const el = sizerRef.current;
@@ -117,8 +116,8 @@ const Caption = ({
       data-kind={kind}
       data-style={styleId}
       style={{
-        // the frame overhangs the content box on every side, so the padding is
-        // that overhang and the border box ends up the whole drawn caption
+        // the frame overhangs the content box on every side. padding it by that
+        // overhang makes the border box the whole drawn caption
         paddingLeft: -bb.l,
         paddingTop: -bb.t,
         paddingRight: bb.r - box.w,
@@ -143,8 +142,8 @@ const Caption = ({
             color: spriteColor(style.clr),
             lineHeight: `${height}px`,
             maxWidth: kind === 'tag' ? undefined : maxWidth,
-            // drawn by css rather than as a sibling node, so it measures as part
-            // of the box. an empty caption would otherwise collapse to a sliver
+            // css rather than a sibling node, so it measures as part of the
+            // box. an empty caption would collapse to a sliver otherwise
             '--placeholder': JSON.stringify(placeholder ?? '...'),
           } as CSSProperties
         }
@@ -154,8 +153,7 @@ const Caption = ({
         onInput={
           editable ? e => onChange(e.currentTarget.textContent ?? '') : undefined
         }
-        // enter would insert a div, and growing on a paste of formatted html is
-        // worse than only ever holding plain text
+        // enter would insert a div, and pasted html would come in with its own formatting. plain text only
         onKeyDown={
           editable
             ? e => {

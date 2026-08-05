@@ -40,11 +40,10 @@ export type MapInfo = {
 };
 
 /**
- * A speech balloon or a name tag. Both are a UI.wz frame drawn around typed
- * text, so they carry the same three fields.
+ * A speech balloon or a name tag.
  *
- * Off by default. Most people are here to dress a character up, and a caption
- * nobody asked for sitting over the sprite is in the way.
+ * Both are a UI.wz frame drawn around typed text, so same three fields. Off
+ * until asked for, a caption over the sprite is in the way otherwise
  */
 export type Caption = {
   on: boolean;
@@ -63,7 +62,7 @@ type Scene = {
 type SceneApi = Scene & {
   setBg: (bg: string) => void;
   setMapId: (id: string | null) => void;
-  /** merges a partial, so a caller can flip `on` without restating the text */
+  /** merges a partial, so flipping `on` doesn't mean restating the text */
   setSpeech: (patch: Partial<Caption>) => void;
   setNametag: (patch: Partial<Caption>) => void;
   /** every map with plates on disk, name-sorted */
@@ -72,8 +71,9 @@ type SceneApi = Scene & {
   hydrated: boolean;
 };
 
-// balloon 0 is the plain white one every version of the game has had. name tags
-// don't start until 3, and that one is the plain grey plate
+// balloon 0 is the plain one
+//
+// name tags don't start until 3, which is the plain grey plate
 const DEFAULT_SPEECH: Caption = { on: false, text: '', style: '0' };
 const DEFAULT_NAMETAG: Caption = { on: false, text: '', style: '3' };
 
@@ -109,7 +109,7 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
       const raw = localStorage.getItem(KEY);
       const saved = raw ? (JSON.parse(raw) as Partial<Scene>) : null;
       if (typeof saved?.bg === 'string') setBgState(saved.bg);
-      // spread onto the default so a key added later doesn't come back undefined
+      // spread onto the default, or a key added later comes back undefined
       if (saved?.speech) setSpeechState({ ...DEFAULT_SPEECH, ...saved.speech });
       if (saved?.nametag)
         setNametagState({ ...DEFAULT_NAMETAG, ...saved.nametag });
@@ -165,8 +165,7 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
     [save],
   );
 
-  // patched off the previous value rather than the closed-over one, so two
-  // updates in the same tick can't drop each other
+  // patched off the previous value, not the closed-over one, or two updates in the same tick would drop each other
   const setSpeech = useCallback(
     (patch: Partial<Caption>) =>
       setSpeechState(prev => {

@@ -3,9 +3,8 @@ import { useEffect, useState } from 'react';
 
 // reads the manifests that scripts/wz/dump-chat-balloons.lua writes
 //
-// a chat balloon is a 9-slice out of UI.wz. n is the same width as c and w is
-// the same height as c, so c is the tile unit and the box grows to fit whatever
-// gets typed, which is what the game does with chat
+// a chat balloon is a 9-slice out of UI.wz. n is as wide as c and w is as tall
+// as c, so c is the tile unit and the box grows around whatever gets typed
 //
 // a name tag is the same idea with only w/c/e, so it stretches sideways and
 // keeps its own height
@@ -18,9 +17,8 @@ export type SpritePiece = {
   y: number;
   w: number;
   h: number;
-  // ox/oy is the origin offset, which is what says where the piece sits
-  // relative to the content box. nw is -6,-6 so it hangs off the top left
-  // corner, c is 0,0 so it fills the box
+  // the origin offset, which says where the piece sits relative to the content
+  // box. nw is -6,-6 so it hangs off the top left corner, c is 0,0 so it fills
   ox: number;
   oy: number;
 };
@@ -66,13 +64,10 @@ export const spriteColor = (clr: number | null) => {
 
 export const spriteUrl = (set: UiSetName, file: string) => `/ui/${set}/${file}`;
 
-/**
- * Loads a style's strip png.
- *
- * Held as an element rather than drawn straight from a url because canvas needs
- * something already decoded, and both the live caption and every preview tile
- * redraw far more often than they change image.
- */
+// loads a style's strip png
+//
+// kept as an element because canvas needs something already decoded, and both
+// the live caption and every preview redraw far more often than they swap image
 export const useStripImage = (url: string | null) => {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
 
@@ -109,7 +104,7 @@ const useUiSprites = (set: UiSetName | null) => {
         if (!stale) setData(body);
       })
       .catch(() => {
-        // no manifest just means no captions, the rest of the stage is fine
+        // no manifest just means no captions, the stage is fine without them
       });
     return () => {
       stale = true;

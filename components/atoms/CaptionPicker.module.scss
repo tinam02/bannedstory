@@ -77,8 +77,8 @@
 }
 
 .input {
-  // a flex item won't shrink below its content without this, and the toggle
-  // would get pushed out of the row by a long name
+  // a flex item won't shrink below its content without this, so a long name
+  // would shove the toggle out of the row
   min-width: 0;
   flex: 1;
   border: 0;
@@ -100,8 +100,8 @@
   }
 }
 
-// Fixed cells rather than packed ones: the styles range from 18px wide to well
-// over 100, and a ragged grid is much harder to scan than a clipped one.
+// Fixed cells, not packed ones. The styles run from 18px wide to well over 100,
+// and a ragged grid is harder to scan than a clipped one.
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));

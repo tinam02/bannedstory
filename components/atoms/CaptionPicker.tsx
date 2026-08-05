@@ -12,8 +12,7 @@ import styles from './CaptionPicker.module.scss';
 /**
  * Speech balloons and name tags, behind one toolbar button.
  *
- * Kept out of the main toolbar row on purpose: most people are here to dress a
- * character up, and this is a side room for the ones who aren't.
+ * Tucked behind a button rather than sat in the toolbar bc its less important
  */
 
 const TABS: {
@@ -41,7 +40,7 @@ const CaptionPanel = ({
   value: Caption;
   onChange: (patch: Partial<Caption>) => void;
 }) => {
-  // only mounted once its tab is open, so the manifest isn't fetched until then
+  // only mounted while its tab is open, so the manifest waits until then
   const sprites = useUiSprites(set);
   const entries = sprites ? Object.entries(sprites.styles) : [];
 
@@ -59,8 +58,6 @@ const CaptionPanel = ({
           className={styles.input}
           value={value.text}
           placeholder={placeholder}
-          // turning it on the moment there's something to show saves a click,
-          // and typing here is unambiguous about wanting to see it
           onChange={e => onChange({ text: e.target.value, on: true })}
         />
       </div>
@@ -71,8 +68,6 @@ const CaptionPanel = ({
             key={id}
             className={styles.cell}
             data-active={id === value.style ? '' : undefined}
-            // the wz id, on the element rather than only in the tooltip, so it
-            // reads straight off the dom when inspecting
             data-style={id}
             title={`${label} ${id}`}
             onClick={() => onChange({ style: id, on: true })}
@@ -109,8 +104,7 @@ const CaptionPicker = () => {
       <Popover.Target>
         <button
           className={toolbar.btn}
-          // lit while either one is on, so it's obvious where a caption on the
-          // stage came from without opening the panel
+          // lit while either is on, so a caption on the stage is traceable back here without opening the panel
           data-active={speech.on || nametag.on ? '' : undefined}
           onClick={toggle}
           aria-label='Speech balloon and name tag'
@@ -132,8 +126,8 @@ const CaptionPicker = () => {
           ))}
         </div>
 
-        {/* keyed so switching tabs remounts, rather than one panel trying to
-            reuse the other's scroll position and lazily loaded previews */}
+        {/* keyed so switching tabs remounts, or one panel would inherit the
+            other's scroll position and already loaded previews */}
         <CaptionPanel
           key={active.key}
           kind={active.key}
