@@ -115,7 +115,15 @@ export const minBox = (kind: CaptionKind, f: SpriteFrame | undefined) => {
 // a balloon tiles c vertically, so one line of text is one tile tall and the
 // tiling lands seamless. a tag doesn't tile vertically at all, so one c is the
 // whole plate and the text centres in it
-export const lineBox = (f: SpriteFrame | undefined) => f?.c?.h ?? 14;
+//
+// 0 means the style has no line box of its own and the font should pick. only
+// tutorial, whose c is 1x1 because it stretches smoothly instead of tiling.
+// taking that literally gives line-height 1px and the text falls out of a
+// balloon squashed to a sliver
+export const lineBox = (f: SpriteFrame | undefined) => {
+  const h = f?.c?.h ?? 14;
+  return h < 12 ? 0 : h;
+};
 
 /** the full drawn rect, which is always at least the content box */
 export const boundsOf = (placed: Placed[], W: number, H: number) => {

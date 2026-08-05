@@ -76,6 +76,11 @@
   }
 }
 
+.search {
+  @extend .input;
+  width: 100%;
+}
+
 .input {
   // a flex item won't shrink below its content without this, so a long name
   // would shove the toggle out of the row

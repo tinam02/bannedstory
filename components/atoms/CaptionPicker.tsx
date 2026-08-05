@@ -1,7 +1,10 @@
 'use client';
 import useScene, { Caption } from '@/app/context/SceneCtx';
 import CaptionPreview from '@/components/molecules/Stage/CaptionPreview';
-import useUiSprites, { UiSetName } from '@/components/molecules/Stage/useUiSprites';
+import useUiSprites, {
+  useCaptionNames,
+  UiSetName,
+} from '@/components/molecules/Stage/useUiSprites';
 import { CaptionKind } from '@/components/molecules/Stage/captionDraw';
 import toolbar from '@/components/molecules/Toolbar/Toolbar.module.scss';
 import { Popover } from '@mantine/core';
@@ -42,7 +45,14 @@ const CaptionPanel = ({
 }) => {
   // only mounted while its tab is open, so the manifest waits until then
   const sprites = useUiSprites(set);
-  const entries = sprites ? Object.entries(sprites.styles) : [];
+  const names = useCaptionNames(set);
+  const [query, setQuery] = useState('');
+
+  const all = sprites ? Object.entries(sprites.styles) : [];
+  const q = query.trim().toLowerCase();
+  const entries = q
+    ? all.filter(([id]) => id.includes(q) || names[id]?.toLowerCase().includes(q))
+    : all;
 
   return (
     <>
@@ -62,6 +72,15 @@ const CaptionPanel = ({
         />
       </div>
 
+      <input
+        className={styles.search}
+        value={query}
+        placeholder={
+          sprites ? `Search ${all.length} styles by name or id` : 'Loading...'
+        }
+        onChange={e => setQuery(e.target.value)}
+      />
+
       <div className={styles.grid}>
         {entries.map(([id, style]) => (
           <button
@@ -69,17 +88,23 @@ const CaptionPanel = ({
             className={styles.cell}
             data-active={id === value.style ? '' : undefined}
             data-style={id}
-            title={`${label} ${id}`}
+            // the styles carry no names of their own, these come from the ring
+            // that grants them, so plenty have none
+            title={names[id] ? `${names[id]}  (${id})` : `${label} ${id}`}
             onClick={() => onChange({ style: id, on: true })}
           >
             <CaptionPreview set={set} kind={kind} style={style} />
           </button>
         ))}
 
-        {sprites && entries.length === 0 && (
+        {sprites && all.length === 0 && (
           <div className={styles.empty}>
             Nothing in public/ui/{set}. Run the lua dump in scripts/wz.
           </div>
+        )}
+
+        {sprites && all.length > 0 && entries.length === 0 && (
+          <div className={styles.empty}>No style matches “{query}”.</div>
         )}
       </div>
     </>

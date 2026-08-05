@@ -144,7 +144,8 @@ const Caption = ({
         style={
           {
             color: spriteColor(style.clr),
-            lineHeight: `${height}px`,
+            // 0 means the style carries no line box, so let the font pick one
+            lineHeight: height ? `${height}px` : undefined,
             maxWidth: kind === 'tag' ? undefined : maxWidth,
             // css rather than a sibling node, so it measures as part of the
             // box. an empty caption would collapse to a sliver otherwise

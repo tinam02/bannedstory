@@ -39,7 +39,9 @@ const CaptionPreview = ({
     return () => io.disconnect();
   }, [seen]);
 
-  const height = lineBox(style.frames[0]);
+  // a preview has no real text, so a style with no line box of its own still
+  // needs some height to draw around
+  const height = lineBox(style.frames[0]) || 14;
 
   // always frame 0, an animated grid would be 450 timers
   const { placed, bb } = useMemo(() => {

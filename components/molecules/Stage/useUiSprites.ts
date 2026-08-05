@@ -88,6 +88,36 @@ export const useStripImage = (url: string | null) => {
   return img;
 };
 
+/**
+ * style id -> item name, written by scripts/wz/dump-caption-names.lua
+ *
+ * the styles have no names of their own. these come from the ring that grants
+ * them, item 1115000 + the style id. only the picker wants them, the stage
+ * draws fine without
+ */
+export const useCaptionNames = (set: UiSetName | null) => {
+  const [names, setNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setNames({});
+    if (!set) return;
+    let stale = false;
+    fetch(`/ui/${set}/names.json`)
+      .then(r => (r.ok ? r.json() : {}))
+      .then((body: Record<string, string>) => {
+        if (!stale) setNames(body ?? {});
+      })
+      .catch(() => {
+        // no names file just means the picker falls back to numbers
+      });
+    return () => {
+      stale = true;
+    };
+  }, [set]);
+
+  return names;
+};
+
 /** null means nothing wants this set yet, so don't go and fetch it */
 const useUiSprites = (set: UiSetName | null) => {
   const [data, setData] = useState<SpriteSet | null>(null);
