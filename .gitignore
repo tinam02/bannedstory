@@ -11,6 +11,8 @@
 
 # next.js
 /.next/
+# where NEXT_DIST_DIR sends a verification build
+/.next-check/
 /out/
 
 # production
