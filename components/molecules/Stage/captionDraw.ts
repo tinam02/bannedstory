@@ -1,4 +1,4 @@
-import { SpriteFrame } from './useUiSprites';
+import { PieceName, SpriteFrame, SpritePiece } from './useUiSprites';
 
 // where every piece of a wz caption goes, and how to paint it. shared by the
 // live one on the stage and the previews in the picker
@@ -84,6 +84,24 @@ export const placePieces = (
   W: number,
   H: number,
 ) => (kind === 'balloon' ? placeNine(f, W, H) : placeThree(f, W));
+
+// the shortest content box a style's art will sit right in
+//
+// n isn't always just a border. style 5's is 7px of yellow edge and then 24px of
+// the dark interior fill, so a one line box puts s over the top of n's own fill
+// and the balloon comes out squashed
+//
+// only style 5 of the 450 needs this, the rest are flush and come back 0
+export const minBox = (kind: CaptionKind, f: SpriteFrame | undefined) => {
+  if (!f || kind !== 'balloon') return 0;
+  const reach = (keys: PieceName[], of: (p: SpritePiece) => number) =>
+    Math.max(0, ...keys.map(k => (f[k] ? of(f[k] as SpritePiece) : 0)));
+  // how far the top row hangs below the box top, plus how far the bottom row
+  // reaches back up above the box bottom
+  return (
+    reach(['n', 'nw', 'ne'], p => p.oy + p.h) + reach(['s', 'sw', 'se'], p => -p.oy)
+  );
+};
 
 // the line box the style was drawn around, which is c either way
 //

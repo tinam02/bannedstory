@@ -4,6 +4,7 @@ import {
   boundsOf,
   CaptionKind,
   lineBox,
+  minBox,
   paint,
   placePieces,
 } from './captionDraw';
@@ -80,17 +81,20 @@ const Caption = ({
     return () => ro.disconnect();
   }, []);
 
+  // a style whose art needs more room than the text gets the difference as
+  // padding, split top and bottom, so the text ends up centred in the frame
+  const boxH = Math.max(box.h, minBox(kind, style.frames[0]));
+  const slack = boxH - box.h;
+  const above = Math.floor(slack / 2);
+
   const placed = useMemo(() => {
     // picked in here, not outside. an empty fallback object would be a new
     // identity every render and the memo would never hold
     const f = style.frames[Math.min(frame, frames - 1)];
-    return f && box.w > 0 ? placePieces(kind, f, box.w, box.h) : [];
-  }, [kind, style, frame, frames, box.w, box.h]);
+    return f && box.w > 0 ? placePieces(kind, f, box.w, boxH) : [];
+  }, [kind, style, frame, frames, box.w, boxH]);
 
-  const bb = useMemo(
-    () => boundsOf(placed, box.w, box.h),
-    [placed, box.w, box.h],
-  );
+  const bb = useMemo(() => boundsOf(placed, box.w, boxH), [placed, box.w, boxH]);
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d');
@@ -119,9 +123,9 @@ const Caption = ({
         // the frame overhangs the content box on every side. padding it by that
         // overhang makes the border box the whole drawn caption
         paddingLeft: -bb.l,
-        paddingTop: -bb.t,
+        paddingTop: -bb.t + above,
         paddingRight: bb.r - box.w,
-        paddingBottom: bb.b - box.h,
+        paddingBottom: bb.b - boxH + (slack - above),
       }}
       // or the map underneath starts panning and the caret never lands
       onPointerDown={editable ? e => e.stopPropagation() : undefined}
