@@ -20,6 +20,8 @@ export type Placed = {
   y: number;
   w: number;
   h: number;
+  /** clear what's underneath first, see paint */
+  cut?: boolean;
 };
 
 export type CaptionKind = 'balloon' | 'tag';
@@ -31,9 +33,10 @@ const push = (
   y: number,
   w: number,
   h: number,
+  cut = false,
 ) => {
   if (!p || w < 1 || h < 1) return;
-  out.push({ sx: p.x, sy: p.y, sw: p.w, sh: p.h, x, y, w, h });
+  out.push({ sx: p.x, sy: p.y, sw: p.w, sh: p.h, x, y, w, h, cut });
 };
 
 /** the chat balloon, nine pieces plus a tail */
@@ -52,8 +55,12 @@ const placeNine = (f: SpriteFrame, W: number, H: number) => {
 
   // the tail. wz anchors it at the character rather than at the balloon, so
   // there is no offset in the data that centres it. centring is ours
+  //
+  // cut because it stands in for the bottom border across its width rather than
+  // sitting on top of it, see paint
   if (f.arrow) {
-    push(out, f.arrow, Math.round((W - f.arrow.w) / 2), H + f.arrow.oy, f.arrow.w, f.arrow.h);
+    const a = f.arrow;
+    push(out, a, Math.round((W - a.w) / 2), H + a.oy, a.w, a.h, true);
   }
 
   // head is a topper about a third of the styles carry. its width tracks arrow
@@ -139,9 +146,11 @@ export const paint = (
 ) => {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.imageSmoothingEnabled = false;
-  for (const p of placed) {
-    // tile, cropping the source on the last row and column so a box that isn't
-    // a whole number of tiles still ends flush
+  ctx.globalCompositeOperation = 'source-over';
+
+  // tile, cropping the source on the last row and column so a box that isn't a
+  // whole number of tiles still ends flush
+  const blit = (p: Placed) => {
     for (let y = 0; y < p.h; y += p.sh) {
       for (let x = 0; x < p.w; x += p.sw) {
         const cw = Math.min(p.sw, p.w - x);
@@ -149,5 +158,20 @@ export const paint = (
         ctx.drawImage(img, p.sx, p.sy, cw, ch, p.x - l + x, p.y - t + y, cw, ch);
       }
     }
+  };
+
+  for (const p of placed) {
+    // s runs the full width and the arrow lands on top of it. on an opaque style
+    // that's invisible, but a translucent one blends both and leaves a square above the tail
+    //
+    // punching the arrow's own silhouette out first means it replaces the border
+    // instead of stacking on it. only where it actually paints, so the styles
+    // whose arrow doesn't fully cover s keep theirs and don't gain a hole
+    if (p.cut) {
+      ctx.globalCompositeOperation = 'destination-out';
+      blit(p);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    blit(p);
   }
 };
