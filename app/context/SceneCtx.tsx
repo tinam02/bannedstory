@@ -39,22 +39,53 @@ export type MapInfo = {
   keep?: string[];
 };
 
-type Scene = { bg: string; mapId: string | null };
+/**
+ * A speech balloon or a name tag. Both are a UI.wz frame drawn around typed
+ * text, so they carry the same three fields.
+ *
+ * Off by default. Most people are here to dress a character up, and a caption
+ * nobody asked for sitting over the sprite is in the way.
+ */
+export type Caption = {
+  on: boolean;
+  text: string;
+  /** keys into public/ui/<set>/<set>.json */
+  style: string;
+};
+
+type Scene = {
+  bg: string;
+  mapId: string | null;
+  speech: Caption;
+  nametag: Caption;
+};
 
 type SceneApi = Scene & {
   setBg: (bg: string) => void;
   setMapId: (id: string | null) => void;
+  /** merges a partial, so a caller can flip `on` without restating the text */
+  setSpeech: (patch: Partial<Caption>) => void;
+  setNametag: (patch: Partial<Caption>) => void;
   /** every map with plates on disk, name-sorted */
   maps: MapInfo[];
   /** False until localStorage has been read, so nothing flashes the default. */
   hydrated: boolean;
 };
 
+// balloon 0 is the plain white one every version of the game has had. name tags
+// don't start until 3, and that one is the plain grey plate
+const DEFAULT_SPEECH: Caption = { on: false, text: '', style: '0' };
+const DEFAULT_NAMETAG: Caption = { on: false, text: '', style: '3' };
+
 const Ctx = createContext<SceneApi>({
   bg: DEFAULT_BG,
   mapId: null,
+  speech: DEFAULT_SPEECH,
+  nametag: DEFAULT_NAMETAG,
   setBg: () => {},
   setMapId: () => {},
+  setSpeech: () => {},
+  setNametag: () => {},
   maps: [],
   hydrated: false,
 });
@@ -62,6 +93,8 @@ const Ctx = createContext<SceneApi>({
 export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
   const [bg, setBgState] = useState(DEFAULT_BG);
   const [mapId, setMapIdState] = useState<string | null>(null);
+  const [speech, setSpeechState] = useState(DEFAULT_SPEECH);
+  const [nametag, setNametagState] = useState(DEFAULT_NAMETAG);
   const [maps, setMaps] = useState<MapInfo[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
@@ -76,6 +109,10 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
       const raw = localStorage.getItem(KEY);
       const saved = raw ? (JSON.parse(raw) as Partial<Scene>) : null;
       if (typeof saved?.bg === 'string') setBgState(saved.bg);
+      // spread onto the default so a key added later doesn't come back undefined
+      if (saved?.speech) setSpeechState({ ...DEFAULT_SPEECH, ...saved.speech });
+      if (saved?.nametag)
+        setNametagState({ ...DEFAULT_NAMETAG, ...saved.nametag });
       if (saved && 'mapId' in saved) {
         hadSavedMap.current = true;
         setMapIdState(saved.mapId ?? null);
@@ -128,9 +165,53 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
     [save],
   );
 
+  // patched off the previous value rather than the closed-over one, so two
+  // updates in the same tick can't drop each other
+  const setSpeech = useCallback(
+    (patch: Partial<Caption>) =>
+      setSpeechState(prev => {
+        const next = { ...prev, ...patch };
+        save({ speech: next });
+        return next;
+      }),
+    [save],
+  );
+
+  const setNametag = useCallback(
+    (patch: Partial<Caption>) =>
+      setNametagState(prev => {
+        const next = { ...prev, ...patch };
+        save({ nametag: next });
+        return next;
+      }),
+    [save],
+  );
+
   const value = useMemo(
-    () => ({ bg, setBg, mapId, setMapId, maps, hydrated }),
-    [bg, setBg, mapId, setMapId, maps, hydrated],
+    () => ({
+      bg,
+      setBg,
+      mapId,
+      setMapId,
+      speech,
+      setSpeech,
+      nametag,
+      setNametag,
+      maps,
+      hydrated,
+    }),
+    [
+      bg,
+      setBg,
+      mapId,
+      setMapId,
+      speech,
+      setSpeech,
+      nametag,
+      setNametag,
+      maps,
+      hydrated,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

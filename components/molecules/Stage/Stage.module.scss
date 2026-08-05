@@ -63,3 +63,20 @@
   transform: translate(-50%, -100%);
   touch-action: none;
 }
+
+// Centred on the character, one above and one below. A caption's own border box
+// is the whole drawn thing, tail included, so these only have to place a corner.
+.speechSlot,
+.nametagSlot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.speechSlot {
+  bottom: 100%;
+}
+
+.nametagSlot {
+  top: 100%;
+}

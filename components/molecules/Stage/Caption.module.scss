@@ -1,0 +1,44 @@
+// The caption's border box is the whole drawn thing, tail included, so whatever
+// places it only has to worry about one rectangle. The padding that makes that
+// true is set inline, it depends on the style.
+.caption {
+  position: relative;
+  width: max-content;
+  // it sits over the character, and the character is a drag target
+  cursor: text;
+  user-select: none;
+}
+
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+// The element that actually holds the text. Its size *is* the content box, so
+// everything the canvas draws is derived from whatever this measures.
+.text {
+  position: relative;
+  width: max-content;
+  min-width: 4px;
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  text-align: center;
+  font-size: 12px;
+  user-select: text;
+
+  &[data-nowrap] {
+    white-space: pre;
+  }
+
+  // Sizes the box as well as filling it, which an absolutely positioned
+  // placeholder could not do.
+  &[data-empty]::before {
+    content: var(--placeholder);
+    opacity: 0.45;
+  }
+}

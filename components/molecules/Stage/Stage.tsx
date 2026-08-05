@@ -4,6 +4,8 @@ import useScene from '@/app/context/SceneCtx';
 import Char from '@/components/atoms/Char';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useMapLayers, { scrollsH, scrollsV } from './useMapLayers';
+import useUiSprites from './useUiSprites';
+import Caption from './Caption';
 import styles from './Stage.module.scss';
 
 /**
@@ -30,7 +32,10 @@ const clamp = (v: number, lo: number, hi: number) =>
 
 const Stage = () => {
   const { zoom } = useChar();
-  const { bg, mapId, maps } = useScene();
+  const { bg, mapId, maps, speech, setSpeech, nametag, setNametag } = useScene();
+  // only fetched when something actually wants one, both are off by default
+  const balloons = useUiSprites(speech.on ? 'balloons' : null);
+  const nametags = useUiSprites(nametag.on ? 'nametags' : null);
   const sceneRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   // Map coordinates, not screen ones, so the character stays put on the map
@@ -302,7 +307,39 @@ const Stage = () => {
                 grab.current = { dx: p.x - pos.x, dy: p.y - pos.y };
               }}
             >
+              {/* above the sprite whatever height it happens to be. both
+                  captions swallow their own pointerdown, or typing in one would
+                  drag the character out from under it */}
+              {speech.on && balloons?.styles[speech.style] && (
+                <div className={styles.speechSlot}>
+                  <Caption
+                    kind='balloon'
+                    set='balloons'
+                    style={balloons.styles[speech.style]}
+                    styleId={speech.style}
+                    text={speech.text}
+                    onChange={text => setSpeech({ text })}
+                    placeholder='Say something'
+                  />
+                </div>
+              )}
+
               <Char />
+
+              {/* under the feet, where the game puts it */}
+              {nametag.on && nametags?.styles[nametag.style] && (
+                <div className={styles.nametagSlot}>
+                  <Caption
+                    kind='tag'
+                    set='nametags'
+                    style={nametags.styles[nametag.style]}
+                    styleId={nametag.style}
+                    text={nametag.text}
+                    onChange={text => setNametag({ text })}
+                    placeholder='Name'
+                  />
+                </div>
+              )}
             </div>
           )}
 
