@@ -39,53 +39,35 @@ export type MapInfo = {
   keep?: string[];
 };
 
-/**
- * A speech balloon or a name tag.
- *
- * Both are a UI.wz frame drawn around typed text, so same three fields. Off
- * until asked for, a caption over the sprite is in the way otherwise
- */
-export type Caption = {
-  on: boolean;
-  text: string;
-  /** keys into public/ui/<set>/<set>.json */
-  style: string;
-};
+// zoom scales .plates, which holds the map and every character standing in it,
+// so it belongs to the scene and not to any one of them
+export const ZOOM_MIN = 1;
+export const ZOOM_MAX = 4;
+export const ZOOM_STEP = 1;
 
 type Scene = {
   bg: string;
   mapId: string | null;
-  speech: Caption;
-  nametag: Caption;
+  zoom: number;
 };
 
 type SceneApi = Scene & {
   setBg: (bg: string) => void;
   setMapId: (id: string | null) => void;
-  /** merges a partial, so flipping `on` doesn't mean restating the text */
-  setSpeech: (patch: Partial<Caption>) => void;
-  setNametag: (patch: Partial<Caption>) => void;
+  setZoom: (update: number | ((zoom: number) => number)) => void;
   /** every map with plates on disk, name-sorted */
   maps: MapInfo[];
   /** False until localStorage has been read, so nothing flashes the default. */
   hydrated: boolean;
 };
 
-// balloon 0 is the plain one
-//
-// name tags don't start until 3, which is the plain grey plate
-const DEFAULT_SPEECH: Caption = { on: false, text: '', style: '0' };
-const DEFAULT_NAMETAG: Caption = { on: false, text: '', style: '3' };
-
 const Ctx = createContext<SceneApi>({
   bg: DEFAULT_BG,
   mapId: null,
-  speech: DEFAULT_SPEECH,
-  nametag: DEFAULT_NAMETAG,
+  zoom: ZOOM_MIN,
   setBg: () => {},
   setMapId: () => {},
-  setSpeech: () => {},
-  setNametag: () => {},
+  setZoom: () => {},
   maps: [],
   hydrated: false,
 });
@@ -93,8 +75,7 @@ const Ctx = createContext<SceneApi>({
 export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
   const [bg, setBgState] = useState(DEFAULT_BG);
   const [mapId, setMapIdState] = useState<string | null>(null);
-  const [speech, setSpeechState] = useState(DEFAULT_SPEECH);
-  const [nametag, setNametagState] = useState(DEFAULT_NAMETAG);
+  const [zoom, setZoomState] = useState(ZOOM_MIN);
   const [maps, setMaps] = useState<MapInfo[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
@@ -109,10 +90,7 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
       const raw = localStorage.getItem(KEY);
       const saved = raw ? (JSON.parse(raw) as Partial<Scene>) : null;
       if (typeof saved?.bg === 'string') setBgState(saved.bg);
-      // spread onto the default, or a key added later comes back undefined
-      if (saved?.speech) setSpeechState({ ...DEFAULT_SPEECH, ...saved.speech });
-      if (saved?.nametag)
-        setNametagState({ ...DEFAULT_NAMETAG, ...saved.nametag });
+      if (typeof saved?.zoom === 'number') setZoomState(saved.zoom);
       if (saved && 'mapId' in saved) {
         hadSavedMap.current = true;
         setMapIdState(saved.mapId ?? null);
@@ -165,22 +143,11 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
     [save],
   );
 
-  // patched off the previous value, not the closed-over one, or two updates in the same tick would drop each other
-  const setSpeech = useCallback(
-    (patch: Partial<Caption>) =>
-      setSpeechState(prev => {
-        const next = { ...prev, ...patch };
-        save({ speech: next });
-        return next;
-      }),
-    [save],
-  );
-
-  const setNametag = useCallback(
-    (patch: Partial<Caption>) =>
-      setNametagState(prev => {
-        const next = { ...prev, ...patch };
-        save({ nametag: next });
+  const setZoom = useCallback(
+    (update: number | ((zoom: number) => number)) =>
+      setZoomState(prev => {
+        const next = typeof update === 'function' ? update(prev) : update;
+        save({ zoom: next });
         return next;
       }),
     [save],
@@ -192,25 +159,12 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
       setBg,
       mapId,
       setMapId,
-      speech,
-      setSpeech,
-      nametag,
-      setNametag,
+      zoom,
+      setZoom,
       maps,
       hydrated,
     }),
-    [
-      bg,
-      setBg,
-      mapId,
-      setMapId,
-      speech,
-      setSpeech,
-      nametag,
-      setNametag,
-      maps,
-      hydrated,
-    ],
+    [bg, setBg, mapId, setMapId, zoom, setZoom, maps, hydrated],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

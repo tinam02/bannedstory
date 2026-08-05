@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { characterRenderUrl, preloadImageUrl } from '@/lib/fetch';
 import DefaultImage from './Image';
 import useChar from '@/app/context/CharCtx';
+import { Outfit } from '@/types';
 import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
 import styles from './Char.module.scss';
 
@@ -12,8 +13,10 @@ const POKE_MS = 2000;
 // A pointer that travelled further than this between down and up was a drag
 const DRAG_SLOP_PX = 4;
 
-const Char = () => {
-  const { outfit, hydrated } = useChar();
+/** `who` renders that character. left off, it's whoever is selected */
+const Char = ({ who }: { who?: Outfit }) => {
+  const { outfit: active, hydrated } = useChar();
+  const outfit = who ?? active;
   const [poked, setPoked] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressedAt = useRef<{ x: number; y: number } | null>(null);

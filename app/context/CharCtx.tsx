@@ -1,5 +1,5 @@
 'use client';
-import { Outfit, OutfitItem } from '@/types';
+import { Caption, Outfit, OutfitItem } from '@/types';
 import {
   createOutfit,
   DEFAULT_SKIN_ID,
@@ -16,18 +16,41 @@ import React, {
   useState,
 } from 'react';
 
-export const ZOOM_MIN = 1;
-export const ZOOM_MAX = 4;
-export const ZOOM_STEP = 1;
+/**
+ Characters
+ *
+ * Everything that only cares about one character still reads `outfit`, which is the active one. That's what keeps the closet, the pickers and export off this file entirely
+ */
 
 export { DEFAULT_SKIN_ID };
 
-const STORAGE_KEY = 'outfit';
-// Pre-unification keys, read once so a saved character survives the upgrade.
+const STORAGE_KEY = 'chars';
+// the single char key this replaced, read once so a saved one survives
+const SOLO_KEY = 'outfit';
+// pre-unification keys, older still
 const LEGACY_ITEMS_KEY = 'selectedItems';
 const LEGACY_SKIN_KEY = 'skinId';
+export const MAX_CHARS = 8;
+
+const NO_CAPTION: Caption = { on: false, text: '', style: '0' };
+const NO_TAG: Caption = { on: false, text: '', style: '3' };
+
+type Captions = { speech: Caption; nametag: Caption };
 
 type CharContextValue = {
+  /** every character, in the order they were added */
+  chars: Outfit[];
+  activeId: number;
+  setActiveId: (id: number) => void;
+  /** appends a default character and makes it active. no-op at MAX_CHARS */
+  addChar: () => void;
+  /** copies one, offset so it doesn't land exactly on top of the original */
+  duplicateChar: (id: number) => void;
+  /** removing the last one leaves a fresh default, never an empty stage */
+  removeChar: (id: number) => void;
+  renameChar: (id: number, name: string) => void;
+
+  // everything below is the active character, same shape as before the cast
   outfit: Outfit;
   setOutfit: React.Dispatch<React.SetStateAction<Outfit>>;
   equip: (slot: string, item: OutfitItem) => void;
@@ -36,12 +59,19 @@ type CharContextValue = {
   adjustItem: (slot: string, patch: Partial<OutfitItem>) => void;
   skinId: number;
   setSkinId: (id: number) => void;
-  zoom: number;
-  setZoom: (update: number | ((zoom: number) => number)) => void;
   animating: boolean;
   toggleAnimating: () => void;
   emotion: string;
   setEmotion: (emotion: string) => void;
+
+  // a balloon and a tag per character, kept beside Outfit rather than in it so the interchange format stays exactly what other tools expect
+  captionsOf: (id: number) => Captions;
+  setCaption: (
+    id: number,
+    kind: 'speech' | 'nametag',
+    patch: Partial<Caption>,
+  ) => void;
+
   /** False until localStorage has been read, so nothing overwrites it early. */
   hydrated: boolean;
 };
@@ -49,6 +79,13 @@ type CharContextValue = {
 const FALLBACK = createOutfit(0);
 
 export const CharContext = createContext<CharContextValue>({
+  chars: [FALLBACK],
+  activeId: FALLBACK.id,
+  setActiveId: () => {},
+  addChar: () => {},
+  duplicateChar: () => {},
+  removeChar: () => {},
+  renameChar: () => {},
   outfit: FALLBACK,
   setOutfit: () => {},
   equip: () => {},
@@ -56,12 +93,12 @@ export const CharContext = createContext<CharContextValue>({
   adjustItem: () => {},
   skinId: DEFAULT_SKIN_ID,
   setSkinId: () => {},
-  zoom: FALLBACK.zoom,
-  setZoom: () => {},
   animating: FALLBACK.animating,
   toggleAnimating: () => {},
   emotion: FALLBACK.emotion,
   setEmotion: () => {},
+  captionsOf: () => ({ speech: NO_CAPTION, nametag: NO_TAG }),
+  setCaption: () => {},
   hydrated: false,
 });
 
@@ -100,43 +137,154 @@ function migrateLegacy(now: number): Outfit | null {
   }
 }
 
+/** reads the cast, falling back through the two older single character keys */
+function loadChars(now: number): { chars: Outfit[]; activeId: number } {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    try {
+      const saved = JSON.parse(stored) as {
+        chars?: Outfit[];
+        activeId?: number;
+      };
+      if (saved.chars?.length) {
+        const activeId = saved.chars.some(c => c.id === saved.activeId)
+          ? (saved.activeId as number)
+          : saved.chars[0].id;
+        return { chars: saved.chars, activeId };
+      }
+    } catch {
+      // a corrupt key shouldn't take the page down
+    }
+  }
+
+  const solo = localStorage.getItem(SOLO_KEY);
+  if (solo) {
+    try {
+      const one = JSON.parse(solo) as Outfit;
+      return { chars: [one], activeId: one.id };
+    } catch {
+      // fall through to a default
+    }
+  }
+
+  const one = migrateLegacy(now) ?? createOutfit(now);
+  return { chars: [one], activeId: one.id };
+}
+
+/** ids are timestamps, so a rapid add would collide without this */
+const nextId = (chars: Outfit[]) =>
+  Math.max(Date.now(), ...chars.map(c => c.id + 1));
+
 export function CharProvider({ children }: { children: React.ReactNode }) {
-  const [outfit, setOutfit] = useState<Outfit>(FALLBACK);
+  const [chars, setChars] = useState<Outfit[]>([FALLBACK]);
+  const [activeId, setActiveId] = useState(FALLBACK.id);
+  const [captions, setCaptions] = useState<Record<number, Captions>>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const now = Date.now();
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setOutfit(JSON.parse(stored));
-      } catch {
-        setOutfit(createOutfit(now));
-      }
-    } else {
-      setOutfit(migrateLegacy(now) ?? createOutfit(now));
+    const loaded = loadChars(Date.now());
+    setChars(loaded.chars);
+    setActiveId(loaded.activeId);
+    try {
+      const raw = localStorage.getItem(`${STORAGE_KEY}-captions`);
+      if (raw) setCaptions(JSON.parse(raw));
+    } catch {
+      // captions are decoration, a bad key just means none
     }
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(outfit));
-  }, [outfit, hydrated]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ chars, activeId }));
+  }, [chars, activeId, hydrated]);
 
-  const equip = useCallback((slot: string, item: OutfitItem) => {
-    setOutfit(prev => ({
-      ...prev,
-      selectedItems: { ...prev.selectedItems, [slot]: item },
-    }));
-  }, []);
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(`${STORAGE_KEY}-captions`, JSON.stringify(captions));
+  }, [captions, hydrated]);
 
-  const unequip = useCallback((slot: string) => {
-    setOutfit(prev => {
-      const { [slot]: _removed, ...rest } = prev.selectedItems;
-      return { ...prev, selectedItems: rest };
+  const outfit = useMemo(
+    () => chars.find(c => c.id === activeId) ?? chars[0] ?? FALLBACK,
+    [chars, activeId],
+  );
+
+  // every existing writer calls setOutfit, it just lands on the active character
+  const setOutfit = useCallback<React.Dispatch<React.SetStateAction<Outfit>>>(
+    update => {
+      setChars(prev =>
+        prev.map(c => {
+          if (c.id !== activeId) return c;
+          const next =
+            typeof update === 'function'
+              ? (update as (o: Outfit) => Outfit)(c)
+              : update;
+          // an imported outfit brings its own id, which would orphan the
+          // active selection and silently strand the character
+          return { ...next, id: c.id };
+        }),
+      );
+    },
+    [activeId],
+  );
+
+  const addChar = useCallback(() => {
+    setChars(prev => {
+      if (prev.length >= MAX_CHARS) return prev;
+      const born = createOutfit(nextId(prev));
+      setActiveId(born.id);
+      return [...prev, born];
     });
   }, []);
+
+  const duplicateChar = useCallback((id: number) => {
+    setChars(prev => {
+      if (prev.length >= MAX_CHARS) return prev;
+      const src = prev.find(c => c.id === id);
+      if (!src) return prev;
+      const copy = { ...src, id: nextId(prev), name: `${src.name} copy` };
+      setActiveId(copy.id);
+      return [...prev, copy];
+    });
+  }, []);
+
+  const removeChar = useCallback((id: number) => {
+    setChars(prev => {
+      const left = prev.filter(c => c.id !== id);
+      // never an empty stage, the closet would have nothing to point at
+      const next = left.length ? left : [createOutfit(nextId(prev))];
+      setActiveId(a => (a === id ? next[0].id : a));
+      return next;
+    });
+    setCaptions(prev => {
+      const { [id]: _gone, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+
+  const renameChar = useCallback((id: number, name: string) => {
+    setChars(prev => prev.map(c => (c.id === id ? { ...c, name } : c)));
+  }, []);
+
+  const equip = useCallback(
+    (slot: string, item: OutfitItem) => {
+      setOutfit(prev => ({
+        ...prev,
+        selectedItems: { ...prev.selectedItems, [slot]: item },
+      }));
+    },
+    [setOutfit],
+  );
+
+  const unequip = useCallback(
+    (slot: string) => {
+      setOutfit(prev => {
+        const { [slot]: _removed, ...rest } = prev.selectedItems;
+        return { ...prev, selectedItems: rest };
+      });
+    },
+    [setOutfit],
+  );
 
   // An `undefined` in the patch *removes* the key rather than storing it, so a
   // value reset to neutral leaves no trace in the render URL or the export.
@@ -155,30 +303,51 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
         };
       });
     },
+    [setOutfit],
+  );
+
+  const setSkinId = useCallback(
+    (id: number) => setOutfit(prev => withSkin(prev, id)),
+    [setOutfit],
+  );
+
+  const toggleAnimating = useCallback(
+    () => setOutfit(prev => ({ ...prev, animating: !prev.animating })),
+    [setOutfit],
+  );
+
+  const setEmotion = useCallback(
+    (emotion: string) => setOutfit(prev => ({ ...prev, emotion })),
+    [setOutfit],
+  );
+
+  const captionsOf = useCallback(
+    (id: number) => captions[id] ?? { speech: NO_CAPTION, nametag: NO_TAG },
+    [captions],
+  );
+
+  const setCaption = useCallback(
+    (id: number, kind: 'speech' | 'nametag', patch: Partial<Caption>) => {
+      setCaptions(prev => {
+        const cur = prev[id] ?? { speech: NO_CAPTION, nametag: NO_TAG };
+        return {
+          ...prev,
+          [id]: { ...cur, [kind]: { ...cur[kind], ...patch } },
+        };
+      });
+    },
     [],
   );
 
-  const setSkinId = useCallback((id: number) => {
-    setOutfit(prev => withSkin(prev, id));
-  }, []);
-
-  const setZoom = useCallback((update: number | ((zoom: number) => number)) => {
-    setOutfit(prev => ({
-      ...prev,
-      zoom: typeof update === 'function' ? update(prev.zoom) : update,
-    }));
-  }, []);
-
-  const toggleAnimating = useCallback(() => {
-    setOutfit(prev => ({ ...prev, animating: !prev.animating }));
-  }, []);
-
-  const setEmotion = useCallback((emotion: string) => {
-    setOutfit(prev => ({ ...prev, emotion }));
-  }, []);
-
   const value = useMemo(
     () => ({
+      chars,
+      activeId,
+      setActiveId,
+      addChar,
+      duplicateChar,
+      removeChar,
+      renameChar,
       outfit,
       setOutfit,
       equip,
@@ -186,23 +355,31 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
       adjustItem,
       skinId: skinIdOf(outfit),
       setSkinId,
-      zoom: outfit.zoom,
-      setZoom,
       animating: outfit.animating,
       toggleAnimating,
       emotion: outfit.emotion,
       setEmotion,
+      captionsOf,
+      setCaption,
       hydrated,
     }),
     [
+      chars,
+      activeId,
+      addChar,
+      duplicateChar,
+      removeChar,
+      renameChar,
       outfit,
+      setOutfit,
       equip,
       unequip,
       adjustItem,
       setSkinId,
-      setZoom,
       toggleAnimating,
       setEmotion,
+      captionsOf,
+      setCaption,
       hydrated,
     ],
   );

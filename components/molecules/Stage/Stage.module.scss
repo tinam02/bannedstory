@@ -62,6 +62,11 @@
   z-index: 1;
   transform: translate(-50%, -100%);
   touch-action: none;
+
+  // The selected one draws over the rest
+  &[data-active] {
+    z-index: 2;
+  }
 }
 
 // Centred on the character, one above and one below. A caption's border box is the whole drawn thing, tail included, so these only place a corner

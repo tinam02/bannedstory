@@ -9,6 +9,7 @@ import EmotePicker from '@/components/atoms/EmotePicker';
 import BgPicker from '@/components/atoms/BgPicker';
 import MapPicker from '@/components/atoms/MapPicker';
 import CaptionPicker from '@/components/atoms/CaptionPicker';
+import CharRoster from '@/components/atoms/CharRoster';
 import styles from './Toolbar.module.scss';
 
 /**
@@ -16,6 +17,7 @@ import styles from './Toolbar.module.scss';
 const Toolbar = () => (
   <div className={styles.toolbar}>
     <div className={styles.row}>
+      <CharRoster />
       <RandomizeButton />
       <AnimateToggle />
       <ImportButton />

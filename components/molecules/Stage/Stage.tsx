@@ -31,22 +31,25 @@ const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
 
 const Stage = () => {
-  const { zoom } = useChar();
-  const { bg, mapId, maps, speech, setSpeech, nametag, setNametag } = useScene();
-  // both off by default, so nothing gets fetched until one is asked for
-  const balloons = useUiSprites(speech.on ? 'balloons' : null);
-  const nametags = useUiSprites(nametag.on ? 'nametags' : null);
+  const { chars, activeId, setActiveId, captionsOf, setCaption } = useChar();
+  const { bg, mapId, maps, zoom } = useScene();
+
+  // fetched only once some character actually wants one, all off by default
+  const wantsSpeech = chars.some(c => captionsOf(c.id).speech.on);
+  const wantsTag = chars.some(c => captionsOf(c.id).nametag.on);
+  const balloons = useUiSprites(wantsSpeech ? 'balloons' : null);
+  const nametags = useUiSprites(wantsTag ? 'nametags' : null);
+
   const sceneRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  // Map coordinates, not screen ones, so the character stays put on the map
-  // when the window is resized.
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
-  // How far the map is shoved from centre, in screen pixels. 0 is centred
+  // Map coords, not screen ones, so a character stays put on the map when window is resized. Keyed by character
+  const [pos, setPos] = useState<Record<number, { x: number; y: number }>>({});
+  // How far the map is shoved from center, in screen pixels. 0 =centerdd
   const [pan, setPan] = useState({ x: 0, y: 0 });
   // Viewport size to work out how far the map is allowed to travel
   const [view, setView] = useState({ w: 0, h: 0 });
-  // Pointer offset from the character's anchor at grab time, in map space.
-  const grab = useRef<{ dx: number; dy: number } | null>(null);
+  // Which character is being dragged, and the pointer offset from its anchor at grab time, in map space
+  const grab = useRef<{ id: number; dx: number; dy: number } | null>(null);
   // Where the pointer and the map were when a pan started, in screen pixels.
   const panGrab = useRef<{
     px: number;
@@ -128,14 +131,29 @@ const Stage = () => {
   const spaceRef = useRef(space);
   spaceRef.current = space;
 
+  // ids rather than the array, or equipping a hat would count as a change and shove everyone back to their starting mark
+  const ids = chars.map(c => c.id).join(',');
+
   useEffect(() => {
     const key = mapId ?? 'none';
     const s = spaceRef.current;
-    const saved = localStorage.getItem(`${POS_KEY}:${key}`);
-    setPos(saved ? JSON.parse(saved) : { x: s.w / 2, y: s.h - 30 });
+    const list = ids ? ids.split(',').map(Number) : [];
+    const next: Record<number, { x: number; y: number }> = {};
+    list.forEach((id, i) => {
+      // the solo key, from before positions were per character. only the first
+      // one can inherit it, and only until it saves under its own
+      const saved =
+        localStorage.getItem(`${POS_KEY}:${key}:${id}`) ??
+        (i === 0 ? localStorage.getItem(`${POS_KEY}:${key}`) : null);
+      // a new face starts beside the others rather than exactly on top
+      next[id] = saved
+        ? JSON.parse(saved)
+        : { x: s.w / 2 + (i - (list.length - 1) / 2) * 70, y: s.h - 30 };
+    });
+    setPos(next);
     const savedPan = localStorage.getItem(`${PAN_KEY}:${key}`);
     setPan(savedPan ? JSON.parse(savedPan) : { x: 0, y: 0 });
-  }, [mapId]);
+  }, [mapId, ids]);
 
   useEffect(() => {
     const el = frameRef.current;
@@ -196,16 +214,25 @@ const Stage = () => {
       const p = toMap(e.clientX, e.clientY);
       if (!p) return;
       const s = spaceRef.current;
-      setPos({
-        x: clamp(p.x - grab.current.dx, EDGE_PAD, s.w - EDGE_PAD),
-        y: clamp(p.y - grab.current.dy, EDGE_PAD, s.h),
-      });
+      const { id, dx, dy } = grab.current;
+      setPos(prev => ({
+        ...prev,
+        [id]: {
+          x: clamp(p.x - dx, EDGE_PAD, s.w - EDGE_PAD),
+          y: clamp(p.y - dy, EDGE_PAD, s.h),
+        },
+      }));
     };
     // Saved here rather than in an effect on the value: a drag ends without
     // changing it again, so an effect would never see the final position.
     const onUp = () => {
-      if (grab.current && posRef.current)
-        localStorage.setItem(`${POS_KEY}:${key}`, JSON.stringify(posRef.current));
+      const dragged = grab.current?.id;
+      const at = dragged !== undefined ? posRef.current[dragged] : null;
+      if (at)
+        localStorage.setItem(
+          `${POS_KEY}:${key}:${dragged}`,
+          JSON.stringify(at),
+        );
       if (panGrab.current)
         localStorage.setItem(`${PAN_KEY}:${key}`, JSON.stringify(panRef.current));
       grab.current = null;
@@ -293,10 +320,18 @@ const Stage = () => {
               />
             ))}
 
-          {pos && (
+          {chars.map(who => {
+            const at = pos[who.id];
+            if (!at) return null;
+            const cap = captionsOf(who.id);
+            return (
             <div
+              key={who.id}
               className={styles.charAnchor}
-              style={{ left: pos.x, top: pos.y }}
+              // the selected one sits above the rest, so dragging a character
+              // out of a pile doesn't put it back underneath
+              data-active={who.id === activeId ? '' : undefined}
+              style={{ left: at.x, top: at.y }}
               onPointerDown={e => {
                 const p = toMap(e.clientX, e.clientY);
                 if (!p) return;
@@ -304,44 +339,47 @@ const Stage = () => {
                 e.stopPropagation();
                 e.preventDefault();
                 e.currentTarget.setPointerCapture(e.pointerId);
-                grab.current = { dx: p.x - pos.x, dy: p.y - pos.y };
+                // touching a character is also how you pick one
+                setActiveId(who.id);
+                grab.current = { id: who.id, dx: p.x - at.x, dy: p.y - at.y };
               }}
             >
               {/* above the sprite whatever height it is. both captions swallow
                   their own pointerdown, or typing in one would drag the
                   character out from under it */}
-              {speech.on && balloons?.styles[speech.style] && (
+              {cap.speech.on && balloons?.styles[cap.speech.style] && (
                 <div className={styles.speechSlot}>
                   <Caption
                     kind='balloon'
                     set='balloons'
-                    style={balloons.styles[speech.style]}
-                    styleId={speech.style}
-                    text={speech.text}
-                    onChange={text => setSpeech({ text })}
-                    placeholder='Say something'
+                    style={balloons.styles[cap.speech.style]}
+                    styleId={cap.speech.style}
+                    text={cap.speech.text}
+                    onChange={text => setCaption(who.id, 'speech', { text })}
+                    placeholder='poopoo peepe'
                   />
                 </div>
               )}
 
-              <Char />
+              <Char who={who} />
 
               {/* under the feet, where the game puts it */}
-              {nametag.on && nametags?.styles[nametag.style] && (
+              {cap.nametag.on && nametags?.styles[cap.nametag.style] && (
                 <div className={styles.nametagSlot}>
                   <Caption
                     kind='tag'
                     set='nametags'
-                    style={nametags.styles[nametag.style]}
-                    styleId={nametag.style}
-                    text={nametag.text}
-                    onChange={text => setNametag({ text })}
-                    placeholder='Name'
+                    style={nametags.styles[cap.nametag.style]}
+                    styleId={cap.nametag.style}
+                    text={cap.nametag.text}
+                    onChange={text => setCaption(who.id, 'nametag', { text })}
+                    placeholder={who.name || 'Name'}
                   />
                 </div>
               )}
             </div>
-          )}
+            );
+          })}
 
           {/* drawn over the character, and never a drag target */}
           {map?.front && (

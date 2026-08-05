@@ -181,7 +181,9 @@ export const characterRenderUrl = (outfit: Outfit): string => {
 
   const path = ordered
     .map(([slot, item]) =>
-      encodeURIComponent(JSON.stringify(renderItem(slot, item, outfit.emotion))),
+      encodeURIComponent(
+        JSON.stringify(renderItem(slot, item, outfit.emotion)),
+      ),
     )
     .join(',');
 
@@ -191,7 +193,8 @@ export const characterRenderUrl = (outfit: Outfit): string => {
   if (outfit.illiumEars) params.set('showLefEars', 'true');
   if (outfit.highFloraEars) params.set('showHighLefEars', 'true');
   if (outfit.flipX) params.set('flipX', 'true');
-  if (outfit.name) params.set('name', outfit.name);
+  // if (outfit.name) params.set('name', outfit.name);
+  // `name` is deliberately not sent, bc if we send it then its gonna always show and be baked into the png. this is useless since we already have selectable nametags
   const query = params.toString();
 
   const frame = outfit.animating ? 'animated' : outfit.frame;

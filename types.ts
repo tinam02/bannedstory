@@ -52,6 +52,18 @@ export interface OutfitItem {
 
 export type SelectedItems = Record<string, OutfitItem>;
 
+/**
+ * A speech balloon or a name tag hanging off one character.
+ *
+ * Deliberately not part of Outfit,  other tools have no idea what a balloon is, so passing it is pointless
+ */
+export type Caption = {
+  on: boolean;
+  text: string;
+  /** keys into public/ui/<set>/<set>.json */
+  style: string;
+};
+
 export interface Outfit {
   id: number;
   type: 'character';

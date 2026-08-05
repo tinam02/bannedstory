@@ -1,13 +1,14 @@
 'use client';
-import useChar, {
+import useScene, {
   ZOOM_MAX,
   ZOOM_MIN,
   ZOOM_STEP,
-} from '@/app/context/CharCtx';
+} from '@/app/context/SceneCtx';
 import styles from '@/components/molecules/Toolbar/Toolbar.module.scss';
 
+// zoom scales the whole scene, map included, so it comes from SceneCtx rather than from char
 const ZoomControls = () => {
-  const { zoom, setZoom } = useChar();
+  const { zoom, setZoom } = useScene();
 
   const zoomOut = () =>
     setZoom(z => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2)));

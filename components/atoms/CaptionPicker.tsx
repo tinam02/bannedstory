@@ -1,5 +1,6 @@
 'use client';
-import useScene, { Caption } from '@/app/context/SceneCtx';
+import useChar from '@/app/context/CharCtx';
+import { Caption } from '@/types';
 import CaptionPreview from '@/components/molecules/Stage/CaptionPreview';
 import useUiSprites, {
   useCaptionNames,
@@ -111,12 +112,15 @@ const CaptionPanel = ({
   );
 };
 
+// always the selected character, so picking someone else on the stage points this panel at them too
 const CaptionPicker = () => {
-  const { speech, setSpeech, nametag, setNametag } = useScene();
+  const { activeId, captionsOf, setCaption } = useChar();
   const [open, { toggle, close }] = useDisclosure(false);
   const [tab, setTab] = useState<CaptionKind>('balloon');
 
   const active = TABS.find(t => t.key === tab) ?? TABS[0];
+  const mine = captionsOf(activeId);
+  const which = active.key === 'balloon' ? 'speech' : 'nametag';
 
   return (
     <Popover
@@ -129,8 +133,8 @@ const CaptionPicker = () => {
       <Popover.Target>
         <button
           className={toolbar.btn}
-          // lit while either is on, so a caption on the stage is traceable back here without opening the panel
-          data-active={speech.on || nametag.on ? '' : undefined}
+          // lit while the selected character has one showing
+          data-active={mine.speech.on || mine.nametag.on ? '' : undefined}
           onClick={toggle}
           aria-label='Speech balloon and name tag'
         >
@@ -151,16 +155,16 @@ const CaptionPicker = () => {
           ))}
         </div>
 
-        {/* keyed so switching tabs remounts, or one panel would inherit the
-            other's scroll position and already loaded previews */}
+        {/* keyed on the tab and the character, so switching either remounts
+            rather than inheriting the other's scroll and loaded previews */}
         <CaptionPanel
-          key={active.key}
+          key={`${active.key}-${activeId}`}
           kind={active.key}
           set={active.set}
           label={active.label}
           placeholder={active.placeholder}
-          value={active.key === 'balloon' ? speech : nametag}
-          onChange={active.key === 'balloon' ? setSpeech : setNametag}
+          value={mine[which]}
+          onChange={patch => setCaption(activeId, which, patch)}
         />
       </Popover.Dropdown>
     </Popover>
