@@ -89,38 +89,6 @@ export interface Outfit {
   animating: boolean;
 }
 
-export type PoseOptions =
-  | 'standingOneHanded'
-  | 'standingTwoHanded'
-  | 'walkingOneHanded'
-  | 'walkingTwoHanded'
-  | 'alert'
-  | 'flying'
-  | 'jumping'
-  | 'lyingDown'
-  | 'lyingDownStabbing'
-  | 'firingBow'
-  | 'firingCrossbow'
-  | 'firingBigBow'
-  | 'sitting'
-  | 'stabbingOneHanded'
-  | 'thrustingOneHanded'
-  | 'lungingOneHanded'
-  | 'stabbingTwoHanded'
-  | 'thrustingTwoHanded'
-  | 'lungingTwoHanded'
-  | 'throwingBackhanded'
-  | 'throwingDownward'
-  | 'throwingForehanded'
-  | 'spinningThrow'
-  | 'smashing'
-  | 'bashing'
-  | 'jumpingSmash'
-  | 'slashingBehind'
-  | 'slashingFront'
-  | 'slashingUpward'
-  | 'spinningSlash';
-
 export type FaceEmoteOptions =
   | 'default'
   | 'blink'

@@ -1,24 +1,10 @@
-import { Outfit, OutfitItem, PoseOptions } from '@/types';
+import { Outfit, OutfitItem } from '@/types';
 
 export const REGION = 'GMS';
 export const VERSION = '265';
 const API_BASE = `https://maplestory.io/api/${REGION}/${VERSION}`;
 const RENDER_BASE = 'https://maplestory.io/api/character';
 const PER_PAGE = 50;
-
-// Friendly pose name -> maplestory.io stance string. `Outfit.action` stores the
-// stance directly; this is the label source for the pose picker.
-export const POSE_TO_STANCE: Partial<Record<PoseOptions, string>> = {
-  standingOneHanded: 'stand1',
-  standingTwoHanded: 'stand2',
-  walkingOneHanded: 'walk1',
-  walkingTwoHanded: 'walk2',
-  alert: 'alert',
-  flying: 'fly',
-  jumping: 'jump',
-  sitting: 'sit',
-  lyingDown: 'prone',
-};
 
 // Adjustments the render URL understands, with the value that means "no
 // change". Sending a neutral value is a no-op, so we drop it to keep URLs

@@ -10,6 +10,7 @@ import BgPicker from '@/components/atoms/BgPicker';
 import MapPicker from '@/components/atoms/MapPicker';
 import CaptionPicker from '@/components/atoms/CaptionPicker';
 import CharRoster from '@/components/atoms/CharRoster';
+import PosePicker from '@/components/atoms/PosePicker';
 import styles from './Toolbar.module.scss';
 
 /**
@@ -26,6 +27,7 @@ const Toolbar = () => (
     </div>
     <div className={styles.row}>
       <EmotePicker />
+      <PosePicker />
       <SkinPicker />
       <CaptionPicker />
       <MapPicker />
