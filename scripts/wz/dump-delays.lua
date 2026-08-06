@@ -1,23 +1,33 @@
 -- dumps the real per frame timing for every stance
 --
--- run from LuaConsole with Base.wz loaded. seconds, not hours: it reads one img
+-- run from LuaConsole with Base.wz loaded. seconds, not hours: it reads two imgs
 --
 -- extract-avatar.lua never read `delay`, so the manifests carry no timing and
 -- the app animates on a flat guess. one flat number cannot be right for both:
 -- walking is about 180ms a frame and the stand1 idle breathe is several times
 -- slower, so whichever you pick, one of them looks wrong.
 --
--- the body is the only item worth reading. every part of a stance has to share
--- its timing or the character would come apart while it played, so the body's
--- delays are the stance's delays
+-- the body is the only item worth reading for stances. every part of a stance
+-- has to share its timing or the character would come apart while it played, so
+-- the body's delays are the stance's delays.
+--
+-- the face is separate. it blinks on its own schedule in game rather than
+-- keeping time with the legs, so its expressions are dumped alongside
 
 import 'WzComparerR2.PluginBase'
 import 'WzComparerR2.WzLib'
 import 'System'
 import 'System.IO'
 
-local OUT = 'C:\\TINA\\CODE\\bannedstory\\bannedstory\\.avatar-out\\delays.json'
-local BODY = 'Character/00002000.img'
+local DIR = 'C:\\TINA\\CODE\\bannedstory\\bannedstory\\.avatar-out\\'
+
+-- the body drives every stance, and a face drives every expression. two files
+-- because the app runs them on separate clocks: the face blinks on its own
+-- schedule in game, it does not keep time with the legs
+local JOBS = {
+  { path = 'Character/00002000.img', out = DIR .. 'delays.json' },
+  { path = 'Character/Face/00020000.img', out = DIR .. 'face-delays.json' },
+}
 
 -- wz leaves delay off a frame that uses the default
 local DEFAULT_MS = 180
@@ -54,10 +64,11 @@ end
 
 local function q(s) return '"' .. tostring(s) .. '"' end
 
-local img = resolve(BODY)
+for _, job in ipairs(JOBS) do
+local img = resolve(job.path)
 if not img then
-  env:WriteLine('no ' .. BODY .. ', is Base.wz loaded?')
-  return
+  env:WriteLine('no ' .. job.path .. ', is Base.wz loaded?')
+  goto nextJob
 end
 
 local parts = {}
@@ -109,9 +120,11 @@ for stance in each_node(img) do
   end
 end
 
-File.WriteAllText(OUT, '{' .. table.concat(parts, ',') .. '}')
-env:WriteLine(string.format('%d stances written to %s', #parts, OUT))
+File.WriteAllText(job.out, '{' .. table.concat(parts, ',') .. '}')
+env:WriteLine(string.format('%d entries from %s -> %s', #parts, job.path, job.out))
 
 -- printed as well as written, since the interesting part is what turns up in
 -- `extras` and that is easier to read here than in the json
 for _, p in ipairs(parts) do env:WriteLine('  ' .. p) end
+::nextJob::
+end

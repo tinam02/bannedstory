@@ -1,6 +1,6 @@
 'use client';
 import useAvatar from '@/app/hooks/useAvatar';
-import useFrameDelays from '@/app/hooks/useFrameDelays';
+import useFrameDelays, { FrameDelays } from '@/app/hooks/useFrameDelays';
 import { buildAvatar } from '@/lib/avatar';
 import { ADJUSTMENTS } from '@/lib/fetch';
 import { Outfit } from '@/types';
@@ -43,6 +43,88 @@ const sequenceFor = (stance: string, frames: number) => {
   return [...forward, ...forward.slice(1, -1).reverse()];
 };
 
+// how long the eyes stay open between blinks, how much that varies, and how
+// often a blink comes in a pair.
+//
+// wz has nothing to say about any of this. face `blink` is [60,60,60], three
+// frames and 180ms all in, so the file describes the blink itself and not how
+// often it happens. the gap between them is the client's behaviour, and these
+// are the numbers for it
+const REST_MS = 3500;
+const REST_JITTER = 0.6;
+const DOUBLE_BLINK = 0.28;
+const DOUBLE_GAP_MS = 170;
+
+/** only if face-delays.json is missing, since wz does carry the blink speed */
+const BLINK_MS = 110;
+
+/**
+ * Advances one animation, holding each frame for its own delay.
+ *
+ * Chained timeouts rather than an interval, since the frames are not evenly
+ * timed. The body and the face each get one of these, which is the point: they
+ * run independently.
+ *
+ * `rest` is for the face. Eyes are open nearly all the time and a blink is a
+ * quick flurry at an irregular interval, so the resting frame is held far
+ * longer than the rest and by a different amount each time. As an even loop it
+ * reads as a twitch however slowly it is run
+ */
+const useFrameClock = (
+  playing: boolean,
+  key: string,
+  frames: number,
+  delays: FrameDelays | null,
+  onFrame: (frame: number) => void,
+  rest = false,
+) => {
+  useEffect(() => {
+    onFrame(0);
+    if (!playing || frames < 2) return;
+
+    const held = delays?.[key]?.delays;
+    const order = sequenceFor(key, frames);
+    let timer: ReturnType<typeof setTimeout>;
+    let step = 0;
+    let stopped = false;
+
+    // a pair, never a run. without this the short gap can be drawn again and
+    // again and the character flutters
+    let justDoubled = false;
+
+    const holdFor = (frame: number) => {
+      // the blink frames themselves run on wz timing, 60ms each
+      if (!rest || frame !== 0) return held?.[frame] ?? (rest ? BLINK_MS : FRAME_MS);
+      // frame 0 is the eyes open, and wz's 60ms for it is meaningless here.
+      // mostly a long irregular wait, sometimes a short one so the blink comes
+      // in a pair the way a real one does
+      if (!justDoubled && Math.random() < DOUBLE_BLINK) {
+        justDoubled = true;
+        return DOUBLE_GAP_MS;
+      }
+      justDoubled = false;
+      return REST_MS * (1 + (Math.random() * 2 - 1) * REST_JITTER);
+    };
+
+    const next = () => {
+      timer = setTimeout(() => {
+        if (stopped) return;
+        step = (step + 1) % order.length;
+        onFrame(order[step]);
+        next();
+      }, holdFor(order[step]));
+    };
+    next();
+
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+    // onFrame is a setState, stable for the life of the component
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, key, frames, delays, rest]);
+};
+
 /**
  * The adjustments as a canvas filter, so a slider nudge is a redraw.
  */
@@ -77,7 +159,9 @@ const AvatarCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatar = useAvatar(who, true);
   const [tick, setTick] = useState(0);
+  const [faceTick, setFaceTick] = useState(0);
   const delays = useFrameDelays();
+  const faceDelays = useFrameDelays('face-delays.json');
 
   // how many frames this stance has, off the body, which is the one part
   // always worn. every item agrees on the count for a given stance
@@ -90,38 +174,43 @@ const AvatarCanvas = ({
   // chained timeouts rather than one interval, because every frame has its own
   // hold. stand1 sits on each for 500ms, walk1 for 180, and the attack stances
   // go 300/150/350, so an interval makes most of them wrong
-  useEffect(() => {
-    setTick(0);
-    if (!who.animating || frameCount < 2) return;
+  useFrameClock(who.animating, who.action, frameCount, delays, setTick);
 
-    const held = delays?.[who.action]?.delays;
-    const order = sequenceFor(who.action, frameCount);
-    let timer: ReturnType<typeof setTimeout>;
-    let step = 0;
-    let stopped = false;
+  // the face keeps its own time. face `blink` is three frames and body `stand1`
+  // is three, so sharing an index made the character blink exactly in step with
+  // its own breathing
+  const faceCount = useMemo(() => {
+    const face = avatar?.worn.find(w => w.part === 'face');
+    const seq =
+      face?.manifest.frames[who.emotion] ?? face?.manifest.frames.default;
+    return seq?.length ?? 1;
+  }, [avatar, who.emotion]);
 
-    const next = () => {
-      timer = setTimeout(() => {
-        if (stopped) return;
-        step = (step + 1) % order.length;
-        setTick(order[step]);
-        next();
-      }, held?.[order[step]] ?? FRAME_MS);
-    };
-    next();
-
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-    };
-  }, [who.animating, frameCount, who.action, delays]);
+  useFrameClock(
+    who.animating,
+    who.emotion,
+    faceCount,
+    faceDelays,
+    setFaceTick,
+    true,
+  );
 
   const frame = who.animating ? tick : who.frame;
 
+  // the face's frame rides on the item, so buildAvatar keeps one frame for
+  // everything else
+  const wornNow = useMemo(
+    () =>
+      avatar?.worn.map(w =>
+        w.part === 'face' ? { ...w, frame: who.animating ? faceTick : 0 } : w,
+      ) ?? [],
+    [avatar, faceTick, who.animating],
+  );
+
   const built = useMemo(() => {
-    if (!avatar?.worn.length) return null;
+    if (!wornNow.length || !avatar) return null;
     return buildAvatar(
-      avatar.worn,
+      wornNow,
       avatar.meta.zmap,
       avatar.meta.smap,
       who.action,
@@ -132,7 +221,7 @@ const AvatarCanvas = ({
         highFloraEars: who.highFloraEars,
       },
     );
-  }, [avatar, who.action, frame, who.mercEars, who.illiumEars, who.highFloraEars]);
+  }, [avatar, wornNow, who.action, frame, who.mercEars, who.illiumEars, who.highFloraEars]);
 
   // adjustments by item id, so a redraw picks them up without rebuilding
   const tweaks = useMemo(() => {

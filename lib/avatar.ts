@@ -56,6 +56,15 @@ export type WornItem = {
    * or `smile` where everything else takes `stand1`
    */
   stance?: string;
+  /**
+   * Overrides the frame for this item alone.
+   *
+   * Also the face. It runs on its own clock in game, and without this it shares
+   * the body's frame index: face `blink` has three frames and body `stand1` has
+   * three, so they lock together and the character blinks in time with its own
+   * breathing
+   */
+  frame?: number;
 };
 
 /** one drawable piece, resolved for a given stance and frame */
@@ -174,11 +183,11 @@ export const layersFor = (
 ): AvatarLayer[] => {
   const out: AvatarLayer[] = [];
 
-  for (const { part, manifest, sheetUrl, stance: own } of worn) {
+  for (const { part, manifest, sheetUrl, stance: own, frame: ownFrame } of worn) {
     const key = own ?? stance;
     const seq = manifest.frames[key] ?? manifest.frames.default;
     if (!seq?.length) continue;
-    const step = seq[frame % seq.length];
+    const step = seq[(ownFrame ?? frame) % seq.length];
     if (!step) continue;
 
     for (const [layer, idx] of Object.entries(step)) {
