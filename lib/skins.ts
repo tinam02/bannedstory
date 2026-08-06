@@ -1,8 +1,8 @@
 import { Outfit, OutfitItem } from '@/types';
 
 // Highest known body id with a real skin. Bump as MapleStory adds new ones.
-// maplestory.io exposes no name endpoint, so this is verified manually by
-// scrolling the picker and comparing swatches.
+// no name data for skins exists anywhere we can read, so this list is verified
+// by hand, scrolling the picker and comparing swatches.
 export const MAX_SKIN_ID = 2048;
 export const MIN_SKIN_ID = 2000;
 

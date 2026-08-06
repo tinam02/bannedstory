@@ -1,36 +1,21 @@
 import { OutfitItem, SelectedItems } from '@/types';
 import { indexFolderFor } from './closet';
 import { loadItemIndex, asOutfitItem } from '@/app/hooks/useItemIndex';
-import { fetchItems } from './fetch';
 
 /**
  * A random outfit
- *
  */
 
 const pickRandom = <T,>(arr: T[]): T | null =>
   arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
 
-// only used for a slot with no index, which is none of them at the moment
-const PAGE_RANDOM_MAX = 20;
-
-const randomFromApi = async (slot: string) => {
-  const page = Math.floor(Math.random() * PAGE_RANDOM_MAX);
-  let res = await fetchItems({ page, subcategory: slot });
-  if (!res.result.length) res = await fetchItems({ page: 0, subcategory: slot });
-  return pickRandom(res.result);
-};
-
 const randomItem = async (slot: string): Promise<OutfitItem | null> => {
   const folder = indexFolderFor(slot);
-  if (folder) {
-    const index = await loadItemIndex(folder);
-    if (index?.items.length) {
-      const e = pickRandom(index.items);
-      return e ? asOutfitItem(e, slot) : null;
-    }
-  }
-  return randomFromApi(slot);
+  if (!folder) return null;
+  const index = await loadItemIndex(folder);
+  if (!index?.items.length) return null;
+  const e = pickRandom(index.items);
+  return e ? asOutfitItem(e, slot) : null;
 };
 
 export async function randomizeSelectedItems(): Promise<SelectedItems> {

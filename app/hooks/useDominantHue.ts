@@ -99,8 +99,9 @@ export function warmDominantHue(
 
   const load = new Promise<number | null>(resolve => {
     const img = new window.Image();
-    // maplestory.io serves `Access-Control-Allow-Origin: *`, so the canvas
-    // stays readable — without this, getImageData would throw on a tainted one.
+    // the sheets are same origin now, so this is belt and braces rather than
+    // load bearing. left on because getImageData throws on a tainted canvas and
+    // that failure is silent enough to be worth never risking
     img.crossOrigin = 'anonymous';
 
     const finish = (hue: number | null) => {

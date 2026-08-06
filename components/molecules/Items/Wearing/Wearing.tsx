@@ -4,9 +4,7 @@ import useChar from '@/app/context/CharCtx';
 import { fontRegupix } from '@/app/styles/fonts';
 import DragWrapper from '@/components/atoms/DragWrapper';
 import { Icon } from '@/components/atoms/Icon';
-import DefaultImage from '@/components/atoms/Image';
 import ItemAdjust, { isAdjusted } from '@/components/atoms/ItemAdjust';
-import { iconUrlFor } from '@/lib/fetch';
 import { useItemIcon } from '@/app/hooks/useItemIndex';
 import SpriteIcon from '@/components/atoms/SpriteIcon/SpriteIcon';
 import { OutfitItem } from '@/types';
@@ -21,15 +19,13 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
   const { unequip, adjustItem } = useChar();
   const [opened, { toggle, close }] = useDisclosure(false);
   const edited = isAdjusted(item);
-  // our own index first. maplestory.io is only reached for a slot we have no
-  // index for, and there are none of those left
+  // null only while the index is still loading
   const icon = useItemIcon(slot, item.id);
-  const iconUrl = icon ? icon.sheet : iconUrlFor(item);
 
   // Sample the hue while the row is just sitting there
   useEffect(() => {
-    void warmDominantHue(iconUrl, icon);
-  }, [iconUrl, icon]);
+    if (icon) void warmDominantHue(icon.sheet, icon);
+  }, [icon]);
 
   return (
     <Popover
@@ -56,7 +52,7 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
         >
           <div className={styles.item}>
             <div style={{ display: 'contents' }}>
-              {icon ? (
+              {icon && (
                 <SpriteIcon
                   sheet={icon.sheet}
                   x={icon.x}
@@ -64,14 +60,6 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
                   w={icon.w}
                   h={icon.h}
                   title={item.name}
-                />
-              ) : (
-                <DefaultImage
-                  className={styles.itemImg}
-                  src={iconUrl}
-                  alt={item.name}
-                  title={item.name}
-                  unoptimized
                 />
               )}
             </div>

@@ -3,7 +3,8 @@ import { Outfit, SelectedItems } from '@/types';
 /**
  * Face expressions, ordered with the everyday ones first.
  *
- * These are the `frameBooks` keys maplestory.io exposes on a face item, and they are the values the render URL takes as `animationName`
+ * These are the frame keys a face item carries in wz, and the values the face
+ * manifest is keyed by
  */
 export const EMOTES = [
   'default',

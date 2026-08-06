@@ -2,7 +2,7 @@
 import { CSSProperties, useState } from 'react';
 import { Slider } from '@mantine/core';
 import { useDominantHue } from '@/app/hooks/useDominantHue';
-import { ADJUSTMENTS, AdjustmentKey, iconUrlFor } from '@/lib/fetch';
+import { ADJUSTMENTS, AdjustmentKey } from '@/lib/fetch';
 import { ItemIcon } from '@/app/hooks/useItemIndex';
 import { OutfitItem } from '@/types';
 import styles from './ItemAdjust.module.scss';
@@ -123,7 +123,7 @@ const ItemAdjust = ({
 }) => {
   const hidden = item.visible === false;
   // Read off the icon, which is the item in its unmodified colour
-  const baseHue = useDominantHue(icon ? icon.sheet : iconUrlFor(item), icon);
+  const baseHue = useDominantHue(icon ? icon.sheet : null, icon);
 
   // `undefined` for every key, so a reset removes them rather than writing
   // neutral numbers the export would then carry around.
