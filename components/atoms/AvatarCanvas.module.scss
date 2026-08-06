@@ -1,0 +1,8 @@
+// Drawn at wz's own 1:1 size and scaled by the stage's zoom, same as the map
+// sprites. Never smoothed, or the pixel art turns to soup.
+.avatar {
+  display: block;
+  image-rendering: pixelated;
+  user-select: none;
+  pointer-events: none;
+}

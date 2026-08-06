@@ -49,12 +49,15 @@ type Scene = {
   bg: string;
   mapId: string | null;
   zoom: number;
+  /** draw the character from wz layers instead of the maplestory.io png */
+  wzAvatar: boolean;
 };
 
 type SceneApi = Scene & {
   setBg: (bg: string) => void;
   setMapId: (id: string | null) => void;
   setZoom: (update: number | ((zoom: number) => number)) => void;
+  setWzAvatar: (on: boolean) => void;
   /** every map with plates on disk, name-sorted */
   maps: MapInfo[];
   /** False until localStorage has been read, so nothing flashes the default. */
@@ -65,9 +68,11 @@ const Ctx = createContext<SceneApi>({
   bg: DEFAULT_BG,
   mapId: null,
   zoom: ZOOM_MIN,
+  wzAvatar: false,
   setBg: () => {},
   setMapId: () => {},
   setZoom: () => {},
+  setWzAvatar: () => {},
   maps: [],
   hydrated: false,
 });
@@ -76,6 +81,7 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
   const [bg, setBgState] = useState(DEFAULT_BG);
   const [mapId, setMapIdState] = useState<string | null>(null);
   const [zoom, setZoomState] = useState(ZOOM_MIN);
+  const [wzAvatar, setWzAvatarState] = useState(false);
   const [maps, setMaps] = useState<MapInfo[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
@@ -91,6 +97,7 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
       const saved = raw ? (JSON.parse(raw) as Partial<Scene>) : null;
       if (typeof saved?.bg === 'string') setBgState(saved.bg);
       if (typeof saved?.zoom === 'number') setZoomState(saved.zoom);
+      if (typeof saved?.wzAvatar === 'boolean') setWzAvatarState(saved.wzAvatar);
       if (saved && 'mapId' in saved) {
         hadSavedMap.current = true;
         setMapIdState(saved.mapId ?? null);
@@ -153,6 +160,14 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
     [save],
   );
 
+  const setWzAvatar = useCallback(
+    (on: boolean) => {
+      setWzAvatarState(on);
+      save({ wzAvatar: on });
+    },
+    [save],
+  );
+
   const value = useMemo(
     () => ({
       bg,
@@ -161,10 +176,12 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
       setMapId,
       zoom,
       setZoom,
+      wzAvatar,
+      setWzAvatar,
       maps,
       hydrated,
     }),
-    [bg, setBg, mapId, setMapId, zoom, setZoom, maps, hydrated],
+    [bg, setBg, mapId, setMapId, zoom, setZoom, wzAvatar, setWzAvatar, maps, hydrated],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

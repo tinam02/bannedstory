@@ -37,3 +37,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# throwaway output from the avatar compositing spike
+/.avatar-spike/
+
+# packed avatar sheets, these go to blob not to git
+/.avatar-out/
+# the pre inlink-fix extraction, kept until the new one is verified
+/.avatar-out-old/
+
+# generated avatar sheets, copied from .avatar-out for local dev
+/public/avatar/
