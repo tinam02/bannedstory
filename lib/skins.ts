@@ -1,4 +1,4 @@
-import { REGION, VERSION } from './fetch';
+import { Outfit, OutfitItem } from '@/types';
 
 // Highest known body id with a real skin. Bump as MapleStory adds new ones.
 // maplestory.io exposes no name endpoint, so this is verified manually by
@@ -70,16 +70,21 @@ export const skinLabel = (id: number) => SKIN_NAMES[id] || String(id);
 export const skinFullName = (id: number): string | undefined =>
   SKIN_NAMES[id] ? `${SKIN_NAMES[id]} Skin` : undefined;
 
-export const skinSwatchUrl = (id: number) => {
-  const body = encodeURIComponent(
-    JSON.stringify({ Region: REGION, Version: VERSION, ItemId: id }),
-  );
-  const head = encodeURIComponent(
-    JSON.stringify({
-      Region: REGION,
-      Version: VERSION,
-      ItemId: id + HEAD_ID_OFFSET,
-    }),
-  );
-  return `https://maplestory.io/api/character/${body},${head}/stand1/0`;
-};
+/**
+ * A bare body and head in one skin, for a swatch.
+ */
+export const skinSwatchOutfit = (outfit: Outfit, id: number): Outfit => ({
+  ...outfit,
+  selectedItems: {
+    Body: { ...(outfit.selectedItems.Body as OutfitItem), id },
+    Head: {
+      ...(outfit.selectedItems.Head as OutfitItem),
+      id: id + HEAD_ID_OFFSET,
+    },
+  },
+  emotion: 'default',
+  action: 'stand1',
+  frame: 0,
+  animating: false,
+  flipX: false,
+});

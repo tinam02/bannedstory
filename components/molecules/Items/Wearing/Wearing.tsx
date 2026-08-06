@@ -7,6 +7,8 @@ import { Icon } from '@/components/atoms/Icon';
 import DefaultImage from '@/components/atoms/Image';
 import ItemAdjust, { isAdjusted } from '@/components/atoms/ItemAdjust';
 import { iconUrlFor } from '@/lib/fetch';
+import { useItemIcon } from '@/app/hooks/useItemIndex';
+import SpriteIcon from '@/components/atoms/SpriteIcon/SpriteIcon';
 import { OutfitItem } from '@/types';
 import { warmDominantHue } from '@/app/hooks/useDominantHue';
 import { Popover } from '@mantine/core';
@@ -19,12 +21,15 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
   const { unequip, adjustItem } = useChar();
   const [opened, { toggle, close }] = useDisclosure(false);
   const edited = isAdjusted(item);
-  const iconUrl = iconUrlFor(item);
+  // our own index first. maplestory.io is only reached for a slot we have no
+  // index for, and there are none of those left
+  const icon = useItemIcon(slot, item.id);
+  const iconUrl = icon ? icon.sheet : iconUrlFor(item);
 
   // Sample the hue while the row is just sitting there
   useEffect(() => {
-    void warmDominantHue(iconUrl);
-  }, [iconUrl]);
+    void warmDominantHue(iconUrl, icon);
+  }, [iconUrl, icon]);
 
   return (
     <Popover
@@ -51,13 +56,24 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
         >
           <div className={styles.item}>
             <div style={{ display: 'contents' }}>
-              <DefaultImage
-                className={styles.itemImg}
-                src={iconUrl}
-                alt={item.name}
-                title={item.name}
-                unoptimized
-              />
+              {icon ? (
+                <SpriteIcon
+                  sheet={icon.sheet}
+                  x={icon.x}
+                  y={icon.y}
+                  w={icon.w}
+                  h={icon.h}
+                  title={item.name}
+                />
+              ) : (
+                <DefaultImage
+                  className={styles.itemImg}
+                  src={iconUrl}
+                  alt={item.name}
+                  title={item.name}
+                  unoptimized
+                />
+              )}
             </div>
             <div
               className={styles.name}
@@ -83,7 +99,11 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
         </div>
       </Popover.Target>
       <Popover.Dropdown>
-        <ItemAdjust item={item} onChange={patch => adjustItem(slot, patch)} />
+        <ItemAdjust
+          item={item}
+          icon={icon}
+          onChange={patch => adjustItem(slot, patch)}
+        />
       </Popover.Dropdown>
     </Popover>
   );

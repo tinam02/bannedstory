@@ -1,6 +1,7 @@
 'use client';
 import useChar from '@/app/context/CharCtx';
-import { EMOTES, emoteLabel, emotePreviewUrl } from '@/lib/emotes';
+import { EMOTES, emoteLabel, emotePreviewOutfit } from '@/lib/emotes';
+import AvatarCanvas from './AvatarCanvas';
 import { Popover } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import styles from './EmotePicker.module.scss';
@@ -25,11 +26,9 @@ const EmotePicker = () => {
             aria-label='Expression'
             title={`Expression: ${emoteLabel(emotion)}`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={emotePreviewUrl(outfit, emotion)}
-              alt=''
+            <AvatarCanvas
               className={styles.triggerImg}
+              who={emotePreviewOutfit(outfit, emotion)}
             />
             <span>{emoteLabel(emotion)}</span>
           </button>
@@ -47,12 +46,9 @@ const EmotePicker = () => {
                 }}
                 title={emoteLabel(emote)}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={emotePreviewUrl(outfit, emote)}
-                  alt=''
-                  loading='lazy'
+                <AvatarCanvas
                   className={styles.swatchImg}
+                  who={emotePreviewOutfit(outfit, emote)}
                 />
                 <span className={styles.swatchLabel}>{emoteLabel(emote)}</span>
               </button>

@@ -1,12 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { characterRenderUrl, preloadImageUrl } from '@/lib/fetch';
-import DefaultImage from './Image';
 import useChar from '@/app/context/CharCtx';
-import useScene from '@/app/context/SceneCtx';
 import AvatarCanvas from './AvatarCanvas';
 import { Outfit } from '@/types';
-import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
 import styles from './Char.module.scss';
 
 // Poke the character
@@ -22,13 +18,11 @@ const DOUBLE_SLOP_PX = 12;
 /** `who` renders that character. left off, it's whoever is selected */
 const Char = ({ who }: { who?: Outfit }) => {
   const { outfit: active, hydrated } = useChar();
-  const { wzAvatar } = useScene();
   const outfit = who ?? active;
   const [poked, setPoked] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const release = useRef<(() => void) | null>(null);
   const lastTap = useRef<{ t: number; x: number; y: number } | null>(null);
-  const preloader = useSweepDebounce();
 
   // Deliberately not routed through `setEmotion`
   //never reaches localStorage
@@ -86,29 +80,8 @@ const Char = ({ who }: { who?: Outfit }) => {
       {/* Wait for the saved outfit so we don't render, and pay for, a
           default char that is about to be replaced. */}
       {hydrated && (
-        <div
-          className={styles.scale}
-          // Warm the hum render on dwell so the reaction is instant
-          onMouseEnter={() =>
-            preloader.trigger(() =>
-              preloadImageUrl(
-                characterRenderUrl({ ...outfit, emotion: POKE_EMOTE }),
-              ),
-            )
-          }
-          onPointerDown={press}
-        >
-          {/* the wz route draws the spike's character, not this one, so it's
-              only useful for comparing the two renderers side by side */}
-          {wzAvatar ? (
-            <AvatarCanvas who={shown} />
-          ) : (
-            <DefaultImage
-              src={characterRenderUrl(shown)}
-              alt='Character'
-              unoptimized
-            />
-          )}
+        <div className={styles.scale} onPointerDown={press}>
+          <AvatarCanvas who={shown} />
         </div>
       )}
     </div>

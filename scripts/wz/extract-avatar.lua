@@ -37,7 +37,7 @@ local LIMIT = 0
 -- extracted images in memory, so the whole of Character.wz resident is what
 -- crashed it. a folder at a time keeps that bounded and makes a crash cost
 -- minutes instead of the whole run
-local ONLY = ''
+local ONLY = 'Face'
 
 -- items already written are skipped, so this is resumable. it still leaks
 -- somewhere despite Unextract, so the way through a big folder is to run it,
@@ -190,6 +190,32 @@ local function resolve(path)
   return PluginManager.FindWz(path)
 end
 
+-- the appearance to use for a weapon that has one per weapon type.
+--
+-- cash weapons are the bulk of these. a Pizza Pan is not one shape: it is
+-- stored once per type of weapon it stands in for, keyed by that type's code,
+-- 30 for a one handed sword, 45 for a bow and so on. so the tree is
+-- typecode/stance/frame/layer, one level deeper than everything else, and the
+-- stance walk finds nothing at all.
+--
+-- there is no single right answer, so we take the lowest code present and note
+-- the rest in the manifest. that is what makes ~2200 cash weapons, almost every
+-- cash weapon there is, wearable instead of absent
+local function typeVariant(img)
+  local bestCode, bestNode, codes = nil, nil, {}
+  for n in each_node(img) do
+    local code = tonumber(textOf(n) or '')
+    -- a real type node holds stances, which is what tells it apart from a
+    -- frame number on an item that just happens to be shallow
+    if code and child(n, 'stand1') then
+      table.insert(codes, code)
+      if not bestCode or code < bestCode then bestCode, bestNode = code, n end
+    end
+  end
+  table.sort(codes)
+  return bestNode, bestCode, codes
+end
+
 local function findNodeFunc(path) return PluginManager.FindWz(path) end
 
 local function deref(node)
@@ -238,13 +264,15 @@ local function collect(img, keys)
   local frames = {}     -- stance -> { [frameIndex] = { layer -> nodeKey } }
   local total = 0
 
-  for _, stance in ipairs(keys) do
-    local sNode = child(img, stance)
-    if sNode then
-      local perFrame = {}
-      for frameNode in each_node(sNode) do
-        if tonumber(frameNode.Text) then
-          local layers = {}
+  -- the layers of one frame, keyed by layer name.
+  --
+  -- pulled out because a frame is not always a numbered node. a still stance
+  -- keeps its layers directly underneath itself, and the face `default` is
+  -- exactly that: default/face, not default/0/face. only walking numbered
+  -- children dropped it from 12609 of 12617 faces, and since the app starts on
+  -- emotion 'default' that meant characters with no face at all
+  local function readFrame(frameNode)
+    local layers = {}
           for raw in each_node(frameNode) do
             local c = deref(raw)
             -- a layer can be a run of frames rather than a canvas, take the first
@@ -285,14 +313,33 @@ local function collect(img, keys)
                   table.insert(order, nodeKey)
                   total = total + 1
                 end
-                layers[raw.Text] = nodeKey
+                local layerName = textOf(raw)
+                if layerName then layers[layerName] = nodeKey end
               end
             end
           end
+    return layers
+  end
+
+  for _, stance in ipairs(keys) do
+    local sNode = child(img, stance)
+    if sNode then
+      local perFrame = {}
+      for frameNode in each_node(sNode) do
+        local n = tonumber(textOf(frameNode) or '')
+        if n then
+          local layers = readFrame(frameNode)
           if next(layers) then
-            perFrame[tonumber(frameNode.Text)] = layers
+            perFrame[n] = layers
           end
         end
+      end
+      -- no numbered frames, so this stance is a single still and its layers sit
+      -- directly under it. that is the face `default`, and anything else stored
+      -- the same way
+      if not next(perFrame) then
+        local layers = readFrame(sNode)
+        if next(layers) then perFrame[0] = layers end
       end
       if next(perFrame) then frames[stance] = perFrame end
     end
@@ -338,13 +385,17 @@ do
   local zorder, slots = {}, {}
   local zmap = resolve('Base/zmap.img') or resolve('zmap.img')
   if zmap then
-    for c in each_node(zmap) do table.insert(zorder, q(c.Text)) end
+    for c in each_node(zmap) do
+      local t = textOf(c)
+      if t then table.insert(zorder, q(t)) end
+    end
   end
   local smap = resolve('Base/smap.img') or resolve('smap.img')
   if smap then
     for c in each_node(smap) do
       if c.Value ~= nil then
-        table.insert(slots, q(c.Text) .. ':' .. q(tostring(c.Value)))
+        local t = textOf(c)
+        if t then table.insert(slots, q(t) .. ':' .. q(tostring(c.Value))) end
       end
     end
   end
@@ -378,9 +429,10 @@ for _, folder in ipairs(FOLDERS) do
 
     local names = {}
     for c in each_node(root) do
-      local ok = c.Text:find('%.img$') ~= nil
-      if ok and folder.match then ok = c.Text:find(folder.match) ~= nil end
-      if ok then table.insert(names, c.Text) end
+      local t = textOf(c)
+      local ok = t ~= nil and t:find('%.img$') ~= nil
+      if ok and folder.match then ok = t:find(folder.match) ~= nil end
+      if ok then table.insert(names, t) end
     end
     table.sort(names)
 
@@ -414,7 +466,8 @@ for _, folder in ipairs(FOLDERS) do
         local function ownKeys()
           local out = {}
           for c in each_node(img) do
-            if c.Text ~= 'info' then table.insert(out, c.Text) end
+            local t = textOf(c)
+            if t and t ~= 'info' then table.insert(out, t) end
           end
           return out
         end
@@ -422,14 +475,34 @@ for _, folder in ipairs(FOLDERS) do
         local keys = STANCES
         if folder.byExpression then keys = ownKeys() end
 
+        -- set when this item turned out to be keyed by weapon type, so the
+        -- manifest can record which appearance we took and what else was there
+        local usedType, allTypes = nil, nil
+
         local function doItem()
           local canvases, order, frames, total, slots, slotOrder = collect(img, keys)
 
-          -- the stance whitelist found nothing, so this item isn't keyed by
-          -- pose. face accessories follow expressions the way Face does, and
-          -- anything else keyed its own way lands here too. retry on its own
-          -- keys rather than skip it, and say what they were the first time so
-          -- we learn the shape instead of guessing at it
+          -- nothing under the stance names, so try one level down. a cash
+          -- weapon keeps a whole set of stances per weapon type it imitates
+          if (not total or total < 1) and keys == STANCES then
+            local vNode, vCode, codes = typeVariant(img)
+            if vNode then
+              usedType, allTypes = vCode, codes
+              if not shapes[folder.name .. ':type'] then
+                shapes[folder.name .. ':type'] = true
+                say(string.format(
+                  '  %s has weapon type variants, taking the lowest. first one: %d of %d codes',
+                  folder.name, vCode, #codes))
+              end
+              canvases, order, frames, total, slots, slotOrder = collect(vNode, keys)
+            end
+          end
+
+          -- still nothing, so this item isn't keyed by pose at all. face
+          -- accessories follow expressions the way Face does, and anything else
+          -- keyed its own way lands here too. retry on its own keys rather than
+          -- skip it, and say what they were the first time so we learn the
+          -- shape instead of guessing at it
           if (not total or total < 1) and keys == STANCES then
             local mine = ownKeys()
             if #mine > 0 then
@@ -483,7 +556,8 @@ for _, folder in ipairs(FOLDERS) do
             if mapNode then
               for a in each_node(mapNode) do
                 local v = vec(a)
-                if v then table.insert(anchors, q(a.Text) .. ':' .. v) end
+                local an = textOf(a)
+                if v and an then table.insert(anchors, q(an) .. ':' .. v) end
               end
             end
             local zNode = child(c.node, 'z')
@@ -515,9 +589,23 @@ for _, folder in ipairs(FOLDERS) do
 
           local vslot = info and child(info, 'vslot')
           local islot = info and child(info, 'islot')
+          -- only on the weapons that have them. `type` is the appearance we
+          -- took, `types` is everything that was on offer, so a later pass can
+          -- let people switch without re-reading the wz
+          local typeBits = ''
+          if usedType then
+            local list = {}
+            for _, c in ipairs(allTypes or {}) do
+              table.insert(list, string.format('%d', c))
+            end
+            typeBits = q('type') .. ':' .. string.format('%d', usedType) .. ','
+              .. q('types') .. ':[' .. table.concat(list, ',') .. '],'
+          end
+
           File.WriteAllText(Path.Combine(dir, id .. '.json'),
             '{' .. q('id') .. ':' .. id .. ','
             .. q('sheet') .. ':' .. q(id .. '.png') .. ','
+            .. typeBits
             .. q('islot') .. ':' .. q(islot and tostring(islot.Value) or '') .. ','
             .. q('vslot') .. ':' .. q(vslot and tostring(vslot.Value) or '') .. ','
             .. q('canvases') .. ':{' .. table.concat(parts, ',') .. '},'

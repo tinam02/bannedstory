@@ -27,6 +27,17 @@ import styles from './Caption.module.scss';
 /** wz carries no delay for these, so it's a guess that reads about right */
 const FRAME_MS = 120;
 
+/**
+ * A javascript string as a css string token, line breaks included.
+ */
+const cssString = (s: string) =>
+  '"' +
+  s
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r?\n/g, '\\A ') +
+  '"';
+
 const Caption = ({
   kind,
   set,
@@ -149,7 +160,7 @@ const Caption = ({
             maxWidth: kind === 'tag' ? undefined : maxWidth,
             // css rather than a sibling node, so it measures as part of the
             // box. an empty caption would collapse to a sliver otherwise
-            '--placeholder': JSON.stringify(placeholder ?? '...'),
+            '--placeholder': cssString(placeholder ?? '...'),
           } as CSSProperties
         }
         contentEditable={editable}

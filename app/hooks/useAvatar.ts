@@ -34,7 +34,6 @@ const FOLDERS: Record<string, string> = {
   Shoes: 'Shoes',
   Glove: 'Glove',
   Cape: 'Cape',
-  Shield: 'Shield',
   Weapon: 'Weapon',
   'Face Accessory': 'Accessory',
   'Eye Decoration': 'Accessory',

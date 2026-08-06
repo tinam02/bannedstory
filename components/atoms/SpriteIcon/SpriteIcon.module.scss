@@ -1,0 +1,11 @@
+// 1 icon cut out of a packed sheet.
+//
+// background-position rather than an <img> per icon, because a tab shows 50 at
+// a time out of one file. as separate requests that would be 50 round trips for
+// a tab you might only glance at
+.icon {
+  display: block;
+  background-repeat: no-repeat;
+  // no smoothing pixel art TODO: check browsers
+  image-rendering: pixelated;
+}

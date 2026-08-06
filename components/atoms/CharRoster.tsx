@@ -1,6 +1,6 @@
 'use client';
 import useChar, { MAX_CHARS } from '@/app/context/CharCtx';
-import { characterRenderUrl } from '@/lib/fetch';
+import AvatarCanvas from './AvatarCanvas';
 import toolbar from '@/components/molecules/Toolbar/Toolbar.module.scss';
 import { Popover } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
@@ -54,8 +54,7 @@ const CharRoster = () => {
                 onClick={() => setActiveId(c.id)}
                 title='Select'
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={characterRenderUrl(c)} alt='' draggable={false} />
+                <AvatarCanvas who={c} />
               </button>
 
               <input

@@ -1,5 +1,4 @@
 import { Outfit } from '@/types';
-import { characterRenderUrl } from './fetch';
 
 /**
  * Every stance the render API knows, straight off a hat's `frameBooks`.
@@ -92,11 +91,10 @@ export const poseLabel = (stance: string) =>
  * makes a pose readable, and a weapon decides whether the attack ones look
  * like anything at all
  */
-export const posePreviewUrl = (outfit: Outfit, stance: string) =>
-  characterRenderUrl({
-    ...outfit,
-    action: stance,
-    // a still frame, so the grid isn't 35 animations running at once
-    animating: false,
-    frame: 0,
-  });
+export const posePreviewOutfit = (outfit: Outfit, stance: string): Outfit => ({
+  ...outfit,
+  action: stance,
+  // a still frame, so the grid isn't 35 animations running at once
+  animating: false,
+  frame: 0,
+});

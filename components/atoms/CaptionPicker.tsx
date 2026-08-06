@@ -65,11 +65,25 @@ const CaptionPanel = ({
         >
           {value.on ? 'Shown' : 'Hidden'}
         </button>
-        <input
+        <textarea
           className={styles.input}
           value={value.text}
           placeholder={placeholder}
+          id='speech-bubble-input'
+          rows={Math.min(
+            6,
+            Math.max(
+              value.text.split('\n').length,
+              (value.text ? '' : placeholder).split('\n').length,
+            ),
+          )}
           onChange={e => onChange({ text: e.target.value, on: true })}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
         />
       </div>
 

@@ -1,5 +1,4 @@
 import { Outfit, SelectedItems } from '@/types';
-import { characterRenderUrl } from './fetch';
 
 /**
  * Face expressions, ordered with the everyday ones first.
@@ -43,14 +42,22 @@ export const emoteLabel = (emote: string) =>
 // entries, stable while the outfit changes underneath
 const PREVIEW_SLOTS = ['Body', 'Head', 'Face', 'Face Accessory', 'Hair'];
 
-/** A head-and-shoulders render of the current character wearing `emotion`. */
-export const emotePreviewUrl = (outfit: Outfit, emotion: string) => {
+/**
+ * The character head-and-shoulders wearing `emotion`, for a picker thumbnail.
+ *
+ * Only the slots above the neck, so the swatch is a face rather than a whole
+ * body shrunk to thumbnail size.
+ *
+ * Returns the outfit rather than a url, because AvatarCanvas draws these now.
+ * See posePreviewOutfit for why
+ */
+export const emotePreviewOutfit = (outfit: Outfit, emotion: string): Outfit => {
   const selectedItems: SelectedItems = {};
   for (const slot of PREVIEW_SLOTS) {
     const item = outfit.selectedItems[slot];
     if (item) selectedItems[slot] = item;
   }
-  return characterRenderUrl({
+  return {
     ...outfit,
     emotion,
     selectedItems,
@@ -59,5 +66,5 @@ export const emotePreviewUrl = (outfit: Outfit, emotion: string) => {
     frame: 0,
     flipX: false,
     name: '',
-  });
+  };
 };

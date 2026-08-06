@@ -11,7 +11,6 @@ import MapPicker from '@/components/atoms/MapPicker';
 import CaptionPicker from '@/components/atoms/CaptionPicker';
 import CharRoster from '@/components/atoms/CharRoster';
 import PosePicker from '@/components/atoms/PosePicker';
-import WzAvatarToggle from '@/components/atoms/WzAvatarToggle';
 import styles from './Toolbar.module.scss';
 
 /**
@@ -24,7 +23,6 @@ const Toolbar = () => (
       <AnimateToggle />
       <ImportButton />
       <ExportButton />
-      <WzAvatarToggle />
       <ZoomControls />
     </div>
     <div className={styles.row}>

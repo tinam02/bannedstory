@@ -356,7 +356,7 @@ const Stage = () => {
                     styleId={cap.speech.style}
                     text={cap.speech.text}
                     onChange={text => setCaption(who.id, 'speech', { text })}
-                    placeholder='poopoo peepe'
+                    placeholder={'LF> MESOS\nPL0X\n@@@@\n@@@@\n@@@@'}
                   />
                 </div>
               )}

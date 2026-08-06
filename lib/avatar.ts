@@ -224,9 +224,22 @@ export const visibleLayers = (
   stance?: string,
 ): AvatarLayer[] => {
   const loose = (stance && NO_LOOSE_HAND[stance]) || [];
+
+  // Back facing stances draw no face.
+  //
+  // The tell is in the data rather than a list of stance names: the head drops
+  // its `humanEar` layer when you are looking at the back of it, and the three
+  // stances that do this, ladder, rope and swingTF, are exactly the three where
+  // maplestory.io draws no face. Keying off the head we were given also means a
+  // future stance behaves correctly without being enumerated here
+  const head = layers.filter(l => l.part === 'head');
+  const facingAway =
+    head.length > 0 && !head.some(l => l.layer === 'humanEar');
+
   const kept = layers.filter(l => {
     if (UNRESOLVED.has(l.layer)) return false;
     if (loose.includes(l.layer)) return false;
+    if (facingAway && l.part === 'face') return false;
     const flag = EAR_LAYERS[l.layer as keyof typeof EAR_LAYERS];
     if (flag) return opts[flag] === true;
     return true;

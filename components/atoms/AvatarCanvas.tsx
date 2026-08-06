@@ -39,7 +39,14 @@ const filterFor = (item: {
   return parts.length ? parts.join(' ') : 'none';
 };
 
-const AvatarCanvas = ({ who }: { who: Outfit }) => {
+const AvatarCanvas = ({
+  who,
+  className,
+}: {
+  who: Outfit;
+  /** for the picker thumbnails*/
+  className?: string;
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatar = useAvatar(who, true);
 
@@ -103,7 +110,7 @@ const AvatarCanvas = ({ who }: { who: Outfit }) => {
   return (
     <canvas
       ref={canvasRef}
-      className={styles.avatar}
+      className={className ? `${styles.avatar} ${className}` : styles.avatar}
       width={Math.max(1, built.w)}
       height={Math.max(1, built.h)}
     />

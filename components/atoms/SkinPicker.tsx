@@ -1,12 +1,15 @@
 'use client';
+import AvatarCanvas from './AvatarCanvas';
 import useChar from '@/app/context/CharCtx';
-import { SKIN_IDS, skinLabel, skinSwatchUrl } from '@/lib/skins';
+import { SKIN_IDS, skinLabel, skinSwatchOutfit } from '@/lib/skins';
 import { Popover } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import styles from './SkinPicker.module.scss';
 
 const SkinPicker = () => {
-  const { skinId, setSkinId } = useChar();
+  // the outfit only supplies the region/version and the shape of the two slots,
+  // skinSwatchOutfit swaps the body and head ids and strips everything else
+  const { skinId, setSkinId, outfit } = useChar();
   const [opened, { toggle, close }] = useDisclosure(false);
   const currentLabel = skinLabel(skinId);
   return (
@@ -25,10 +28,9 @@ const SkinPicker = () => {
             aria-label='Skin tone'
             title={`${currentLabel} (${skinId})`}
           >
-            <img
-              src={skinSwatchUrl(skinId)}
-              alt=''
+            <AvatarCanvas
               className={styles.triggerImg}
+              who={skinSwatchOutfit(outfit, skinId)}
             />
             <span>{currentLabel.toUpperCase()}</span>
           </button>
@@ -48,11 +50,9 @@ const SkinPicker = () => {
                   }}
                   title={`${label} (${id})`}
                 >
-                  <img
-                    src={skinSwatchUrl(id)}
-                    alt=''
-                    loading='lazy'
+                  <AvatarCanvas
                     className={styles.swatchImg}
+                    who={skinSwatchOutfit(outfit, id)}
                   />
                   <span className={styles.swatchLabel}>{label}</span>
                 </button>

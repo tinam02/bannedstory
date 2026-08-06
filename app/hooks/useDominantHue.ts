@@ -81,10 +81,20 @@ function analyse(data: Uint8ClampedArray): number | null {
  * never throws. Call it as soon as an item is on screen so the value is ready
  * before anything needs to paint with it.
  */
-export function warmDominantHue(url: string): Promise<number | null> {
-  const done = resolved.get(url);
+export type IconRect = { x: number; y: number; w: number; h: number };
+
+/** cache key, since one packed sheet holds 1000s of different items */
+const keyFor = (url: string, rect?: IconRect | null) =>
+  rect ? `${url}#${rect.x},${rect.y},${rect.w},${rect.h}` : url;
+
+export function warmDominantHue(
+  url: string,
+  rect?: IconRect | null,
+): Promise<number | null> {
+  const key = keyFor(url, rect);
+  const done = resolved.get(key);
   if (done !== undefined) return Promise.resolve(done);
-  const inFlight = pending.get(url);
+  const inFlight = pending.get(key);
   if (inFlight) return inFlight;
 
   const load = new Promise<number | null>(resolve => {
@@ -94,21 +104,25 @@ export function warmDominantHue(url: string): Promise<number | null> {
     img.crossOrigin = 'anonymous';
 
     const finish = (hue: number | null) => {
-      resolved.set(url, hue);
-      pending.delete(url);
+      resolved.set(key, hue);
+      pending.delete(key);
       resolve(hue);
     };
 
     img.onload = () => {
       try {
+        // a rect means the url is a packed sheet
+        // and only this item's tile should be sampled. reading the whole sheet would average every hat in the game together
+        const w = rect ? rect.w : img.naturalWidth;
+        const h = rect ? rect.h : img.naturalHeight;
         const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        if (!canvas.width || !canvas.height) return finish(null);
+        canvas.width = w;
+        canvas.height = h;
+        if (!w || !h) return finish(null);
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (!ctx) return finish(null);
-        ctx.drawImage(img, 0, 0);
-        finish(analyse(ctx.getImageData(0, 0, canvas.width, canvas.height).data));
+        ctx.drawImage(img, rect ? -rect.x : 0, rect ? -rect.y : 0);
+        finish(analyse(ctx.getImageData(0, 0, w, h).data));
       } catch {
         // Unreadable canvas — callers fall back to a plain spectrum.
         finish(null);
@@ -120,7 +134,7 @@ export function warmDominantHue(url: string): Promise<number | null> {
     img.src = url;
   });
 
-  pending.set(url, load);
+  pending.set(key, load);
   return load;
 }
 
@@ -136,29 +150,40 @@ export function warmDominantHue(url: string): Promise<number | null> {
  * Returns a warmed value on the very first render, with no repaint — see
  * `warmDominantHue`.
  */
-export function useDominantHue(url: string | null) {
+export function useDominantHue(url: string | null, rect?: IconRect | null) {
   const [hue, setHue] = useState<number | null>(() =>
-    url ? (resolved.get(url) ?? null) : null,
+    url ? (resolved.get(keyFor(url, rect)) ?? null) : null,
   );
+
+  // rect is spread into primitives, or a fresh object literal from the caller
+  // would re-run this on every render
+  const rx = rect?.x;
+  const ry = rect?.y;
+  const rw = rect?.w;
+  const rh = rect?.h;
 
   useEffect(() => {
     if (!url) {
       setHue(null);
       return;
     }
-    const known = resolved.get(url);
+    const r =
+      rx != null && ry != null && rw != null && rh != null
+        ? { x: rx, y: ry, w: rw, h: rh }
+        : null;
+    const known = resolved.get(keyFor(url, r));
     if (known !== undefined) {
       setHue(known);
       return;
     }
     let cancelled = false;
-    warmDominantHue(url).then(value => {
+    warmDominantHue(url, r).then(value => {
       if (!cancelled) setHue(value);
     });
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [url, rx, ry, rw, rh]);
 
   return hue;
 }

@@ -1,6 +1,7 @@
 'use client';
 import useChar from '@/app/context/CharCtx';
-import { POSE_GROUPS, poseLabel, posePreviewUrl } from '@/lib/poses';
+import { POSE_GROUPS, poseLabel, posePreviewOutfit } from '@/lib/poses';
+import AvatarCanvas from './AvatarCanvas';
 import toolbar from '@/components/molecules/Toolbar/Toolbar.module.scss';
 import { Popover } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
@@ -49,13 +50,9 @@ const PosePicker = () => {
                   title={`${pose.label}  (${pose.stance})`}
                   onClick={() => choose(pose.stance)}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <AvatarCanvas
                     className={styles.shot}
-                    src={posePreviewUrl(outfit, pose.stance)}
-                    alt=''
-                    loading='lazy'
-                    draggable={false}
+                    who={posePreviewOutfit(outfit, pose.stance)}
                   />
                   <span className={styles.label}>{pose.label}</span>
                 </button>
