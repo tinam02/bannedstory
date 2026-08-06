@@ -63,17 +63,22 @@ const buildItemsUrl = ({
   overallCategory,
   subcategory,
   category,
+  cashOnly,
 }: {
   page: number;
   nameText?: string;
   overallCategory: string;
   subcategory?: string;
   category?: string;
+  cashOnly?: boolean;
 }) => {
   const params = new URLSearchParams();
   params.set('overallCategoryFilter', overallCategory);
   if (category) params.set('categoryFilter', category);
   if (subcategory) params.set('subCategoryFilter', subcategory);
+  // filtered by the api rather than by us, so a page is still a full page.
+  // dropping non cash items after the fetch would leave most pages half empty
+  if (cashOnly) params.set('cashFilter', 'true');
   if (nameText) params.set('searchFor', nameText);
   params.set('startPosition', String(page * PER_PAGE));
   // Request one extra so we can detect whether a next page exists.
@@ -102,19 +107,29 @@ export const fetchItems = async ({
   overallCategory = 'Equip',
   subcategory,
   categories,
+  cashOnly,
 }: {
   page?: number;
   nameText?: string;
   overallCategory?: string;
   subcategory?: string;
   categories?: string[];
+  cashOnly?: boolean;
 }): Promise<ItemsListResponse> => {
   try {
     const urls = categories?.length
       ? categories.map(category =>
-          buildItemsUrl({ page, nameText, overallCategory, category }),
+          buildItemsUrl({ page, nameText, overallCategory, category, cashOnly }),
         )
-      : [buildItemsUrl({ page, nameText, overallCategory, subcategory })];
+      : [
+          buildItemsUrl({
+            page,
+            nameText,
+            overallCategory,
+            subcategory,
+            cashOnly,
+          }),
+        ];
 
     const pages = await Promise.all(urls.map(fetchPage));
     const hasNext = pages.some(arr => arr.length > PER_PAGE);

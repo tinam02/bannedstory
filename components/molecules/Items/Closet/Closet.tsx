@@ -3,10 +3,13 @@
 import { fontRegupix } from '@/app/styles/fonts';
 import DragWrapper from '@/components/atoms/DragWrapper';
 import { Tabs } from '@mantine/core';
+import { useState } from 'react';
 import ItemList from '../ItemList';
 import styles from './Closet.module.scss';
 
 const Closet = ({}: {}) => {
+  const [cashOnly, setCashOnly] = useState(false);
+
   const items = tabs.map(tab => (
     <Tabs.Tab value={tab.slot} key={tab.slot}>
       {tabLabel(tab)}
@@ -41,7 +44,12 @@ const Closet = ({}: {}) => {
             <hr className={styles.divider} />
             {tabs.map(tab => (
               <Tabs.Panel value={tab.slot} key={tab.slot}>
-                <ItemList slot={tab.slot} categories={tab.categories} />
+                <ItemList
+                  slot={tab.slot}
+                  categories={tab.categories}
+                  cashOnly={cashOnly}
+                  onCashOnlyChange={setCashOnly}
+                />
               </Tabs.Panel>
             ))}
           </Tabs>

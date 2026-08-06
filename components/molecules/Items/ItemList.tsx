@@ -11,6 +11,7 @@ import ScrollBar from '../../atoms/ScrollBar/ScrollBar';
 import styles from './Items.module.scss';
 import useChar from '@/app/context/CharCtx';
 import Search, { SEARCH_DEBOUNCE_MS } from '@/components/atoms/Search/Search';
+import CashFilter from '@/components/atoms/CashFilter/CashFilter';
 import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
 import { useDebouncedValue } from '@/app/hooks/useDebouncedValue';
 import { OutfitItem } from '@/types';
@@ -32,9 +33,13 @@ const PRELOAD_MARGIN = '200px';
 const ItemList = ({
   slot,
   categories,
+  cashOnly,
+  onCashOnlyChange,
 }: {
   slot: string;
   categories?: string[];
+  cashOnly: boolean;
+  onCashOnlyChange: (next: boolean) => void;
 }) => {
   const [items, setItems] = useState<OutfitItem[]>([]);
   const [page, setPage] = useState(0);
@@ -59,7 +64,7 @@ const ItemList = ({
   // A new search means a different list, so the accumulated one is thrown away.
   // Done during render rather than in an effect: React re-renders with the reset values before committing, so the fetch below sees page 0 straight away
   // instead of firing once for the stale page and again for the reset one.
-  const listKey = `${slot} ${catKey} ${nameText}`;
+  const listKey = `${slot} ${catKey} ${cashOnly} ${nameText}`;
   const [prevListKey, setPrevListKey] = useState(listKey);
   if (prevListKey !== listKey) {
     setPrevListKey(listKey);
@@ -73,7 +78,13 @@ const ItemList = ({
     // anything that resolves after its query has been superseded is ignored.
     let stale = false;
     setLoading(true);
-    fetchItems({ page, subcategory: slot, categories, nameText }).then(res => {
+    fetchItems({
+      page,
+      subcategory: slot,
+      categories,
+      cashOnly,
+      nameText,
+    }).then(res => {
       if (stale) return;
       setItems(prev => {
         if (page === 0) return res.result;
@@ -89,7 +100,7 @@ const ItemList = ({
     };
     // catKey rather than categories, see above
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, slot, catKey, nameText]);
+  }, [page, slot, catKey, cashOnly, nameText]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -131,6 +142,7 @@ const ItemList = ({
           onChange={setQuery}
           onSubmit={next => applyQueryNow(next.trim())}
         />
+        <CashFilter on={cashOnly} onChange={onCashOnlyChange} />
       </div>
 
       <div className={styles.listWrap}>
