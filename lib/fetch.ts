@@ -62,14 +62,17 @@ const buildItemsUrl = ({
   nameText,
   overallCategory,
   subcategory,
+  category,
 }: {
   page: number;
   nameText?: string;
   overallCategory: string;
   subcategory?: string;
+  category?: string;
 }) => {
   const params = new URLSearchParams();
   params.set('overallCategoryFilter', overallCategory);
+  if (category) params.set('categoryFilter', category);
   if (subcategory) params.set('subCategoryFilter', subcategory);
   if (nameText) params.set('searchFor', nameText);
   params.set('startPosition', String(page * PER_PAGE));
@@ -78,27 +81,58 @@ const buildItemsUrl = ({
   return `${API_BASE}/item?${params}`;
 };
 
+const fetchPage = async (url: string) => {
+  const res = await fetch(url, { cache: 'force-cache' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as any[];
+};
+
+/**
+ * One page of items for a closet tab.
+ *
+ * `categories` is for a tab that isn't one subcategory. Weapons are the reason:
+ * the api splits them across One-Handed, Two-Handed and Secondary Weapon, each
+ * with the actual type as its subcategory, so a single WEAPON tab has to ask for
+ * all three and merge. Each is paged independently at the same offset and there
+ * are more items left as long as any of them still has some
+ */
 export const fetchItems = async ({
   page = 0,
   nameText,
   overallCategory = 'Equip',
   subcategory,
+  categories,
 }: {
   page?: number;
   nameText?: string;
   overallCategory?: string;
   subcategory?: string;
+  categories?: string[];
 }): Promise<ItemsListResponse> => {
   try {
-    const res = await fetch(
-      buildItemsUrl({ page, nameText, overallCategory, subcategory }),
-      { cache: 'force-cache' },
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const arr = (await res.json()) as any[];
-    const hasNext = arr.length > PER_PAGE;
+    const urls = categories?.length
+      ? categories.map(category =>
+          buildItemsUrl({ page, nameText, overallCategory, category }),
+        )
+      : [buildItemsUrl({ page, nameText, overallCategory, subcategory })];
+
+    const pages = await Promise.all(urls.map(fetchPage));
+    const hasNext = pages.some(arr => arr.length > PER_PAGE);
+
+    // dropped per source, so one long category can't crowd out the others
+    const merged: any[] = [];
+    const seen = new Set<number>();
+    for (const arr of pages) {
+      for (const io of arr.slice(0, PER_PAGE)) {
+        if (seen.has(io.id)) continue;
+        seen.add(io.id);
+        merged.push(io);
+      }
+    }
+    merged.sort((a, b) => a.id - b.id);
+
     return {
-      result: arr.slice(0, PER_PAGE).map(adaptItem),
+      result: merged.map(adaptItem),
       metadata: {
         page,
         prevPage: page > 0 ? page - 1 : null,

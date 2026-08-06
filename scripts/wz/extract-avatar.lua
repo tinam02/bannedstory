@@ -84,6 +84,9 @@ local FOLDERS = {
   { name = 'Glove', path = 'Character/Glove' },
   { name = 'Cape', path = 'Character/Cape' },
   { name = 'Weapon', path = 'Character/Weapon' },
+  -- the api files shields under Armor rather than Weapon, but wz keeps them in
+  -- their own folder and the closet has always had a tab for them
+  { name = 'Shield', path = 'Character/Shield' },
   -- face accessories, eye decorations and earrings all live in here together
   { name = 'Accessory', path = 'Character/Accessory' },
   -- the skins live loose at the root rather than in a folder

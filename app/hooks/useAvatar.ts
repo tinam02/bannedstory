@@ -16,9 +16,11 @@ const ROOT = '/avatar';
 /**
  * The equipped slot -> the folder its manifests are in.
  *
- * Keyed by the item's subCategory, which is what `selectedItems` is keyed by.
- * Weapons are the exception: their subCategory is the weapon type, so a sword
- * says "One-Handed Sword" and never "Weapon". Those go by category instead
+ * Keyed by the slot in `selectedItems`, which is the item's subCategory for
+ * everything except the weapon tab. That one equips under a flat "Weapon"
+ * because the API spreads weapons over sixteen subcategories and a character
+ * only holds one, so the category is the fallback for anything that arrives
+ * with a weapon type as its slot instead
  */
 const FOLDERS: Record<string, string> = {
   Body: 'Body',
@@ -32,6 +34,8 @@ const FOLDERS: Record<string, string> = {
   Shoes: 'Shoes',
   Glove: 'Glove',
   Cape: 'Cape',
+  Shield: 'Shield',
+  Weapon: 'Weapon',
   'Face Accessory': 'Accessory',
   'Eye Decoration': 'Accessory',
   Earrings: 'Accessory',
