@@ -1,5 +1,6 @@
 'use client';
 import { ClosetTab, indexFolderFor } from '@/lib/closet';
+import { asSheet } from '@/lib/assets';
 import { OutfitItem } from '@/types';
 import { REGION, VERSION } from '@/lib/fetch';
 import { useEffect, useState } from 'react';
@@ -50,7 +51,7 @@ export const loadItemIndex = (folder: string) => load(folder);
 
 /** the sheet a row's icon lives on, for css background positioning */
 export const iconSheetUrl = (folder: string, index: ItemIndex, e: IndexEntry) =>
-  `${ROOT}/${index.sheets[e.s] ?? index.sheets[0]}`;
+  asSheet(`${ROOT}/${index.sheets[e.s] ?? index.sheets[0]}`);
 
 /**
  * An index row in the shape the rest of the app passes around.
@@ -93,7 +94,7 @@ const lookup = async (folder: string, id: number) => {
   const e = map.get(id);
   if (!e) return null;
   return {
-    sheet: `${ROOT}/${index.sheets[e.s] ?? index.sheets[0]}`,
+    sheet: asSheet(`${ROOT}/${index.sheets[e.s] ?? index.sheets[0]}`),
     x: e.x,
     y: e.y,
     w: e.w,

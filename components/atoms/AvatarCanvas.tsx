@@ -1,9 +1,10 @@
 'use client';
 import useAvatar from '@/app/hooks/useAvatar';
+import useFrameDelays from '@/app/hooks/useFrameDelays';
 import { buildAvatar } from '@/lib/avatar';
 import { ADJUSTMENTS } from '@/lib/fetch';
 import { Outfit } from '@/types';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './AvatarCanvas.module.scss';
 
 /**
@@ -12,6 +13,9 @@ import styles from './AvatarCanvas.module.scss';
  * Same model as lib/avatar.ts, which scripts/avatar-spike.ts checks pixel for
  * pixel against maplestory.io
  */
+
+/** only for a stance delays.json has nothing for */
+const FRAME_MS = 280;
 
 /**
  * The adjustments as a canvas filter, so a slider nudge is a redraw.
@@ -46,6 +50,46 @@ const AvatarCanvas = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatar = useAvatar(who, true);
+  const [tick, setTick] = useState(0);
+  const delays = useFrameDelays();
+
+  // how many frames this stance has, off the body, which is the one part
+  // always worn. every item agrees on the count for a given stance
+  const frameCount = useMemo(() => {
+    const body = avatar?.worn.find(w => w.part === 'body');
+    const seq = body?.manifest.frames[who.action] ?? body?.manifest.frames.default;
+    return seq?.length ?? 1;
+  }, [avatar, who.action]);
+
+  // chained timeouts rather than one interval, because every frame has its own
+  // hold. stand1 sits on each for 500ms, walk1 for 180, and the attack stances
+  // go 300/150/350, so an interval makes most of them wrong
+  useEffect(() => {
+    setTick(0);
+    if (!who.animating || frameCount < 2) return;
+
+    const held = delays?.[who.action]?.delays;
+    let timer: ReturnType<typeof setTimeout>;
+    let at = 0;
+    let stopped = false;
+
+    const step = () => {
+      timer = setTimeout(() => {
+        if (stopped) return;
+        at = (at + 1) % frameCount;
+        setTick(at);
+        step();
+      }, held?.[at] ?? FRAME_MS);
+    };
+    step();
+
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [who.animating, frameCount, who.action, delays]);
+
+  const frame = who.animating ? tick : who.frame;
 
   const built = useMemo(() => {
     if (!avatar?.worn.length) return null;
@@ -54,14 +98,14 @@ const AvatarCanvas = ({
       avatar.meta.zmap,
       avatar.meta.smap,
       who.action,
-      who.frame,
+      frame,
       {
         mercEars: who.mercEars,
         illiumEars: who.illiumEars,
         highFloraEars: who.highFloraEars,
       },
     );
-  }, [avatar, who.action, who.frame, who.mercEars, who.illiumEars, who.highFloraEars]);
+  }, [avatar, who.action, frame, who.mercEars, who.illiumEars, who.highFloraEars]);
 
   // adjustments by item id, so a redraw picks them up without rebuilding
   const tweaks = useMemo(() => {

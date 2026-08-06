@@ -1,6 +1,7 @@
 'use client';
 import { ItemManifest, WornItem } from '@/lib/avatar';
 import { Outfit } from '@/types';
+import { SHEET_EXT } from '@/lib/assets';
 import { useEffect, useState } from 'react';
 
 /**
@@ -123,7 +124,7 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
           worn.push({
             part,
             manifest,
-            sheetUrl: `${ROOT}/${folder}/${item.id}.png`,
+            sheetUrl: `${ROOT}/${folder}/${item.id}${SHEET_EXT}`,
             // the face is keyed by expression, everything else by pose
             stance: part === 'face' ? outfit.emotion : undefined,
           });
