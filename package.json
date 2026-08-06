@@ -30,6 +30,7 @@
     "postcss-preset-mantine": "^1.17.0",
     "postcss-simple-vars": "^7.0.1",
     "sass": "^1.77.8",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-plugin-css-modules": "^5.2.0"
   }
 }

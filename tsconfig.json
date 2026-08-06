@@ -20,6 +20,12 @@
     "plugins": [
       {
         "name": "next"
+      },
+      {
+        "name": "typescript-plugin-css-modules",
+        "options": {
+          "goToDefinition": true //go to css class definition
+        }
       }
     ],
     "paths": {
