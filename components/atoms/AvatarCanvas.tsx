@@ -18,6 +18,32 @@ import styles from './AvatarCanvas.module.scss';
 const FRAME_MS = 280;
 
 /**
+ * The stances built to loop. Everything else plays there and back.
+ *
+ * wz carries no flag for this, so it comes from measuring how many pixels move
+ * on each frame to frame step, including the wrap from the last frame to the
+ * first. A stance built as a cycle closes on itself and its wrap is no bigger
+ * than any other step. These three do: walk1 1.00x, walk2 0.99x, heal 0.87x.
+ *
+ * Nothing else with three or more frames comes close. stand1 wraps at 1.36x,
+ * alert 1.23x, the swings and stabs 1.16 to 1.43x, and the shooting stances are
+ * worst at 2.00x, 2.00x and 2.65x. Their last frame is nowhere near their
+ * first, so a plain loop snaps.
+ *
+ * Two frame stances are not in either list on purpose. They have only one
+ * distinct step, so a bounce and a loop are the same thing
+ */
+const CYCLES = new Set(['walk1', 'walk2', 'heal']);
+
+/** the frame order for a stance, either a cycle or a there and back */
+const sequenceFor = (stance: string, frames: number) => {
+  const forward = Array.from({ length: frames }, (_, i) => i);
+  if (frames < 3 || CYCLES.has(stance)) return forward;
+  // the ends are not repeated, or each would be held for twice its delay
+  return [...forward, ...forward.slice(1, -1).reverse()];
+};
+
+/**
  * The adjustments as a canvas filter, so a slider nudge is a redraw.
  */
 const filterFor = (item: {
@@ -69,19 +95,20 @@ const AvatarCanvas = ({
     if (!who.animating || frameCount < 2) return;
 
     const held = delays?.[who.action]?.delays;
+    const order = sequenceFor(who.action, frameCount);
     let timer: ReturnType<typeof setTimeout>;
-    let at = 0;
+    let step = 0;
     let stopped = false;
 
-    const step = () => {
+    const next = () => {
       timer = setTimeout(() => {
         if (stopped) return;
-        at = (at + 1) % frameCount;
-        setTick(at);
-        step();
-      }, held?.[at] ?? FRAME_MS);
+        step = (step + 1) % order.length;
+        setTick(order[step]);
+        next();
+      }, held?.[order[step]] ?? FRAME_MS);
     };
-    step();
+    next();
 
     return () => {
       stopped = true;
