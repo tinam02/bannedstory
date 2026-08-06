@@ -73,13 +73,19 @@
   position: relative;
   flex: 1;
   min-width: 0;
+  align-items: center;
 }
 
+
 .itemImg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   margin-right: 8px;
   align-self: center;
   min-width: 40px;
-  object-fit: none;
+  min-height: 32px;
 }
 
 .name {

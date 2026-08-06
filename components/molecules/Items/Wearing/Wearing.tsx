@@ -51,7 +51,7 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
           }}
         >
           <div className={styles.item}>
-            <div style={{ display: 'contents' }}>
+            <div className={styles.itemImg}>
               {icon && (
                 <SpriteIcon
                   sheet={icon.sheet}

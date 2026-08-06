@@ -14,10 +14,7 @@ import styles from './AvatarCanvas.module.scss';
  */
 
 /**
- * The adjustments as a canvas filter.
- *
- * These used to be query params on the render url, so every nudge of a slider
- * meant refetching a png. Doing them here is a redraw instead
+ * The adjustments as a canvas filter, so a slider nudge is a redraw.
  */
 const filterFor = (item: {
   hue?: number;
