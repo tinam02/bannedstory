@@ -42,6 +42,9 @@ const DOUBLE_GAP_MS = 170;
 /** only if face-delays.json is missing, since wz does carry the blink speed */
 const BLINK_MS = 110;
 
+/** blink waits between plays instead of looping */
+const BLINK = 'blink';
+
 /**
  * Advances one animation, holding each frame for its own delay.
  *
@@ -49,10 +52,10 @@ const BLINK_MS = 110;
  * timed. The body and the face each get one of these, which is the point: they
  * run independently.
  *
- * `rest` is for the face. Eyes are open nearly all the time and a blink is a
- * quick flurry at an irregular interval, so the resting frame is held far
- * longer than the rest and by a different amount each time. As an even loop it
- * reads as a twitch however slowly it is run
+ * `rest` is for blinking, and ONLY for blinking. Eyes are open nearly all the
+ * time and a blink is a quick flurry at an irregular interval
+ *
+ * Every other expression is a plain loop
  */
 const useFrameClock = (
   playing: boolean,
@@ -77,8 +80,15 @@ const useFrameClock = (
     let justDoubled = false;
 
     const holdFor = (frame: number) => {
-      // the blink frames themselves run on wz timing, 60ms each
-      if (!rest || frame !== 0) return held?.[frame] ?? (rest ? BLINK_MS : FRAME_MS);
+      // the blink frames themselves run on wz timing, 60ms each.
+      //
+      // falling back to the first delay rather than to a constant, because
+      // face-delays.json often carries fewer delays than the face has frames,
+      // `cry` being [180] against a three frame cry. every entry in it is
+      // evenly timed, so frame 0's delay is the right guess for the others
+      if (!rest || frame !== 0) {
+        return held?.[frame] ?? held?.[0] ?? (rest ? BLINK_MS : FRAME_MS);
+      }
       // frame 0 is the eyes open, and wz's 60ms for it is meaningless here.
       // mostly a long irregular wait, sometimes a short one so the blink comes
       // in a pair the way a real one does
@@ -261,13 +271,14 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
     return seq?.length ?? 1;
   }, [avatar, who.emotion]);
 
+  // only blink rests
   useFrameClock(
     who.animating,
     who.emotion,
     faceCount,
     faceDelays,
     setFaceTick,
-    true,
+    who.emotion === BLINK,
   );
 
   const frame = who.animating ? tick : who.frame;

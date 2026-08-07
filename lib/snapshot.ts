@@ -7,9 +7,6 @@
  * with the animation intact
  */
 
-/** what a still is saved as. both keep full alpha */
-export type StillFormat = 'png' | 'webp';
-
 /**
  * Bigger, without going soft.
  *
