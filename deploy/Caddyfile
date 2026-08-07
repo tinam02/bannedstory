@@ -1,0 +1,29 @@
+# goes on the vps at /etc/caddy/Caddyfile
+#
+# caddy rather than nginx because it gets and renews the https certificate on
+# its own. no certbot, no cron job, no expiry at 3am
+
+henehoe.app {
+	root * /var/www/henehoe
+	encode gzip zstd
+
+	# the assets never change under a given name, so they can be cached for a
+	# year and never revalidated. this is what keeps repeat visits free
+	@immutable path /avatar/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+	# the html is the opposite. it has to be rechecked or a deploy never
+	# reaches anyone still holding the old page
+	@html path /
+	header @html Cache-Control "public, max-age=0, must-revalidate"
+
+	# next writes /foo.html but links to /foo, so try the file with .html on
+	try_files {path} {path}.html {path}/index.html
+
+	file_server
+}
+
+# www goes to the bare domain, so the two do not compete for cache entries
+www.henehoe.app {
+	redir https://henehoe.app{uri} permanent
+}

@@ -13,6 +13,8 @@
 /.next/
 # where NEXT_DIST_DIR sends a verification build
 /.next-check/
+# and where scripts/deploy.mjs builds, so neither touches the dev server
+/.next-deploy/
 /out/
 
 # production
