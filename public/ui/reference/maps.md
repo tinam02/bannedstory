@@ -1,7 +1,6 @@
 # MapleStory map reference — GMS 265
 
-20723 named maps across 869 streets.
-Source: `https://maplestory.io/api/GMS/265/map` — full data in `maps.json` next to this file.
+20723 named maps across 869 streets
 
 Streets are alphabetical. Ctrl+F a street name, or a map name directly.
 Feed the `id` to WzComparerR2: `Map/Map/Map<first digit>/<id padded to 9>.img`

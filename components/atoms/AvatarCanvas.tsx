@@ -230,7 +230,15 @@ const AvatarCanvas = ({
       if (!item) continue;
       out[item.id] = {
         filter: filterFor(item),
-        alpha: item.alpha != null ? item.alpha : ADJUSTMENTS.alpha,
+        // hidden is alpha 0 rather than dropping the item, so it still counts
+        // towards the canvas bounds. otherwise hiding a hat collapses the whole
+        // character upwards and everything jumps
+        alpha:
+          item.visible === false
+            ? 0
+            : item.alpha != null
+              ? item.alpha
+              : ADJUSTMENTS.alpha,
       };
     }
     return out;
@@ -268,6 +276,9 @@ const AvatarCanvas = ({
     <canvas
       ref={canvasRef}
       className={className ? `${styles.avatar} ${className}` : styles.avatar}
+      // css rather than flipping every blit, so it costs nothing per frame.
+      // nothing in the ui sets this yet, but an imported outfit can carry it
+      style={who.flipX ? { transform: 'scaleX(-1)' } : undefined}
       width={Math.max(1, built.w)}
       height={Math.max(1, built.h)}
     />

@@ -4,8 +4,7 @@
 //   node scripts/build-sprite-icons.mjs
 //
 // Character.wz stores no icon for hair or faces, the game just draws the sprite,
-// which is why extract-index.lua came back with nothing for both and why
-// maplestory.io only serves /icon and never /iconRaw for those slots.
+// which is why extract-index.lua came back with nothing for both
 //
 // so the icon is made here, out of the sprite: take the default frame, composite
 // its layers in zmap order the same way the character does, trim to the pixels

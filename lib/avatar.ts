@@ -111,12 +111,6 @@ const ANCHORS: [anchor: string, parentLayer: string, parentAnchor?: string][] = 
   // character supplies that: it comes from the weapon, which is what its
   // `handBelowWeapon` z is telling us. so it falls through as an orphan and
   // lands on the body origin, which is exactly right for alert.
-  //
-  // heal is the one stance in 35 that is off, and no anchor fixes it. every
-  // candidate parent was scored and each cost more elsewhere than it saved, and
-  // no translation of the layer makes heal match either. maplestory.io simply
-  // does not draw the hand there. worth revisiting once weapons go in, since
-  // that is where handMove actually comes from
 ];
 
 /** one optional pair of ears per race, each behind its own flag */

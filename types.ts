@@ -67,7 +67,6 @@ export type Caption = {
 export interface Outfit {
   id: number;
   type: 'character';
-  /** maplestory.io stance string, e.g. "stand1" — not a friendly pose name. */
   action: string;
   /** Applied as `animationName` on the Face and Face Accessory layers. */
   emotion: string;

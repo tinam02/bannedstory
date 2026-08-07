@@ -2,10 +2,6 @@
 --
 -- run from LuaConsole with Base.wz loaded, after extract-avatar.lua
 --
--- this is what lets the closet stop asking maplestory.io for the item list.
--- their api is frozen at GMS 265 and is missing whole releases: Heartthrob Eye
--- Candy (Longcoat 1054790) renders fine from our own sheets but cannot be found,
--- because the search that finds it is theirs
 --
 -- two outputs per folder, both into .avatar-out/index
 --   <Folder>.json        [{id, name, cash, x, y, w, h}, ...]
@@ -349,8 +345,7 @@ for _, folder in ipairs(FOLDERS) do
   elseif #all == 0 then
     -- every chunk ran and none of them found an icon, so this folder does not
     -- store one. Hair and Face are like that: the game draws their sprite as
-    -- the icon rather than keeping a separate image, which is why
-    -- maplestory.io only serves /icon and not /iconRaw for them.
+    -- the icon rather than keeping a separate image
     --
     -- deliberately no json, because an empty one reads as "done" and would
     -- quietly leave the tab with no icons at all

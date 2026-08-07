@@ -9,9 +9,6 @@
 -- rings are equips, so they live in Character.wz. an earlier pass over Item.wz
 -- found nothing for exactly that reason, and the id arithmetic it fell back on
 -- (style N = item 1115000+N) was wrong. ring 1115020 is chat balloon 182, not 20
---
--- the fields are chatBalloon and nameTag here. maplestory.io calls them
--- chatBalloonId and nameTagId, its metaInfo names aren't always the wz ones
 
 import 'WzComparerR2.PluginBase'
 import 'WzComparerR2.WzLib'
