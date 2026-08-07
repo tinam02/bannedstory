@@ -1,0 +1,7 @@
+.coin {
+  display: block;
+  flex: 0 0 auto;
+  background-repeat: no-repeat;
+  //  13px of pixel art, so no smoothing
+  image-rendering: pixelated;
+}

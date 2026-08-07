@@ -1,4 +1,6 @@
 'use client';
+import { useState } from 'react';
+import CashCoin from './CashCoin';
 import styles from './CashFilter.module.scss';
 
 /**
@@ -10,18 +12,26 @@ const CashFilter = ({
 }: {
   on: boolean;
   onChange: (next: boolean) => void;
-}) => (
-  <button
-    type='button'
-    className={styles.btn}
-    data-on={on ? '' : undefined}
-    aria-pressed={on}
-    onClick={() => onChange(!on)}
-    title={on ? 'Showing cash items only' : 'Showing all items'}
-  >
-    <span className={styles.mark}>$</span>
-    CASH
-  </button>
-);
+}) => {
+  //bump spin coin
+  const [flips, setFlips] = useState(0);
+
+  return (
+    <button
+      type='button'
+      className={styles.btn}
+      data-on={on ? '' : undefined}
+      aria-pressed={on}
+      onClick={() => {
+        setFlips(n => n + 1);
+        onChange(!on);
+      }}
+      title={on ? 'Showing cash items only' : 'Showing all items'}
+    >
+      <CashCoin flipKey={flips} />
+      CASH
+    </button>
+  );
+};
 
 export default CashFilter;
