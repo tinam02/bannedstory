@@ -1,10 +1,13 @@
 /**
  * Where the extracted art is served from, and in what format.
  *
- * Locally it is `/avatar`, which is a junction onto .avatar-out so `next dev`
- * serves it straight off disk. In production it is the R2 bucket's public url,
- * set as NEXT_PUBLIC_ASSET_BASE in the Cloudflare Pages build settings
+ * `/avatar` either way. Locally that is a junction onto .avatar-out so
+ * `next dev` serves it straight off disk, and on the box scripts/deploy.mjs
+ * puts the assets at <DEPLOY_PATH>/avatar next to the site.
  *
+ * NEXT_PUBLIC_ASSET_BASE overrides it, and nothing sets it. It is the hook for
+ * serving the art from somewhere other than the box, which the R2 plan would
+ * have needed and the Hetzner one does not
  */
 export const ASSET_BASE =
   process.env.NEXT_PUBLIC_ASSET_BASE?.replace(/\/$/, '') || '/avatar';

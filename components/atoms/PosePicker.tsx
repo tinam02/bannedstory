@@ -52,6 +52,7 @@ const PosePicker = () => {
                 >
                   <AvatarCanvas
                     className={styles.shot}
+                    effects={false}
                     who={posePreviewOutfit(outfit, pose.stance)}
                   />
                   <span className={styles.label}>{pose.label}</span>

@@ -27,14 +27,36 @@ const FOLDERS = [
   'Glove', 'Cape', 'Weapon', 'Accessory',
 ];
 
+/**
+ * Ids that have art we can actually draw.
+ *
+ * A file existing is not enough. Some items are effect only: their whole
+ * appearance is an animation in Effect.wz/ItemEff.img and what sits in
+ * Character.wz is a 1x1 placeholder. 742 of 1660 capes are like that, plus
+ * some weapons and hats.
+ *
+ * They are real items and one day they will render, but until item effects are
+ * supported they are a tile you can click that does nothing, which is worse
+ * than not offering them
+ */
 const spriteIds = folder => {
   const dir = join(OUT, folder);
   if (!existsSync(dir)) return new Set();
-  return new Set(
-    readdirSync(dir)
-      .filter(f => f.endsWith('.json'))
-      .map(f => Number(f.replace('.json', ''))),
-  );
+  const out = new Set();
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith('.json')) continue;
+    let j;
+    try {
+      j = JSON.parse(readFileSync(join(dir, f), 'utf8'));
+    } catch {
+      continue;
+    }
+    const canvases = Object.values(j.canvases ?? {});
+    if (!canvases.length) continue;
+    if (canvases.every(c => c.w <= 1 && c.h <= 1)) continue;
+    out.add(Number(f.replace('.json', '')));
+  }
+  return out;
 };
 
 /**

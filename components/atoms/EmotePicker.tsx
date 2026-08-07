@@ -28,6 +28,7 @@ const EmotePicker = () => {
           >
             <AvatarCanvas
               className={styles.triggerImg}
+              effects={false}
               who={emotePreviewOutfit(outfit, emotion)}
             />
             <span>{emoteLabel(emotion)}</span>
@@ -48,6 +49,7 @@ const EmotePicker = () => {
               >
                 <AvatarCanvas
                   className={styles.swatchImg}
+                  effects={false}
                   who={emotePreviewOutfit(outfit, emote)}
                 />
                 <span className={styles.swatchLabel}>{emoteLabel(emote)}</span>

@@ -22,6 +22,7 @@ import 'System.Diagnostics'
 import 'System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'
 import 'System.Drawing'
 import 'System.Drawing.Imaging'
+import 'System.Drawing.Drawing2D'
 
 ------------------------------------------------------------
 
@@ -37,7 +38,7 @@ local LIMIT = 0
 -- extracted images in memory, so the whole of Character.wz resident is what
 -- crashed it. a folder at a time keeps that bounded and makes a crash cost
 -- minutes instead of the whole run
-local ONLY = 'Face'
+local ONLY = ''
 
 -- items already written are skipped, so this is resumable. it still leaks
 -- somewhere despite Unextract, so the way through a big folder is to run it,
@@ -216,7 +217,20 @@ local function typeVariant(img)
   return bestNode, bestCode, codes
 end
 
-local function findNodeFunc(path) return PluginManager.FindWz(path) end
+-- has to extract the target, not just look it up.
+--
+-- an item can keep its pixels in a separate _Canvas img and point at it with
+-- _outlink, and CreateFrameFromNode calls this to follow that link. FindWz on
+-- its own returns nothing for an img nobody has extracted yet, so the frame
+-- came back as a 1x1 placeholder and the item drew nothing. 742 of 1660 capes
+-- were empty for exactly this reason
+local function findNodeFunc(path)
+  local node = PluginManager.FindWz(path)
+  if not node then return nil end
+  local img = Wz_NodeExtension.GetNodeWzImage(node)
+  if img and not img.Extracted then img:TryExtract() end
+  return PluginManager.FindWz(path)
+end
 
 local function deref(node)
   if not node then return nil end
@@ -525,6 +539,13 @@ for _, folder in ipairs(FOLDERS) do
           end
           local bmp = Bitmap(sw, sh, PixelFormat.Format32bppArgb)
           local g = Graphics.FromImage(bmp)
+    -- copy the pixels, do not blend them.
+    --
+    -- the default is SourceOver, which composites onto the transparent black
+    -- we just allocated, so every semi transparent pixel gets dragged toward
+    -- black. opaque sprites never showed it. a glow is nothing but semi
+    -- transparent pixels and came out with a grey halo
+    g.CompositingMode = CompositingMode.SourceCopy
           for _, k in ipairs(slotOrder) do
             local s = slots[k]
             g:TranslateTransform(s.sx, s.sy)

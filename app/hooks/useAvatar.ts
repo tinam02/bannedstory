@@ -1,5 +1,6 @@
 'use client';
 import { ItemManifest, WornItem } from '@/lib/avatar';
+import { EffectManifest, WornEffect } from '@/lib/effects';
 import { Outfit } from '@/types';
 import { ASSET_BASE, SHEET_EXT } from '@/lib/assets';
 import { useEffect, useState } from 'react';
@@ -52,8 +53,36 @@ export type AvatarMeta = { zmap: string[]; smap: Record<string, string> };
 
 // module level, so remounting or switching character doesn't refetch
 let metaOnce: Promise<AvatarMeta> | null = null;
+let effectIdsOnce: Promise<Set<number>> | null = null;
 const manifests = new Map<string, Promise<ItemManifest | null>>();
+const effectManifests = new Map<number, Promise<EffectManifest | null>>();
 const sheets = new Map<string, Promise<HTMLImageElement | null>>();
+
+/**
+ * The ids that have an effect at all, fetched once.
+ *
+ * 1664 of 52,724, so asking per worn item would be a 404 nearly every time.
+ * An empty set on failure means effects quietly do not draw, which is the
+ * right way round: the character still renders
+ */
+const loadEffectIds = () => {
+  effectIdsOnce ??= fetch(`${ROOT}/Effect/index.json`)
+    .then(r => (r.ok ? (r.json() as Promise<number[]>) : []))
+    .then(ids => new Set(ids))
+    .catch(() => new Set<number>());
+  return effectIdsOnce;
+};
+
+const loadEffect = (id: number) => {
+  let hit = effectManifests.get(id);
+  if (!hit) {
+    hit = fetch(`${ROOT}/Effect/${id}.json`)
+      .then(r => (r.ok ? (r.json() as Promise<EffectManifest>) : null))
+      .catch(() => null);
+    effectManifests.set(id, hit);
+  }
+  return hit;
+};
 
 const loadManifest = (folder: string, id: number) => {
   const url = `${ROOT}/${folder}/${id}.json`;
@@ -84,6 +113,8 @@ const loadSheet = (url: string) => {
 export type LoadedAvatar = {
   meta: AvatarMeta;
   worn: WornItem[];
+  /** the worn items that also carry an Effect appearance */
+  effects: WornEffect[];
   images: Map<string, HTMLImageElement>;
   /** slots we have no extraction for yet, so the ui can say so */
   missing: string[];
@@ -131,16 +162,37 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
         }),
       );
 
+      // the effects, for whichever worn items have one. an item's effect is
+      // its whole appearance when its Character.wz art is a 1x1 placeholder,
+      // so this is not decoration
+      const haveEffect = await loadEffectIds();
+      const wornEffects: WornEffect[] = [];
+      await Promise.all(
+        Array.from(new Set(worn.map(w => w.manifest.id)))
+          .filter(id => haveEffect.has(id))
+          .map(async id => {
+            const manifest = await loadEffect(id);
+            if (manifest) {
+              wornEffects.push({
+                manifest,
+                sheetUrl: `${ROOT}/Effect/${id}${SHEET_EXT}`,
+              });
+            }
+          }),
+      );
+
       // one load per sheet, not per layer. Array.from rather than spreading a
       // Set, the tsconfig targets es5
-      const urls = Array.from(new Set(worn.map(w => w.sheetUrl)));
+      const urls = Array.from(
+        new Set([...worn.map(w => w.sheetUrl), ...wornEffects.map(e => e.sheetUrl)]),
+      );
       const imgs = await Promise.all(
         urls.map(async url => [url, await loadSheet(url)] as const),
       );
       const images = new Map<string, HTMLImageElement>();
       for (const [url, img] of imgs) if (img) images.set(url, img);
 
-      if (!stale) setLoaded({ meta, worn, images, missing });
+      if (!stale) setLoaded({ meta, worn, effects: wornEffects, images, missing });
     })().catch(() => {
       // nothing extracted yet, the api render is still there
       metaOnce = null;

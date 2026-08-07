@@ -30,6 +30,7 @@ const SkinPicker = () => {
           >
             <AvatarCanvas
               className={styles.triggerImg}
+              effects={false}
               who={skinSwatchOutfit(outfit, skinId)}
             />
             <span>{currentLabel.toUpperCase()}</span>
@@ -52,6 +53,7 @@ const SkinPicker = () => {
                 >
                   <AvatarCanvas
                     className={styles.swatchImg}
+                    effects={false}
                     who={skinSwatchOutfit(outfit, id)}
                   />
                   <span className={styles.swatchLabel}>{label}</span>

@@ -9,8 +9,7 @@ const SITE = 'https://henehoe.app';
 
 const DISCLAIMER =
   'MapleStory and all related assets are © NEXON Korea Corp. Henehoe is an ' +
-  'unofficial, non-commercial fan project and is not affiliated with, endorsed ' +
-  'by, or sponsored by Nexon.';
+  'unofficial, non-commercial fan project and is not affiliated with Nexon.';
 
 const DESCRIPTION =
   'A free animated MapleStory character creator and dress up simulator. Try on hats, ' +

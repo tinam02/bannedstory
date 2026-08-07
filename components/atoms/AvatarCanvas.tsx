@@ -2,6 +2,7 @@
 import useAvatar from '@/app/hooks/useAvatar';
 import useFrameDelays, { FrameDelays } from '@/app/hooks/useFrameDelays';
 import { buildAvatar } from '@/lib/avatar';
+import { effectDelays, placeEffects, type WornEffect } from '@/lib/effects';
 import { ADJUSTMENTS } from '@/lib/fetch';
 import { Outfit } from '@/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -126,6 +127,74 @@ const useFrameClock = (
 };
 
 /**
+ * The effects' frame indices, each on its own delays.
+ *
+ * Not on the body's clock
+ */
+const useEffectFrames = (playing: boolean, effects: WornEffect[]) => {
+  const [now, setNow] = useState(0);
+  const delays = useMemo(() => effects.map(effectDelays), [effects]);
+  // the shape of the timing, so a pose change does not restart the animation
+  const key = delays.map(d => d.join('.')).join('|');
+
+  useEffect(() => {
+    setNow(0);
+    if (!playing || !delays.some(d => d.length > 1)) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+    let stopped = false;
+    let t = 0;
+
+    const step = () => {
+      // the shortest wait until any one of them moves on
+      let wait = Infinity;
+      for (const d of delays) {
+        const total = d.reduce((a, b) => a + b, 0);
+        if (!total || d.length < 2) continue;
+        let p = t % total;
+        for (const ms of d) {
+          if (p < ms) {
+            wait = Math.min(wait, ms - p);
+            break;
+          }
+          p -= ms;
+        }
+      }
+      if (!isFinite(wait) || wait <= 0) return;
+      timer = setTimeout(() => {
+        if (stopped) return;
+        t += wait;
+        setNow(t);
+        step();
+      }, wait);
+    };
+    step();
+
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+    // delays is rebuilt every render, key is what actually changed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, key]);
+
+  return useMemo(
+    () =>
+      delays.map(d => {
+        const total = d.reduce((a, b) => a + b, 0);
+        if (!total) return 0;
+        let p = now % total;
+        for (let i = 0; i < d.length; i++) {
+          if (p < d[i]) return i;
+          p -= d[i];
+        }
+        return 0;
+      }),
+    [delays, now],
+  );
+};
+
+/**
  * The adjustments as a canvas filter, so a slider nudge is a redraw.
  */
 const filterFor = (item: {
@@ -151,10 +220,17 @@ const filterFor = (item: {
 const AvatarCanvas = ({
   who,
   className,
+  effects = true,
 }: {
   who: Outfit;
   /** for the picker thumbnails*/
   className?: string;
+  /**
+   * Off for the thumbnails.
+   *
+   * An effect is huge, so a winged cape would shrink the character to nothing in a pose picker
+   */
+  effects?: boolean;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatar = useAvatar(who, true);
@@ -223,6 +299,48 @@ const AvatarCanvas = ({
     );
   }, [avatar, wornNow, who.action, frame, who.mercEars, who.illiumEars, who.highFloraEars]);
 
+  // the effects, on their own clocks and anchored by lib/effects.ts
+  const wornEffects = useMemo(
+    () => (effects ? (avatar?.effects ?? []) : []),
+    [effects, avatar],
+  );
+  const eframes = useEffectFrames(who.animating, wornEffects);
+  const placedEffects = useMemo(
+    () => (built ? placeEffects(built.placed, wornEffects, who.action, eframes) : []),
+    [built, wornEffects, who.action, eframes],
+  );
+
+  /**
+   * The bbox once the effects are in it, and how far it grew.
+   *
+   * The canvas has to hold the effect, which is routinely 5x the
+   * character's area, but the layout must not notice. `pad` is negated into
+   * margins so the element still measures the character alone and the feet
+   * stay where they were, the way an alpha 0 item keeps its place in the box
+   */
+  const box = useMemo(() => {
+    if (!built) return null;
+    let { l, t, r, b } = built.bounds;
+    for (const e of placedEffects) {
+      l = Math.min(l, e.x);
+      t = Math.min(t, e.y);
+      r = Math.max(r, e.x + e.w);
+      b = Math.max(b, e.y + e.h);
+    }
+    return {
+      l,
+      t,
+      w: r - l,
+      h: b - t,
+      pad: {
+        l: built.bounds.l - l,
+        t: built.bounds.t - t,
+        r: r - built.bounds.r,
+        b: b - built.bounds.b,
+      },
+    };
+  }, [built, placedEffects]);
+
   // adjustments by item id, so a redraw picks them up without rebuilding
   const tweaks = useMemo(() => {
     const out: Record<number, { filter: string; alpha: number }> = {};
@@ -246,12 +364,30 @@ const AvatarCanvas = ({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !avatar || !built) return;
+    if (!canvas || !avatar || !built || !box) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = false;
+
+    // an effect belongs to its item, so hiding or fading the item takes the
+    // effect with it. otherwise a hidden cape leaves its wings behind
+    const drawEffects = (behind: boolean) => {
+      for (const e of placedEffects) {
+        if (e.z < 0 !== behind) continue;
+        const sheet = avatar.images.get(e.sheet);
+        if (!sheet) continue;
+        const t = tweaks[e.item];
+        ctx.globalAlpha = t?.alpha ?? 1;
+        ctx.filter = t?.filter ?? 'none';
+        ctx.drawImage(sheet, e.sx, e.sy, e.w, e.h, e.x - box.l, e.y - box.t, e.w, e.h);
+      }
+    };
+
+    // z is a number per action and only its sign is honoured here. -2 and 2
+    // are 81% of the set, so behind and in front covers most of it
+    drawEffects(true);
 
     for (const p of built.placed) {
       const sheet = avatar.images.get(p.sheet);
@@ -263,24 +399,38 @@ const AvatarCanvas = ({
       ctx.drawImage(
         sheet,
         p.sx, p.sy, p.w, p.h,
-        p.x - built.bounds.l, p.y - built.bounds.t, p.w, p.h,
+        p.x - box.l, p.y - box.t, p.w, p.h,
       );
     }
+
+    drawEffects(false);
+
     ctx.globalAlpha = 1;
     ctx.filter = 'none';
-  }, [avatar, built, tweaks]);
+  }, [avatar, built, box, placedEffects, tweaks]);
 
-  if (!built) return null;
+  if (!built || !box) return null;
 
   return (
     <canvas
       ref={canvasRef}
       className={className ? `${styles.avatar} ${className}` : styles.avatar}
-      // css rather than flipping every blit, so it costs nothing per frame.
-      // nothing in the ui sets this yet, but an imported outfit can carry it
-      style={who.flipX ? { transform: 'scaleX(-1)' } : undefined}
-      width={Math.max(1, built.w)}
-      height={Math.max(1, built.h)}
+      style={{
+        // css rather than flipping every blit, so it costs nothing per frame.
+        // nothing in the ui sets this yet, but an imported outfit can carry it
+        ...(who.flipX ? { transform: 'scaleX(-1)' } : null),
+        // the effect overhang, taken back out of the layout
+        ...(box.pad.l || box.pad.t || box.pad.r || box.pad.b
+          ? {
+              marginLeft: -box.pad.l,
+              marginTop: -box.pad.t,
+              marginRight: -box.pad.r,
+              marginBottom: -box.pad.b,
+            }
+          : null),
+      }}
+      width={Math.max(1, box.w)}
+      height={Math.max(1, box.h)}
     />
   );
 };
