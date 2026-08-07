@@ -411,14 +411,30 @@ const AvatarCanvas = ({
 
   if (!built || !box) return null;
 
+  /**
+   * The body origin's offset, as a share of the canvas.
+   *
+   * so weapons and capes dont stay anchored while body moves back and forth
+   */
+  const anchor = {
+    x: (100 * (built.bounds.l + built.bounds.r)) / (2 * Math.max(1, box.w)),
+    y: (100 * built.bounds.b) / Math.max(1, box.h),
+  };
+
   return (
     <canvas
       ref={canvasRef}
       className={className ? `${styles.avatar} ${className}` : styles.avatar}
       style={{
-        // css rather than flipping every blit, so it costs nothing per frame.
-        // nothing in the ui sets this yet, but an imported outfit can carry it
-        ...(who.flipX ? { transform: 'scaleX(-1)' } : null),
+        // stand on the origin, not on the middle of the bounding box.
+        //
+        // percentages rather than pixels because the thumbnails size the
+        // canvas in css, and a percentage is of the rendered width. scaleX
+        // last, so the flip happens first and the offset is measured in the
+        // unmirrored frame
+        transform:
+          `translate(${(who.flipX ? -1 : 1) * anchor.x}%, ${anchor.y}%)` +
+          (who.flipX ? ' scaleX(-1)' : ''),
         // the effect overhang, taken back out of the layout
         ...(box.pad.l || box.pad.t || box.pad.r || box.pad.b
           ? {

@@ -50,3 +50,9 @@ next-env.d.ts
 
 # generated avatar sheets, copied from .avatar-out for local dev
 /public/avatar/
+scripts/build-effect-index.mjs
+scripts/drop-empty.mjs
+scripts/effect-spike.ts
+scripts/effect-check.ts
+scripts/wz/extract-effects.lua
+scripts/wz/probe-tree.lua
