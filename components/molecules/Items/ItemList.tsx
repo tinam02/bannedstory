@@ -14,7 +14,7 @@ import useItemIndex, {
   iconSheetUrl,
 } from '@/app/hooks/useItemIndex';
 import { ClosetTab } from '@/lib/closet';
-import { SHEET_EXT } from '@/lib/assets';
+import { ASSET_BASE, SHEET_EXT } from '@/lib/assets';
 
 // How close to the bottom of the grid the sentinel starts pulling the next page. Roughly a row and a half of lead time, so the list refills before th scroll actually bottoms out.
 const PRELOAD_MARGIN = '200px';
@@ -103,7 +103,7 @@ const ItemList = ({
     const folder = tab.index;
     if (!folder) return;
     preloader.trigger(() =>
-      preloadImageUrl(`/avatar/${folder}/${id}${SHEET_EXT}`),
+      preloadImageUrl(`${ASSET_BASE}/${folder}/${id}${SHEET_EXT}`),
     );
   };
 

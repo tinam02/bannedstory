@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { ASSET_BASE } from '@/lib/assets';
 
 /**
  * How long each frame of a stance is held, in ms.
@@ -20,7 +21,7 @@ const cache = new Map<string, Promise<FrameDelays | null>>();
 const load = (file: string) => {
   let hit = cache.get(file);
   if (!hit) {
-    hit = fetch(`/avatar/${file}`)
+    hit = fetch(`${ASSET_BASE}/${file}`)
       .then(r => (r.ok ? (r.json() as Promise<FrameDelays>) : null))
       .catch(() => null);
     cache.set(file, hit);

@@ -1,15 +1,29 @@
 /**
- * What the extracted art is served as.
+ * Where the extracted art is served from, and in what format.
  *
- * scripts/webp-avatar.mjs writes a .webp next to every .png and deletes
- * nothing, so both formats sit on disk and this decides which one the app
- * asks for. Flip it back to '.png' to rule webp out of any rendering problem.
+ * Locally it is `/avatar`, which is a junction onto .avatar-out so `next dev`
+ * serves it straight off disk. In production it is the R2 bucket's public url,
+ * set as NEXT_PUBLIC_ASSET_BASE in the Cloudflare Pages build settings
  *
- * The index json still names its sheets .png, since that is what
- * extract-index.lua wrote. sheetUrl swaps the extension rather than us
- * rewriting those files, so the pipeline output stays untouched
+ */
+export const ASSET_BASE =
+  process.env.NEXT_PUBLIC_ASSET_BASE?.replace(/\/$/, '') || '/avatar';
+
+/**
+ * What the art is served as.
+ *
+ * Only .webp is uploaded. The .png stay on the local disk because
+ * scripts/build-sprite-icons.mjs reads them to composite the hair and face
+ * icons, and our png reader cannot read webp.
+ *
+ * Flip to '.png' to rule webp out of a rendering problem, but only locally:
+ * there are no png in the bucket
  */
 export const SHEET_EXT = '.webp';
 
 /** an art path with whichever format we are serving */
 export const asSheet = (path: string) => path.replace(/\.png$/, SHEET_EXT);
+
+/** a file under the asset root */
+export const assetUrl = (path: string) =>
+  `${ASSET_BASE}/${path.replace(/^\//, '')}`;

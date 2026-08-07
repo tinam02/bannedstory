@@ -1,6 +1,6 @@
 'use client';
 import { ClosetTab, indexFolderFor } from '@/lib/closet';
-import { asSheet } from '@/lib/assets';
+import { asSheet, ASSET_BASE } from '@/lib/assets';
 import { OutfitItem } from '@/types';
 import { REGION, VERSION } from '@/lib/fetch';
 import { useEffect, useState } from 'react';
@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
  * json, and the entire index across every tab is about 12 MB including icons
  */
 
-const ROOT = '/avatar/index';
+const ROOT = `${ASSET_BASE}/index`;
 
 /** one row as extract-index.lua writes it */
 export type IndexEntry = {

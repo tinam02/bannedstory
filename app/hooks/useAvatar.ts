@@ -1,7 +1,7 @@
 'use client';
 import { ItemManifest, WornItem } from '@/lib/avatar';
 import { Outfit } from '@/types';
-import { SHEET_EXT } from '@/lib/assets';
+import { ASSET_BASE, SHEET_EXT } from '@/lib/assets';
 import { useEffect, useState } from 'react';
 
 /**
@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
  * missing extraction and not a broken renderer
  */
 
-const ROOT = '/avatar';
+const ROOT = ASSET_BASE;
 
 /**
  * The equipped slot -> the folder its manifests are in.
