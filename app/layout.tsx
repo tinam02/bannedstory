@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   // makes every relative url below absolute, which og tags require
   metadataBase: new URL(SITE),
   title: {
-    default: 'Henehoe, a MapleStory character creator and dress up simulator',
+    default: 'Henehoe',
     template: '%s | Henehoe',
   },
   description: DESCRIPTION,

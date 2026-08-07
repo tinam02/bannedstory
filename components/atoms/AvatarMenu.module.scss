@@ -1,0 +1,107 @@
+.menu {
+  position: fixed;
+  z-index: 400;
+  min-width: 190px;
+  padding: 4px;
+  border: 1px solid var(--mantine-color-default-border, #d0d0d0);
+  border-radius: 6px;
+  background: var(--mantine-color-body, #fff);
+  box-shadow: 0 6px 22px rgb(0 0 0 / 18%);
+  font-size: 13px;
+  user-select: none;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    background: var(--mantine-color-default-hover, #f1f3f5);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
+.hint {
+  color: var(--mantine-color-dimmed, #868e96);
+  font-size: 11px;
+}
+
+.rule {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--mantine-color-default-border, #e9ecef);
+}
+
+.busy {
+  padding: 6px 10px;
+  color: var(--mantine-color-dimmed, #868e96);
+}
+
+.group {
+  padding: 4px 10px 8px;
+
+  &[data-disabled] {
+    opacity: 0.45;
+  }
+}
+
+.groupLabel {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 0 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  & + & {
+    margin-top: 6px;
+  }
+
+  .hint {
+    flex: 1;
+  }
+}
+
+.chip {
+  padding: 3px 9px;
+  border: 1px solid var(--mantine-color-default-border, #d0d0d0);
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--mantine-color-default-hover, #f1f3f5);
+  }
+
+  // the chosen background, which is a setting rather than an action
+  &[data-on] {
+    border-color: currentColor;
+    font-weight: 600;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}

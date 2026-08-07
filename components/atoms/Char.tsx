@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import useChar from '@/app/context/CharCtx';
-import AvatarCanvas from './AvatarCanvas';
+import AvatarCanvas, { type AvatarHandle } from './AvatarCanvas';
+import AvatarMenu from './AvatarMenu';
 import { Outfit } from '@/types';
 import styles from './Char.module.scss';
 
@@ -23,6 +25,8 @@ const Char = ({ who }: { who?: Outfit }) => {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const release = useRef<(() => void) | null>(null);
   const lastTap = useRef<{ t: number; x: number; y: number } | null>(null);
+  const avatarRef = useRef<AvatarHandle>(null);
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
 
   // Deliberately not routed through `setEmotion`
   //never reaches localStorage
@@ -80,10 +84,31 @@ const Char = ({ who }: { who?: Outfit }) => {
       {/* Wait for the saved outfit so we don't render, and pay for, a
           default char that is about to be replaced. */}
       {hydrated && (
-        <div className={styles.scale} onPointerDown={press}>
-          <AvatarCanvas who={shown} />
+        <div
+          className={styles.scale}
+          onPointerDown={press}
+          // a canvas offers no "save image as", so the browser's own menu is
+          // no use here. this replaces it rather than adding to it
+          onContextMenu={e => {
+            e.preventDefault();
+            setMenuAt({ x: e.clientX, y: e.clientY });
+          }}
+        >
+          <AvatarCanvas ref={avatarRef} who={shown} />
         </div>
       )}
+      {/* through a portal, because the stage scales this subtree and a fixed
+          position element inside a transformed ancestor is neither fixed to
+          the viewport nor drawn at the right size */}
+      {menuAt &&
+        createPortal(
+          <AvatarMenu
+            at={menuAt}
+            target={avatarRef}
+            onClose={() => setMenuAt(null)}
+          />,
+          document.body,
+        )}
     </div>
   );
 };

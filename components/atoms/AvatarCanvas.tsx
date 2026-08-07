@@ -2,10 +2,22 @@
 import useAvatar from '@/app/hooks/useAvatar';
 import useFrameDelays, { FrameDelays } from '@/app/hooks/useFrameDelays';
 import { buildAvatar } from '@/lib/avatar';
+import { FRAME_MS, sequenceFor, timeline } from '@/lib/clock';
+import { boxFor, drawAvatar, mergeBoxes } from '@/lib/draw';
 import { effectDelays, placeEffects, type WornEffect } from '@/lib/effects';
 import { ADJUSTMENTS } from '@/lib/fetch';
 import { Outfit } from '@/types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { buildApng } from '@/lib/apng';
+import { buildGif } from '@/lib/gif';
+import { canvasToPngBytes, scaleUp } from '@/lib/snapshot';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import styles from './AvatarCanvas.module.scss';
 
 /**
@@ -14,35 +26,6 @@ import styles from './AvatarCanvas.module.scss';
  * Same model as lib/avatar.ts, which scripts/avatar-spike.ts checks pixel for
  * pixel against maplestory.io
  */
-
-/** only for a stance delays.json has nothing for */
-const FRAME_MS = 280;
-
-/**
- * The stances built to loop. Everything else plays there and back.
- *
- * wz carries no flag for this, so it comes from measuring how many pixels move
- * on each frame to frame step, including the wrap from the last frame to the
- * first. A stance built as a cycle closes on itself and its wrap is no bigger
- * than any other step. These three do: walk1 1.00x, walk2 0.99x, heal 0.87x.
- *
- * Nothing else with three or more frames comes close. stand1 wraps at 1.36x,
- * alert 1.23x, the swings and stabs 1.16 to 1.43x, and the shooting stances are
- * worst at 2.00x, 2.00x and 2.65x. Their last frame is nowhere near their
- * first, so a plain loop snaps.
- *
- * Two frame stances are not in either list on purpose. They have only one
- * distinct step, so a bounce and a loop are the same thing
- */
-const CYCLES = new Set(['walk1', 'walk2', 'heal']);
-
-/** the frame order for a stance, either a cycle or a there and back */
-const sequenceFor = (stance: string, frames: number) => {
-  const forward = Array.from({ length: frames }, (_, i) => i);
-  if (frames < 3 || CYCLES.has(stance)) return forward;
-  // the ends are not repeated, or each would be held for twice its delay
-  return [...forward, ...forward.slice(1, -1).reverse()];
-};
 
 // how long the eyes stay open between blinks, how much that varies, and how
 // often a blink comes in a pair.
@@ -217,11 +200,27 @@ const filterFor = (item: {
   return parts.length ? parts.join(' ') : 'none';
 };
 
-const AvatarCanvas = ({
-  who,
-  className,
-  effects = true,
-}: {
+/** what Char reaches for when someone asks for a picture */
+export type AvatarHandle = {
+  /** exactly what is on screen, scaled up */
+  still: (scale: number) => HTMLCanvasElement | null;
+  /**
+   * One clean pass of the stance.
+   *
+   * `background` is only meaningful for gif, whose alpha is one bit: a colour
+   * composites the soft pixels onto it, null keeps them transparent and lets
+   * the encoder round them off
+   */
+  animation: (
+    scale: number,
+    format: 'apng' | 'gif',
+    background?: string | null,
+  ) => Promise<Blob | null>;
+  /** whether an animation would be more than one frame */
+  animatable: () => boolean;
+};
+
+const AvatarCanvas = forwardRef<AvatarHandle, {
   who: Outfit;
   /** for the picker thumbnails*/
   className?: string;
@@ -231,7 +230,7 @@ const AvatarCanvas = ({
    * An effect is huge, so a winged cape would shrink the character to nothing in a pose picker
    */
   effects?: boolean;
-}) => {
+}>(({ who, className, effects = true }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatar = useAvatar(who, true);
   const [tick, setTick] = useState(0);
@@ -320,23 +319,14 @@ const AvatarCanvas = ({
    */
   const box = useMemo(() => {
     if (!built) return null;
-    let { l, t, r, b } = built.bounds;
-    for (const e of placedEffects) {
-      l = Math.min(l, e.x);
-      t = Math.min(t, e.y);
-      r = Math.max(r, e.x + e.w);
-      b = Math.max(b, e.y + e.h);
-    }
+    const b = boxFor(built.bounds, placedEffects);
     return {
-      l,
-      t,
-      w: r - l,
-      h: b - t,
+      ...b,
       pad: {
-        l: built.bounds.l - l,
-        t: built.bounds.t - t,
-        r: r - built.bounds.r,
-        b: b - built.bounds.b,
+        l: built.bounds.l - b.l,
+        t: built.bounds.t - b.t,
+        r: b.l + b.w - built.bounds.r,
+        b: b.t + b.h - built.bounds.b,
       },
     };
   }, [built, placedEffects]);
@@ -367,47 +357,95 @@ const AvatarCanvas = ({
     if (!canvas || !avatar || !built || !box) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.imageSmoothingEnabled = false;
-
-    // an effect belongs to its item, so hiding or fading the item takes the
-    // effect with it. otherwise a hidden cape leaves its wings behind
-    const drawEffects = (behind: boolean) => {
-      for (const e of placedEffects) {
-        if (e.z < 0 !== behind) continue;
-        const sheet = avatar.images.get(e.sheet);
-        if (!sheet) continue;
-        const t = tweaks[e.item];
-        ctx.globalAlpha = t?.alpha ?? 1;
-        ctx.filter = t?.filter ?? 'none';
-        ctx.drawImage(sheet, e.sx, e.sy, e.w, e.h, e.x - box.l, e.y - box.t, e.w, e.h);
-      }
-    };
-
-    // z is a number per action and only its sign is honoured here. -2 and 2
-    // are 81% of the set, so behind and in front covers most of it
-    drawEffects(true);
-
-    for (const p of built.placed) {
-      const sheet = avatar.images.get(p.sheet);
-      if (!sheet) continue;
-      const t = tweaks[p.item];
-      ctx.globalAlpha = t?.alpha ?? 1;
-      ctx.filter = t?.filter ?? 'none';
-      // the layer is a rect inside the item's packed sheet
-      ctx.drawImage(
-        sheet,
-        p.sx, p.sy, p.w, p.h,
-        p.x - box.l, p.y - box.t, p.w, p.h,
-      );
-    }
-
-    drawEffects(false);
-
-    ctx.globalAlpha = 1;
-    ctx.filter = 'none';
+    drawAvatar(ctx, built.placed, placedEffects, box, avatar.images, tweaks);
   }, [avatar, built, box, placedEffects, tweaks]);
+
+  /**
+   * The picture and the animation, for whoever holds the ref.
+   *
+   * Here rather than in a helper because everything it needs is already in
+   * this component: the loaded sheets, the adjustments, the bounds and the
+   * same draw call the screen uses
+   */
+  useImperativeHandle(
+    ref,
+    () => ({
+      animatable: () =>
+        frameCount > 1 || wornEffects.some(e => effectDelays(e).length > 1),
+
+      // straight off the live canvas, so it is the pose and the frame they
+      // were actually looking at rather than a rebuild that might differ
+      still: (scale: number) => {
+        const c = canvasRef.current;
+        return c ? scaleUp(c, scale) : null;
+      },
+
+      animation: async (
+        scale: number,
+        format: 'apng' | 'gif' = 'apng',
+        background: string | null = null,
+      ) => {
+        if (!avatar) return null;
+        const order = sequenceFor(who.action, frameCount);
+        const held = delays?.[who.action]?.delays;
+        const bodyMs = order.map(f => held?.[f] ?? FRAME_MS);
+        const steps = timeline(order, bodyMs, wornEffects.map(effectDelays));
+
+        // the face is pinned open. it blinks on a deliberately irregular
+        // timer, so letting it run would put a blink at a random point of a
+        // loop that then repeats forever
+        const still = avatar.worn.map(w =>
+          w.part === 'face' ? { ...w, frame: 0 } : w,
+        );
+        const opts = {
+          mercEars: who.mercEars,
+          illiumEars: who.illiumEars,
+          highFloraEars: who.highFloraEars,
+        };
+
+        const frames = steps.map(st => {
+          const b = buildAvatar(
+            still, avatar.meta.zmap, avatar.meta.smap, who.action, st.body, opts,
+          );
+          const fx = placeEffects(b.placed, wornEffects, who.action, st.effects);
+          return { b, fx, box: boxFor(b.bounds, fx) };
+        });
+        if (!frames.length) return null;
+
+        // one box for the whole animation. sized per frame, the character
+        // would swim about inside its own picture
+        const shared = mergeBoxes(frames.map(f => f.box));
+        const off = document.createElement('canvas');
+        off.width = Math.max(1, shared.w * scale);
+        off.height = Math.max(1, shared.h * scale);
+        const ctx = off.getContext('2d');
+        if (!ctx) return null;
+
+        const ms = steps.map(st => st.ms);
+
+        if (format === 'gif') {
+          const shots: Uint8ClampedArray[] = [];
+          for (const f of frames) {
+            drawAvatar(
+              ctx, f.b.placed, f.fx, shared, avatar.images, tweaks, scale, background,
+            );
+            shots.push(ctx.getImageData(0, 0, off.width, off.height).data);
+          }
+          return buildGif(
+            shots, off.width, off.height, ms, background ? 'matte' : 'cut',
+          );
+        }
+
+        const pngs: Uint8Array[] = [];
+        for (const f of frames) {
+          drawAvatar(ctx, f.b.placed, f.fx, shared, avatar.images, tweaks, scale);
+          pngs.push(await canvasToPngBytes(off));
+        }
+        return buildApng(pngs, ms);
+      },
+    }),
+    [avatar, who, frameCount, delays, wornEffects, tweaks],
+  );
 
   if (!built || !box) return null;
 
@@ -449,6 +487,8 @@ const AvatarCanvas = ({
       height={Math.max(1, box.h)}
     />
   );
-};
+});
+
+AvatarCanvas.displayName = 'AvatarCanvas';
 
 export default AvatarCanvas;
