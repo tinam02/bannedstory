@@ -55,6 +55,17 @@ const ItemList = ({
   const gridRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const hasCash = useMemo(
+    () =>
+      !!index?.items.some(
+        e => e.cash && (!tab.ids || (e.id >= tab.ids.from && e.id < tab.ids.to)),
+      ),
+    [index, tab.ids],
+  );
+
+  // cashOnly is one switch for the whole closet
+  const filterCash = cashOnly && hasCash;
+
   // `ids` splits the tabs that share a folder, since wz files face accessories,
   // eye decorations and earrings together in Accessory
   const matches = useMemo(() => {
@@ -62,16 +73,16 @@ const ItemList = ({
     const q = nameText.toLowerCase();
     return index.items.filter(e => {
       if (tab.ids && (e.id < tab.ids.from || e.id >= tab.ids.to)) return false;
-      if (cashOnly && !e.cash) return false;
+      if (filterCash && !e.cash) return false;
       if (q && !e.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [index, nameText, cashOnly, tab.ids]);
+  }, [index, nameText, filterCash, tab.ids]);
 
   // A new search means a different list, so start it from the top again.
   // Done during render rather than in an effect, so nothing paints the old
   // scroll position first.
-  const listKey = `${slot} ${cashOnly} ${nameText}`;
+  const listKey = `${slot} ${filterCash} ${nameText}`;
   const [prevListKey, setPrevListKey] = useState(listKey);
   if (prevListKey !== listKey) {
     setPrevListKey(listKey);
@@ -115,7 +126,7 @@ const ItemList = ({
           onChange={setQuery}
           onSubmit={next => applyQueryNow(next.trim())}
         />
-        <CashFilter on={cashOnly} onChange={onCashOnlyChange} />
+        {hasCash && <CashFilter on={cashOnly} onChange={onCashOnlyChange} />}
       </div>
 
       <div className={styles.listWrap}>
