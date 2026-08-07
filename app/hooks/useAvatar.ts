@@ -124,9 +124,13 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
   const [loaded, setLoaded] = useState<LoadedAvatar | null>(null);
 
   // the items, not the whole outfit. an adjustment or a pose change shouldn't
-  // send us back to the network
+  // send us back to the network.
+  //
+  // vslot is in here because it is not an adjustment: hue and opacity are
+  // applied when drawing, but vslot decides which layers exist at all, so it
+  // has to reach buildAvatar through `worn`
   const key = Object.entries(outfit.selectedItems)
-    .map(([slot, item]) => `${slot}:${item?.id}`)
+    .map(([slot, item]) => `${slot}:${item?.id}:${item?.vslot ?? ''}`)
     .sort()
     .join(',');
 
@@ -158,6 +162,8 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
             sheetUrl: `${ROOT}/${folder}/${item.id}${SHEET_EXT}`,
             // the face is keyed by expression, everything else by pose
             stance: part === 'face' ? outfit.emotion : undefined,
+            // set by the stack toggle, and carried in an imported outfit
+            vslot: item.vslot,
           });
         }),
       );

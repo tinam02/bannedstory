@@ -10,14 +10,16 @@ import styles from './ItemAdjust.module.scss';
 // Slider bounds. The neutral value itself lives in ADJUSTMENTS — landing on it
 // stores `undefined` rather than the number, which is what keeps the value out
 // of the render URL and out of the exported JSON.
-const RANGES: Record<AdjustmentKey, { min: number; max: number; step: number }> =
-  {
-    hue: { min: 0, max: 360, step: 1 },
-    saturation: { min: 0, max: 2, step: 0.05 },
-    brightness: { min: 0, max: 2, step: 0.05 },
-    contrast: { min: 0, max: 2, step: 0.05 },
-    alpha: { min: 0, max: 1, step: 0.05 },
-  };
+const RANGES: Record<
+  AdjustmentKey,
+  { min: number; max: number; step: number }
+> = {
+  hue: { min: 0, max: 360, step: 1 },
+  saturation: { min: 0, max: 2, step: 0.05 },
+  brightness: { min: 0, max: 2, step: 0.05 },
+  contrast: { min: 0, max: 2, step: 0.05 },
+  alpha: { min: 0, max: 1, step: 0.05 },
+};
 
 const LABELS: Record<AdjustmentKey, string> = {
   hue: 'Hue',
@@ -32,9 +34,21 @@ const KEYS = Object.keys(RANGES) as AdjustmentKey[];
 const valueOf = (item: OutfitItem, key: AdjustmentKey) =>
   typeof item[key] === 'number' ? (item[key] as number) : ADJUSTMENTS[key];
 
-/** Any non-neutral adjustment, or a hidden layer. Drives the "edited" marker. */
+/**
+ * The vslot an item takes when it is set to stack.
+ *
+ * Empty, so it claims nothing and nothing it would have collided with gets
+ * dropped
+ */
+const STACK_VSLOT = '';
+
+export const isStacked = (item: OutfitItem) => item.vslot !== undefined;
+
+/** Any non-neutral adjustment, a hidden layer, or a stacked one. Drives the "edited" marker. */
 export const isAdjusted = (item: OutfitItem) =>
-  item.visible === false || KEYS.some(k => valueOf(item, k) !== ADJUSTMENTS[k]);
+  item.visible === false ||
+  isStacked(item) ||
+  KEYS.some(k => valueOf(item, k) !== ADJUSTMENTS[k]);
 
 const format = (key: AdjustmentKey, value: number) =>
   key === 'hue' ? `${Math.round(value)}°` : `${Math.round(value * 100)}%`;
@@ -122,13 +136,14 @@ const ItemAdjust = ({
   onChange: (patch: Partial<OutfitItem>) => void;
 }) => {
   const hidden = item.visible === false;
+  const stacked = isStacked(item);
   // Read off the icon, which is the item in its unmodified colour
   const baseHue = useDominantHue(icon ? icon.sheet : null, icon);
 
   // `undefined` for every key, so a reset removes them rather than writing
   // neutral numbers the export would then carry around.
   const reset = () => {
-    const patch: Partial<OutfitItem> = { visible: undefined };
+    const patch: Partial<OutfitItem> = { visible: undefined, vslot: undefined };
     for (const key of KEYS) patch[key] = undefined;
     onChange(patch);
   };
@@ -168,6 +183,18 @@ const ItemAdjust = ({
           data-on={hidden ? '' : undefined}
         >
           {hidden ? 'Hidden' : 'Visible'}
+        </button>
+        <button
+          type='button'
+          className={styles.footBtn}
+          onClick={() => onChange({ vslot: stacked ? undefined : STACK_VSLOT })}
+          data-on={stacked ? '' : undefined}
+          title={
+            'Draw this even when something covering it would normally take its ' +
+            'place, so trousers show under an overall. Off by default'
+          }
+        >
+          {stacked ? 'Stacked' : 'Stack'}
         </button>
         <button
           type='button'

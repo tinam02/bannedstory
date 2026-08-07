@@ -57,6 +57,16 @@ export type WornItem = {
    */
   stance?: string;
   /**
+   * Replaces the item's own vslot.
+   *
+   * An item declares the slots it takes over, and whatever else is sitting in
+   * one of them stops being drawn: an overall declares MaPn, so it eats both a
+   * top and a trousers. Overriding that is how you keep the trousers, and an
+   * empty string is the useful value, since an item claiming nothing collides
+   * with nothing.
+   */
+  vslot?: string;
+  /**
    * Overrides the frame for this item alone.
    *
    * Also the face. It runs on its own clock in game, and without this it shares
@@ -177,7 +187,9 @@ export const layersFor = (
 ): AvatarLayer[] => {
   const out: AvatarLayer[] = [];
 
-  for (const { part, manifest, sheetUrl, stance: own, frame: ownFrame } of worn) {
+  for (const {
+    part, manifest, sheetUrl, stance: own, frame: ownFrame, vslot: ownSlot,
+  } of worn) {
     const key = own ?? stance;
     const seq = manifest.frames[key] ?? manifest.frames.default;
     if (!seq?.length) continue;
@@ -199,7 +211,7 @@ export const layersFor = (
         h: c.h,
         origin: c.origin,
         z: c.z || layer,
-        vslot: manifest.vslot,
+        vslot: ownSlot ?? manifest.vslot,
         islot: manifest.islot,
         map: c.map ?? {},
       });
@@ -250,8 +262,19 @@ export const visibleLayers = (
 
   if (!smap) return kept;
 
+  // last claim on a slot wins, so the order this runs in IS the rule.
+  //
+  // body, head, face and hair go first, which is how an equip beats them. two
+  // equips wanting the same slot used to tie and fall through to whatever
+  // order the manifests happened to load in, which made an overall over
+  // trousers a coin toss between renders
   const claimed = new Map<string, string>();
-  for (const l of [...kept].sort((a, b) => claimRank(a.part) - claimRank(b.part))) {
+  const order = [...kept].sort(
+    (a, b) =>
+      claimRank(a.part) - claimRank(b.part) ||
+      codes(a.vslot).length - codes(b.vslot).length,
+  );
+  for (const l of order) {
     for (const c of codes(l.vslot)) claimed.set(c, l.part);
   }
 
