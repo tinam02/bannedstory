@@ -6,14 +6,14 @@ import { SceneProvider } from './context/SceneCtx';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 
 const DISCLAIMER =
-  'MapleStory and all related assets are © NEXON Korea Corp. bannedstory is an ' +
+  'MapleStory and all related assets are © NEXON Korea Corp. Henehoe is an ' +
   'unofficial, non-commercial fan project and is not affiliated with, endorsed ' +
   'by, or sponsored by Nexon.';
 
 export const metadata: Metadata = {
-  title: 'bannedstory',
+  title: 'Henehoe',
   description:
-    'A MapleStory character creator',
+    'MapleStory character creator',
   other: {
     disclaimer: DISCLAIMER,
     copyright: '© NEXON All rights reserved.',
