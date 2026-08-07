@@ -45,6 +45,11 @@ const BLINK_MS = 110;
 /** blink waits between plays instead of looping */
 const BLINK = 'blink';
 
+// an exported blink closes on the body's loop, so a short stance would blink
+// far too often. these bound how far the body is repeated to avoid it
+const MIN_BLINK_GAP_MS = 1500;
+const MAX_LAPS = 4;
+
 /**
  * Advances one animation, holding each frame for its own delay.
  *
@@ -397,17 +402,49 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
         background: string | null = null,
       ) => {
         if (!avatar) return null;
-        const order = sequenceFor(who.action, frameCount);
+        const seq = sequenceFor(who.action, frameCount);
         const held = delays?.[who.action]?.delays;
-        const bodyMs = order.map(f => held?.[f] ?? FRAME_MS);
-        const steps = timeline(order, bodyMs, wornEffects.map(effectDelays));
+        const lap = seq.map(f => held?.[f] ?? FRAME_MS);
+        const lapMs = lap.reduce((a, b) => a + b, 0);
 
-        // the face is pinned open. it blinks on a deliberately irregular
-        // timer, so letting it run would put a blink at a random point of a
-        // loop that then repeats forever
-        const still = avatar.worn.map(w =>
-          w.part === 'face' ? { ...w, frame: 0 } : w,
+        // how many times round the body before the loop closes.
+        //
+        // one, unless blinking. the blink rests for whatever the body has left
+        // over, and walk1 is a 720ms lap, so one blink a lap is a blink every
+        // three quarters of a second. going round a few times gives it a gap
+        // to sit in and still closes on both clocks
+        const laps =
+          who.emotion === BLINK && lapMs > 0 && lapMs < MIN_BLINK_GAP_MS
+            ? Math.min(MAX_LAPS, Math.ceil(MIN_BLINK_GAP_MS / lapMs))
+            : 1;
+        const order: number[] = [];
+        const bodyMs: number[] = [];
+        for (let i = 0; i < laps; i++) {
+          order.push(...seq);
+          bodyMs.push(...lap);
+        }
+        const total = lapMs * laps;
+
+        // the face runs its own loop, the same as it does on screen
+        const faceOrder = sequenceFor(who.emotion, faceCount);
+        const faceHeld = faceDelays?.[who.emotion]?.delays;
+        const faceMs = faceOrder.map(
+          f => faceHeld?.[f] ?? faceHeld?.[0] ?? BLINK_MS,
         );
+        // blink is the one that cannot be copied straight off the screen,
+        // where it waits a random 1.4 to 5.6 seconds between flurries. baked
+        // into something that repeats forever, random is just wrong twice.
+        // so it rests for exactly what is left of the body's loop, which
+        // comes out as one blink per lap and closes cleanly
+        if (who.emotion === BLINK && faceMs.length > 1) {
+          const flurry = faceMs.slice(1).reduce((a, b) => a + b, 0);
+          faceMs[0] = Math.max(BLINK_MS, total - flurry);
+        }
+
+        const steps = timeline(
+          order, bodyMs, faceMs, wornEffects.map(effectDelays),
+        );
+
         const opts = {
           mercEars: who.mercEars,
           illiumEars: who.illiumEars,
@@ -415,8 +452,13 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
         };
 
         const frames = steps.map(st => {
+          // the face carries its own frame on the worn item, which is how
+          // buildAvatar keeps one frame index for everything else
+          const worn = avatar.worn.map(w =>
+            w.part === 'face' ? { ...w, frame: faceOrder[st.face] ?? 0 } : w,
+          );
           const b = buildAvatar(
-            still, avatar.meta.zmap, avatar.meta.smap, who.action, st.body, opts,
+            worn, avatar.meta.zmap, avatar.meta.smap, who.action, st.body, opts,
           );
           const fx = placeEffects(b.placed, wornEffects, who.action, st.effects);
           return { b, fx, box: boxFor(b.bounds, fx) };
@@ -455,7 +497,7 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
         return buildApng(pngs, ms);
       },
     }),
-    [avatar, who, frameCount, delays, wornEffects, tweaks],
+    [avatar, who, frameCount, delays, faceCount, faceDelays, wornEffects, tweaks],
   );
 
   if (!built || !box) return null;

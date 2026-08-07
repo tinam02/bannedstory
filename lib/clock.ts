@@ -40,6 +40,8 @@ export type Step = {
   ms: number;
   /** the body's frame */
   body: number;
+  /** an index into the face's own order, not its frame number */
+  face: number;
   /** one frame index per effect */
   effects: number[];
 };
@@ -59,11 +61,11 @@ const frameAt = (delays: number[], t: number) => {
 /**
  * One pass of the body, cut wherever anything changes.
  *
- * The body and the effects run on unrelated clocks, so sampling only on the
- * body's frames would drop most of an effect's animation: a 100ms effect inside
- * stand1's 500ms hold would show one frame in five. Every boundary from either
- * side becomes a frame, which is why the output usually has more frames than
- * the stance does.
+ * The body, the face and the effects all run on unrelated clocks, so sampling
+ * only on the body's frames would drop most of the others: a 100ms effect
+ * inside stand1's 500ms hold would show one frame in five. Every boundary from
+ * any of them becomes a frame, which is why the output usually has more frames
+ * than the stance does.
  *
  * The loop closes on the body. If an effect's period does not divide the
  * body's, its last frame is short by the remainder, which is a seam nobody has
@@ -72,11 +74,16 @@ const frameAt = (delays: number[], t: number) => {
 export const timeline = (
   bodyOrder: number[],
   bodyMs: number[],
+  faceMs: number[],
   effectMs: number[][],
   cap = 120,
 ): Step[] => {
   const total = bodyMs.reduce((a, b) => a + b, 0);
-  if (!total) return [{ ms: FRAME_MS, body: bodyOrder[0] ?? 0, effects: effectMs.map(() => 0) }];
+  if (!total) {
+    return [
+      { ms: FRAME_MS, body: bodyOrder[0] ?? 0, face: 0, effects: effectMs.map(() => 0) },
+    ];
+  }
 
   const cuts = new Set<number>([0]);
   let at = 0;
@@ -84,7 +91,7 @@ export const timeline = (
     at += ms;
     if (at < total) cuts.add(at);
   }
-  for (const d of effectMs) {
+  for (const d of [faceMs, ...effectMs]) {
     const period = d.reduce((a, b) => a + b, 0);
     if (!period || d.length < 2) continue;
     for (let base = 0; base < total; base += period) {
@@ -116,6 +123,11 @@ export const timeline = (
       }
       acc += bodyMs[k];
     }
-    return { ms: next - t, body, effects: effectMs.map(d => frameAt(d, t)) };
+    return {
+      ms: next - t,
+      body,
+      face: frameAt(faceMs, t),
+      effects: effectMs.map(d => frameAt(d, t)),
+    };
   });
 };
