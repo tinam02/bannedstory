@@ -6,10 +6,13 @@ import { Tabs } from '@mantine/core';
 import { useState } from 'react';
 import ItemList from '../ItemList';
 import { TAB_STRIP as tabs, tabLabel } from '@/lib/closet';
+import MinimizeButton from '@/components/atoms/MinimizeButton/MinimizeButton';
+import useMinimized from '@/app/hooks/useMinimized';
 import styles from './Closet.module.scss';
 
 const Closet = ({}: {}) => {
   const [cashOnly, setCashOnly] = useState(false);
+  const [min, toggleMin] = useMinimized('closet');
 
   const items = tabs.map(tab => (
     <Tabs.Tab value={tab.slot} key={tab.slot}>
@@ -19,7 +22,7 @@ const Closet = ({}: {}) => {
 
   return (
     <DragWrapper id='closet'>
-      <div className={styles.card}>
+      <div className={styles.card} data-min={min ? '' : undefined}>
         <div
           className='dragHandle'
           style={{
@@ -29,6 +32,7 @@ const Closet = ({}: {}) => {
             top: 1,
           }}
         />
+        <MinimizeButton on={min} onToggle={toggleMin} label='inventory' />
         <p className={`${styles.title} ${fontRegupix}`}>INVENTORY</p>
         <div className={styles.inner}>
           <Tabs

@@ -6,6 +6,15 @@
   // adding a tab widens the card
   width: fit-content;
   min-width: 500px;
+
+  // minimized
+  &[data-min] {
+    height: auto;
+
+    .inner {
+      display: none;
+    }
+  }
 }
 
 .title {

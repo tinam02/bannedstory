@@ -1,0 +1,35 @@
+// Sits in the card's top right, over the drag handle strip.
+//
+// z-index rather than DOM order because the handle is a sibling that covers the
+// whole title bar. The card itself must never get one, see card-inner: it has a
+.btn {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  z-index: 2;
+  width: 18px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}
+
+.glyph {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1;
+  color: #ffcc22;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+}

@@ -4,6 +4,15 @@
   @include card-frame;
   height: 400px;
   width: 200px;
+
+  // minimized
+  &[data-min] {
+    height: auto;
+
+    .inner {
+      display: none;
+    }
+  }
 }
 
 .title {

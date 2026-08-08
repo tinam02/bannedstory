@@ -48,6 +48,9 @@ next-env.d.ts
 # the pre inlink-fix extraction, kept until the new one is verified
 /.avatar-out-old/
 
+# note to self
+/LATEST-ITEMS.md
+
 # generated avatar sheets, copied from .avatar-out for local dev
 /public/avatar/
 scripts/build-effect-index.mjs

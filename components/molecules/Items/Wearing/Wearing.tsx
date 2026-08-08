@@ -2,6 +2,8 @@
 
 import useChar from '@/app/context/CharCtx';
 import { fontRegupix } from '@/app/styles/fonts';
+import MinimizeButton from '@/components/atoms/MinimizeButton/MinimizeButton';
+import useMinimized from '@/app/hooks/useMinimized';
 import DragWrapper from '@/components/atoms/DragWrapper';
 import { Icon } from '@/components/atoms/Icon';
 import ItemAdjust, { isAdjusted } from '@/components/atoms/ItemAdjust';
@@ -99,6 +101,7 @@ const WornItem = ({ slot, item }: { slot: string; item: OutfitItem }) => {
 
 const Wearing = ({}: {}) => {
   const { outfit } = useChar();
+  const [min, toggleMin] = useMinimized('wearing');
 
   // Body/head are the skin, not removable equipment — the skin picker owns them.
   const entries = Object.entries(outfit.selectedItems).filter(
@@ -107,7 +110,10 @@ const Wearing = ({}: {}) => {
 
   return (
     <DragWrapper id='wearing'>
-      <div className={`${styles.card} ${fontRegupix}`}>
+      <div
+        className={`${styles.card} ${fontRegupix}`}
+        data-min={min ? '' : undefined}
+      >
         <div
           className='dragHandle'
           style={{
@@ -117,6 +123,7 @@ const Wearing = ({}: {}) => {
             top: 1,
           }}
         />
+        <MinimizeButton on={min} onToggle={toggleMin} label='wearing' />
         <p className={styles.title}>WEARING</p>
         <div className={styles.inner}>
           <div className={styles.list}>
