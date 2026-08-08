@@ -5,8 +5,11 @@
 // plates go lossy, they are big soft backdrops and q90 saves about two thirds.
 // sprites go lossless, they are small and have hard alpha edges
 //
-// nothing is deleted. the webp lands next to the source and the renderer picks
-// it up through the webp flag in index.json
+// nothing is deleted. the webp lands in public/maps and the renderer picks it
+// up through the webp flag in index.json
+//
+// layer sprites are converted in place. plates come from ../resources/maps,
+// outside the repo, since only the webp is ever served
 
 import { execFile } from 'node:child_process';
 import { readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises';
@@ -16,6 +19,10 @@ import { promisify } from 'node:util';
 
 const run = promisify(execFile);
 const MAPS_DIR = join(process.cwd(), 'public', 'maps');
+// hand captured plates, kept out of the repo. only the webp they convert to
+// ever ships, so the pngs would otherwise be dead weight in every checkout and
+// every deploy
+const PLATES_DIR = join(process.cwd(), '..', 'resources', 'maps');
 const PRUNE = process.argv.includes('--prune');
 
 const size = async p => (await stat(p).then(s => s.size, () => 0));
@@ -94,10 +101,19 @@ for (const dir of await readdir(MAPS_DIR, { withFileTypes: true })) {
   if (!dir.isDirectory()) continue;
   const mapDir = join(MAPS_DIR, dir.name);
 
+  // the png stays outside the repo, the webp it produces lands in public. a
+  // plate dropped straight into public/maps still works, so a fresh capture
+  // converts wherever you happened to put it
   for (const plate of ['back.png', 'front.png']) {
-    const src = join(mapDir, plate);
-    if (await exists(src))
-      jobs.push({ src, out: src.replace(/\.png$/, '.webp'), lossless: false });
+    for (const src of [join(PLATES_DIR, dir.name, plate), join(mapDir, plate)]) {
+      if (!(await exists(src))) continue;
+      jobs.push({
+        src,
+        out: join(mapDir, plate.replace(/\.png$/, '.webp')),
+        lossless: false,
+      });
+      break;
+    }
   }
 
   const layersDir = join(mapDir, 'layers');
@@ -151,6 +167,60 @@ const mb = n => (n / 1024 / 1024).toFixed(1) + 'MB';
 console.log(`${mb(before)} -> ${mb(after)}  (${Math.round((1 - after / before) * 100)}% smaller)`);
 
 for (const f of failed) console.warn(`failed ${f}`);
+
+// sprites the renderer will never ask for, because they hold a single frame
+// and the Stage only overlays what moves
+//
+// a still back is always dead. the plate already contains it, and the Stage
+// filters backs to frames > 1 no matter how the map was captured
+//
+// a still obj is dead unless the map set objsHidden, since that is the flag
+// that says the plate was taken with ctrl+3 and every object has to be drawn
+//
+// the manifest entries stay. they are the record of what the map holds, and
+// they carry the type/rx/cx a future scrolling back would need. re-running the
+// lua dump brings the files back, so this is only ever a disk and deploy win
+if (process.argv.includes('--prune-still')) {
+  let freed = 0, gone = 0;
+  for (const dir of await readdir(MAPS_DIR, { withFileTypes: true })) {
+    if (!dir.isDirectory()) continue;
+    const mapDir = join(MAPS_DIR, dir.name);
+    let manifest;
+    try {
+      manifest = JSON.parse(
+        await readFile(join(mapDir, 'layers', 'layers.json'), 'utf8'),
+      );
+    } catch {
+      continue;
+    }
+    let objsHidden = false;
+    try {
+      const cap = JSON.parse(
+        await readFile(join(mapDir, 'capture.json'), 'utf8'),
+      );
+      objsHidden = cap.objsHidden === true;
+    } catch {
+      // no capture.json means the plate holds the objects
+    }
+
+    const dead = [
+      ...manifest.back,
+      ...(objsHidden ? [] : manifest.obj),
+    ].filter(s => s.frames === 1);
+
+    for (const s of dead) {
+      const base = s.file.replace(/\.(apng|png)$/, '');
+      for (const name of [s.file, `${base}.webp`]) {
+        const p = join(mapDir, 'layers', name);
+        if (!(await exists(p))) continue;
+        freed += await size(p);
+        await unlink(p);
+        gone++;
+      }
+    }
+  }
+  console.log(`pruned ${gone} still sprite file(s), freed ${mb(freed)}`);
+}
 
 // sprites the renderer will never ask for, because capture.json hides them.
 // they still sit in the folder and still deploy, so clear them out

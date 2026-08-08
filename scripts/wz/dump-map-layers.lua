@@ -19,7 +19,8 @@ import 'System.Drawing.Imaging'
 ------------------------------------------------------------
 
 -- leave this empty to do every map that already has plates on disk
-local MAP_IDS = {}
+local MAP_IDS = {
+}
 local OUT_ROOT = 'C:\\TINA\\CODE\\bannedstory\\bannedstory\\public\\maps'
 
 -- true reports what each map holds and writes nothing, for deciding which ones

@@ -311,7 +311,8 @@ const Stage = () => {
                 alt=''
                 draggable={false}
                 style={{
-                  left: s.x + s.ox + s.dx - layers.vr.l,
+                  left:
+                    s.x + (s.f ? -s.ox - s.w : s.ox) + s.dx - layers.vr.l,
                   top: s.y + s.oy + s.dy - layers.vr.t,
                   width: s.w,
                   height: s.h,
