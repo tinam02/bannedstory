@@ -1,9 +1,9 @@
 'use client';
-import { ClosetTab, indexFolderFor } from '@/lib/closet';
+import { CLOSET_TABS, ClosetTab, indexFolderFor } from '@/lib/closet';
 import { asSheet, ASSET_BASE } from '@/lib/assets';
 import { OutfitItem } from '@/types';
 import { REGION, VERSION } from '@/lib/fetch';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 /**
  * Loads a closet tab's own item index, the one extract-index.lua builds.
@@ -48,10 +48,6 @@ const load = (folder: string) => {
 
 /** the cached loader, for callers outside react. the randomiser uses it */
 export const loadItemIndex = (folder: string) => load(folder);
-
-/** the sheet a row's icon lives on, for css background positioning */
-export const iconSheetUrl = (folder: string, index: ItemIndex, e: IndexEntry) =>
-  asSheet(`${ROOT}/${index.sheets[e.s] ?? index.sheets[0]}`);
 
 /**
  * An index row in the shape the rest of the app passes around.
@@ -129,25 +125,78 @@ export const useItemIcon = (slot: string, id?: number) => {
   return icon;
 };
 
-const useItemIndex = (tab: ClosetTab) => {
-  const [index, setIndex] = useState<ItemIndex | null>(null);
-  const folder = tab.index;
+/**
+ * 1 row in a closet tab, carrying where it came from.
+ *
+ * The All tab mixes 11 folders, so a row can no longer lean on the tab to
+ * say which slot it equips into or which sheet holds its icon
+ *
+ * The entry is referenced, not copied
+ */
+export type ClosetRow = { e: IndexEntry; slot: string; folder: string };
 
+/** the tabs a tab reads. itself, unless it is the one that reads them all */
+const sourcesOf = (tab: ClosetTab) => (tab.all ? CLOSET_TABS : [tab]);
+
+const rowsOf = (tab: ClosetTab, loaded: Map<string, ItemIndex>): ClosetRow[] => {
+  const folder = tab.index;
+  const index = folder && loaded.get(folder);
+  if (!folder || !index) return [];
+  const rows: ClosetRow[] = [];
+  for (const e of index.items) {
+    // the id block is what splits the tabs sharing the Accessory folder
+    if (tab.ids && (e.id < tab.ids.from || e.id >= tab.ids.to)) continue;
+    rows.push({ e, slot: tab.slot, folder });
+  }
+  return rows;
+};
+
+/**
+ * A tab's rows, and the indexes behind them for icon lookups.
+ *
+ * Every panel is mounted at once, Mantine keeps them that way, so all folders are already fetched and cached before anyone opens All. It costs no
+ * extra requests, only the merge
+ */
+export const useClosetRows = (tab: ClosetTab) => {
+  const [loaded, setLoaded] = useState<Map<string, ItemIndex> | null>(null);
+
+  // tabs are module level constants, so identity is stable and this runs once
+  // per tab rather than on every render
   useEffect(() => {
-    if (!folder) {
-      setIndex(null);
-      return;
-    }
+    // several tabs share the Accessory folder, so fetch each folder once
+    const folders = Array.from(
+      new Set(
+        sourcesOf(tab)
+          .map(t => t.index)
+          .filter((f): f is string => !!f),
+      ),
+    );
     let stale = false;
-    load(folder).then(got => {
-      if (!stale) setIndex(got);
+    Promise.all(
+      folders.map(async f => [f, await load(f)] as const),
+    ).then(pairs => {
+      if (stale) return;
+      setLoaded(
+        new Map(pairs.filter((p): p is [string, ItemIndex] => !!p[1])),
+      );
     });
     return () => {
       stale = true;
     };
-  }, [folder]);
+  }, [tab]);
 
-  return index;
+  const rows = useMemo(
+    () => (loaded ? sourcesOf(tab).flatMap(t => rowsOf(t, loaded)) : []),
+    [loaded, tab],
+  );
+
+  return { rows, loaded, ready: !!loaded };
 };
 
-export default useItemIndex;
+/** the sheet a row's icon sits on */
+export const rowSheetUrl = (row: ClosetRow, loaded: Map<string, ItemIndex>) => {
+  const index = loaded.get(row.folder);
+  if (!index) return '';
+  return asSheet(`${ROOT}/${index.sheets[row.e.s] ?? index.sheets[0]}`);
+};
+

@@ -5,7 +5,7 @@ import DragWrapper from '@/components/atoms/DragWrapper';
 import { Tabs } from '@mantine/core';
 import { useState } from 'react';
 import ItemList from '../ItemList';
-import { CLOSET_TABS as tabs, tabLabel } from '@/lib/closet';
+import { TAB_STRIP as tabs, tabLabel } from '@/lib/closet';
 import styles from './Closet.module.scss';
 
 const Closet = ({}: {}) => {

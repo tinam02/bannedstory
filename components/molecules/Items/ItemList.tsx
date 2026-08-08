@@ -9,9 +9,10 @@ import Search, { SEARCH_DEBOUNCE_MS } from '@/components/atoms/Search/Search';
 import CashFilter from '@/components/atoms/CashFilter/CashFilter';
 import { useSweepDebounce } from '@/app/hooks/useSweepDebounce';
 import { useDebouncedValue } from '@/app/hooks/useDebouncedValue';
-import useItemIndex, {
+import {
   asOutfitItem,
-  iconSheetUrl,
+  rowSheetUrl,
+  useClosetRows,
 } from '@/app/hooks/useItemIndex';
 import { ClosetTab } from '@/lib/closet';
 import { ASSET_BASE, SHEET_EXT } from '@/lib/assets';
@@ -39,8 +40,7 @@ const ItemList = ({
   cashOnly: boolean;
   onCashOnlyChange: (next: boolean) => void;
 }) => {
-  const { slot } = tab;
-  const index = useItemIndex(tab);
+  const { rows, loaded, ready } = useClosetRows(tab);
 
   const [page, setPage] = useState(0);
   // `query` is what's in the box; `nameText` is what the list is filtered on.
@@ -55,34 +55,25 @@ const ItemList = ({
   const gridRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const hasCash = useMemo(
-    () =>
-      !!index?.items.some(
-        e => e.cash && (!tab.ids || (e.id >= tab.ids.from && e.id < tab.ids.to)),
-      ),
-    [index, tab.ids],
-  );
+  // the rows already carry only this tab's slice, so nothing to re-split here
+  const hasCash = useMemo(() => rows.some(r => r.e.cash), [rows]);
 
   // cashOnly is one switch for the whole closet
   const filterCash = cashOnly && hasCash;
 
-  // `ids` splits the tabs that share a folder, since wz files face accessories,
-  // eye decorations and earrings together in Accessory
   const matches = useMemo(() => {
-    if (!index) return [];
     const q = nameText.toLowerCase();
-    return index.items.filter(e => {
-      if (tab.ids && (e.id < tab.ids.from || e.id >= tab.ids.to)) return false;
-      if (filterCash && !e.cash) return false;
-      if (q && !e.name.toLowerCase().includes(q)) return false;
+    return rows.filter(r => {
+      if (filterCash && !r.e.cash) return false;
+      if (q && !r.e.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [index, nameText, filterCash, tab.ids]);
+  }, [rows, nameText, filterCash]);
 
   // A new search means a different list, so start it from the top again.
   // Done during render rather than in an effect, so nothing paints the old
   // scroll position first.
-  const listKey = `${slot} ${filterCash} ${nameText}`;
+  const listKey = `${tab.slot} ${filterCash} ${nameText}`;
   const [prevListKey, setPrevListKey] = useState(listKey);
   if (prevListKey !== listKey) {
     setPrevListKey(listKey);
@@ -110,9 +101,7 @@ const ItemList = ({
   }, [hasMore, page]);
 
   // dwelling on an item warms its sprite sheet, so clicking draws immediately
-  const prefetchOnDwell = (id: number) => {
-    const folder = tab.index;
-    if (!folder) return;
+  const prefetchOnDwell = (folder: string, id: number) => {
     preloader.trigger(() =>
       preloadImageUrl(`${ASSET_BASE}/${folder}/${id}${SHEET_EXT}`),
     );
@@ -133,30 +122,35 @@ const ItemList = ({
         <div
           ref={gridRef}
           className={styles.itemList}
-          data-loading={index ? undefined : ''}
+          data-loading={ready ? undefined : ''}
         >
-          {index && matches.length === 0 && (
+          {ready && matches.length === 0 && (
             <div className={styles.empty}>
               {nameText ? `No items match "${nameText}"` : 'No items found'}
             </div>
           )}
-          {index &&
-            shown.map(e => (
+          {ready &&
+            loaded &&
+            shown.map(r => (
               <button
-                key={e.id}
+                key={`${r.folder}-${r.e.id}`}
                 type='button'
                 className={styles.item}
-                onClick={() => equip(slot, asOutfitItem(e, slot))}
-                onMouseEnter={() => prefetchOnDwell(e.id)}
+                onClick={() => equip(r.slot, asOutfitItem(r.e, r.slot))}
+                onMouseEnter={() => prefetchOnDwell(r.folder, r.e.id)}
                 onMouseLeave={preloader.cancel}
               >
                 <SpriteIcon
-                  sheet={iconSheetUrl(tab.index!, index, e)}
-                  x={e.x}
-                  y={e.y}
-                  w={e.w}
-                  h={e.h}
-                  title={e.name || String(e.id)}
+                  sheet={rowSheetUrl(r, loaded)}
+                  x={r.e.x}
+                  y={r.e.y}
+                  w={r.e.w}
+                  h={r.e.h}
+                  title={
+                    tab.all
+                      ? `${r.e.name || r.e.id}  (${r.slot})`
+                      : r.e.name || String(r.e.id)
+                  }
                 />
               </button>
             ))}

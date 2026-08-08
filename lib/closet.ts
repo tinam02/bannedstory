@@ -22,6 +22,7 @@ export type ClosetTab = {
    * exclusive
    */
   ids?: { from: number; to: number };
+  all?: true;
 };
 
 export const CLOSET_TABS: ClosetTab[] = [
@@ -60,6 +61,11 @@ export const CLOSET_TABS: ClosetTab[] = [
   // one. wz keeps them all in Character/Weapon regardless of type
   { slot: 'Weapon', index: 'Weapon' },
 ];
+
+export const ALL_TAB: ClosetTab = { slot: '*all', label: 'ALL', all: true };
+
+/** what the closet actually draws, as opposed to the real slots above */
+export const TAB_STRIP: ClosetTab[] = [ALL_TAB, ...CLOSET_TABS];
 
 export const tabLabel = (tab: ClosetTab) => tab.label ?? tab.slot.toUpperCase();
 
