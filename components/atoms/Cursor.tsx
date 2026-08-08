@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import styles from './Cursor.module.scss';
 
 const Cursor = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -41,15 +42,11 @@ const Cursor = () => {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
+      className={styles.cursor}
       src={cursorImage}
-      alt='cursor'
-      style={{
-        position: 'fixed',
-        top: position.y,
-        left: position.x,
-        zIndex: 9999,
-        pointerEvents: 'none',
-      }}
+      alt=''
+      aria-hidden='true'
+      style={{ top: position.y, left: position.x }}
     />
   );
 };

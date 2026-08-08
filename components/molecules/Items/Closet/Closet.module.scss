@@ -7,6 +7,13 @@
   width: fit-content;
   min-width: 500px;
 
+  // out of flow, like every other panel on the page
+  position: fixed;
+  top: max(8px, calc(50vh - 400px));
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+
   // minimized
   &[data-min] {
     height: auto;

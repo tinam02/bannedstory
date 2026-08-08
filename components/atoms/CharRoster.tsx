@@ -18,6 +18,7 @@ const CharRoster = () => {
     duplicateChar,
     removeChar,
     renameChar,
+    focusChar,
   } = useChar();
   const [open, { toggle, close }] = useDisclosure(false);
 
@@ -51,8 +52,8 @@ const CharRoster = () => {
             >
               <button
                 className={styles.face}
-                onClick={() => setActiveId(c.id)}
-                title='Select'
+                onClick={() => focusChar(c.id)}
+                title='Select and focus'
               >
                 <AvatarCanvas who={c} />
               </button>

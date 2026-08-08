@@ -72,6 +72,21 @@ type CharContextValue = {
     patch: Partial<Caption>,
   ) => void;
 
+  /**
+   * Selects a character and asks the Stage to pan to her.
+   *
+   * Separate from setActiveId because selecting happens for all sorts of
+   * reasons, including grabbing someone on the stage, and re-centring the map
+   * under a drag in progress would be horrible
+   */
+  focusChar: (id: number) => void;
+  /**
+   * The standing focus request, if any. The counter is the point: asking for
+   * the same character twice has to read as two requests, or the second click
+   * on someone already selected would do nothing
+   */
+  focusReq: { id: number; n: number } | null;
+
   /** False until localStorage has been read, so nothing overwrites it early. */
   hydrated: boolean;
 };
@@ -99,6 +114,8 @@ export const CharContext = createContext<CharContextValue>({
   setEmotion: () => {},
   captionsOf: () => ({ speech: NO_CAPTION, nametag: NO_TAG }),
   setCaption: () => {},
+  focusChar: () => {},
+  focusReq: null,
   hydrated: false,
 });
 
@@ -179,7 +196,15 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
   const [chars, setChars] = useState<Outfit[]>([FALLBACK]);
   const [activeId, setActiveId] = useState(FALLBACK.id);
   const [captions, setCaptions] = useState<Record<number, Captions>>({});
+  const [focusReq, setFocusReq] = useState<{ id: number; n: number } | null>(
+    null,
+  );
   const [hydrated, setHydrated] = useState(false);
+
+  const focusChar = useCallback((id: number) => {
+    setActiveId(id);
+    setFocusReq(prev => ({ id, n: (prev?.n ?? 0) + 1 }));
+  }, []);
 
   useEffect(() => {
     const loaded = loadChars(Date.now());
@@ -361,6 +386,8 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
       setEmotion,
       captionsOf,
       setCaption,
+      focusChar,
+      focusReq,
       hydrated,
     }),
     [
@@ -380,6 +407,8 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
       setEmotion,
       captionsOf,
       setCaption,
+      focusChar,
+      focusReq,
       hydrated,
     ],
   );

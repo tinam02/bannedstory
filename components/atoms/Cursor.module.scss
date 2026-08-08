@@ -1,0 +1,13 @@
+.cursor {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+//no on touchscreen
+@media (hover: hover) and (pointer: fine) {
+  .cursor {
+    display: block;
+  }
+}

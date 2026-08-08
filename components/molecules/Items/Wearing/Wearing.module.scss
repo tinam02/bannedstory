@@ -4,6 +4,11 @@
   @include card-frame;
   height: 400px;
   width: 200px;
+  position: fixed;
+  top: min(50vh, calc(100vh - 412px));
+  left: 0;
+  right: 0;
+  margin: 0 auto;
 
   // minimized
   &[data-min] {

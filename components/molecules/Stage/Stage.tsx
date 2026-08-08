@@ -31,7 +31,8 @@ const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
 
 const Stage = () => {
-  const { chars, activeId, setActiveId, captionsOf, setCaption } = useChar();
+  const { chars, activeId, setActiveId, captionsOf, setCaption, focusReq } =
+    useChar();
   const { bg, mapId, maps, zoom } = useScene();
 
   // fetched only once some character actually wants one, all off by default
@@ -148,7 +149,10 @@ const Stage = () => {
       // a new face starts beside the others rather than exactly on top
       next[id] = saved
         ? JSON.parse(saved)
-        : { x: s.w / 2 + (i - (list.length - 1) / 2) * 70, y: s.h - 30 };
+        : {
+            x: s.w / 2 + (i - (list.length - 1) / 2) * 70,
+            y: Math.round(s.h / 2 + Math.min(s.h / 4, 150)),
+          };
     });
     setPos(next);
     const savedPan = localStorage.getItem(`${PAN_KEY}:${key}`);
@@ -182,6 +186,28 @@ const Stage = () => {
 
   // Zooming out or shrinking the window can leave an old pan out of bounds.
   useEffect(() => setPan(p => limit(p)), [limit]);
+
+  // the roster asked to be taken to someone
+  //
+  // pan 0 is the map centred, so the shift that brings a character to the
+  // middle is her distance from the map's centre, in screen pixels. limit()
+  // then stops it pulling the map edge into view, which means a character near
+  // a corner lands off centre but on screen, same as dragging there by hand
+  useEffect(() => {
+    if (!focusReq) return;
+    const at = posRef.current[focusReq.id];
+    if (!at) return;
+    const s = spaceRef.current;
+    setPan(
+      limit({
+        x: (s.w / 2 - at.x) * zoom,
+        y: (s.h / 2 - at.y) * zoom,
+      }),
+    );
+    // n rather than id, or asking twice for the same character would be one
+    // change and the second click would do nothing
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusReq?.n]);
 
   // Screen pixels to map pixels. Measuring the scaled element and normalising
   // by its rect means dragging is correct at any zoom with no extra maths.
