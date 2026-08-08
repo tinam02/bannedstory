@@ -3,7 +3,7 @@ import toolbar from '@/components/molecules/Toolbar/Toolbar.module.scss';
 
 const GithubLink = () => (
   <a
-    className={toolbar.btn}
+    className={toolbar.iconLink}
     href={GITHUB_URL}
     target='_blank'
     rel='noopener noreferrer'
@@ -11,8 +11,8 @@ const GithubLink = () => (
     aria-label='Source on GitHub'
   >
     <svg
-      width='15'
-      height='15'
+      width='16'
+      height='16'
       viewBox='0 0 16 16'
       fill='currentColor'
       aria-hidden='true'

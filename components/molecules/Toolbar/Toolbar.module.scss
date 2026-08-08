@@ -64,6 +64,22 @@
   }
 }
 
+// gh
+.iconLink {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 4px;
+  color: #ffe39a;
+  opacity: 0.5;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.9));
+  cursor: pointer;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
 // backdrop colour
 .swatch {
   width: 16px;
