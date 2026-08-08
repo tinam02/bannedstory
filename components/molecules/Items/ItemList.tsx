@@ -63,11 +63,16 @@ const ItemList = ({
 
   const matches = useMemo(() => {
     const q = nameText.toLowerCase();
-    return rows.filter(r => {
-      if (filterCash && !r.e.cash) return false;
-      if (q && !r.e.name.toLowerCase().includes(q)) return false;
-      return true;
-    });
+    return (
+      rows
+        .filter(r => {
+          if (filterCash && !r.e.cash) return false;
+          if (q && !r.e.name.toLowerCase().includes(q)) return false;
+          return true;
+        })
+        // newest first
+        .reverse()
+    );
   }, [rows, nameText, filterCash]);
 
   // A new search means a different list, so start it from the top again.
