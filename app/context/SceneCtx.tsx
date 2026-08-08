@@ -16,7 +16,7 @@ import {
 
 const KEY = 'scene';
 
-export const DEFAULT_BG = '#262335';
+export const DEFAULT_BG = '#100E1A';
 
 /** one entry of public/maps/index.json, written by `npm run maps` */
 export type MapInfo = {
