@@ -142,50 +142,63 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
 
     (async () => {
       const meta = await metaOnce!;
-      const worn: WornItem[] = [];
-      const missing: string[] = [];
 
-      await Promise.all(
-        Object.entries(outfit.selectedItems).map(async ([slot, item]) => {
-          if (!item) return;
+      // collected positionally rather than pushed.
+      //
+      // a push sits after the await, so `worn` came out in whatever order the
+      // manifests happened to come back, which is the network's business and
+      // not ours. placeLayers sorts on the z name and that sort is stable, so
+      // two garments sharing a z name keep their `worn` order
+      const entries = Object.entries(outfit.selectedItems);
+      const built = await Promise.all(
+        entries.map(async ([slot, item]) => {
+          if (!item) return null;
           const folder = folderFor(slot, item.typeInfo?.category);
-          if (!folder) return;
+          if (!folder) return null;
           const manifest = await loadManifest(folder, item.id);
-          if (!manifest) {
-            missing.push(slot);
-            return;
-          }
+          if (!manifest) return { slot, item: null };
           const part = partFor(slot);
-          worn.push({
-            part,
-            manifest,
-            sheetUrl: `${ROOT}/${folder}/${item.id}${SHEET_EXT}`,
-            // the face is keyed by expression, everything else by pose
-            stance: part === 'face' ? outfit.emotion : undefined,
-            // set by the stack toggle, and carried in an imported outfit
-            vslot: item.vslot,
-          });
+          return {
+            slot,
+            item: {
+              part,
+              manifest,
+              sheetUrl: `${ROOT}/${folder}/${item.id}${SHEET_EXT}`,
+              // the face is keyed by expression, everything else by pose
+              stance: part === 'face' ? outfit.emotion : undefined,
+              // set by the stack toggle, and carried in an imported outfit
+              vslot: item.vslot,
+            } as WornItem,
+          };
         }),
       );
+
+      const worn: WornItem[] = [];
+      const missing: string[] = [];
+      for (const b of built) {
+        if (!b) continue;
+        if (b.item) worn.push(b.item);
+        else missing.push(b.slot);
+      }
 
       // the effects, for whichever worn items have one. an item's effect is
       // its whole appearance when its Character.wz art is a 1x1 placeholder,
       // so this is not decoration
       const haveEffect = await loadEffectIds();
-      const wornEffects: WornEffect[] = [];
-      await Promise.all(
-        Array.from(new Set(worn.map(w => w.manifest.id)))
-          .filter(id => haveEffect.has(id))
-          .map(async id => {
-            const manifest = await loadEffect(id);
-            if (manifest) {
-              wornEffects.push({
-                manifest,
-                sheetUrl: `${ROOT}/Effect/${id}${SHEET_EXT}`,
-              });
-            }
-          }),
+      const effectIds = Array.from(new Set(worn.map(w => w.manifest.id))).filter(
+        id => haveEffect.has(id),
       );
+      // positional for the same reason as `worn` above
+      const effectManifests = await Promise.all(effectIds.map(id => loadEffect(id)));
+      const wornEffects: WornEffect[] = [];
+      effectManifests.forEach((manifest, i) => {
+        if (manifest) {
+          wornEffects.push({
+            manifest,
+            sheetUrl: `${ROOT}/Effect/${effectIds[i]}${SHEET_EXT}`,
+          });
+        }
+      });
 
       // one load per sheet, not per layer. Array.from rather than spreading a
       // Set, the tsconfig targets es5

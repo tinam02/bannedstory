@@ -327,8 +327,57 @@ export const placeLayers = (layers: AvatarLayer[], zmap: string[]) => {
     return { ...l, x: p.x - l.origin.x, y: p.y - l.origin.y };
   });
 
-  // zmap runs front to back, so the biggest index is drawn first
-  placed.sort((a, b) => (zIndex.get(b.z) ?? -1) - (zIndex.get(a.z) ?? -1));
+  // The stack toggle empties an overall's vslot so the trousers underneath
+  // survive the cull. That is a pairing the game does not have: an overall is
+  // islot MaPn and replaces trousers, so the two garments' z names never had to
+  // agree with each other, and 28% of overall and trouser pairs come out with
+  // the overall behind. Both are individually right, they just hang off
+  // different anchors: mailChestOverPants is 91, in front of pants at 92, while
+  // pantsOverShoesBelowMailChest is 89, behind mailChest at 87. 89 beats 91.
+  //
+  // So for that one relationship the zmap stops being the authority. Anything
+  // the stacker would normally have replaced goes behind it.
+  const stacker = layers.find(
+    l => l.vslot === '' && codes(l.islot).length > 1,
+  );
+  const covers = new Set(stacker ? codes(stacker.islot) : []);
+  const rawZ = (l: AvatarLayer) => zIndex.get(l.z) ?? -1;
+
+  // front and back kept apart, or pushing a trouser behind a jumper would send
+  // it behind the body as well
+  const side = (l: AvatarLayer) => (l.z.startsWith('back') ? 'back' : 'front');
+  const rear: Record<string, number> = { front: -Infinity, back: -Infinity };
+  if (stacker) {
+    for (const l of layers) {
+      if (l.item !== stacker.item) continue;
+      rear[side(l)] = Math.max(rear[side(l)], rawZ(l));
+    }
+  }
+
+  const stackedUnder = (l: AvatarLayer) => {
+    if (!stacker || l.item === stacker.item) return false;
+    const own = codes(l.islot);
+    // the body has no islot, and every() is true for nothing at all
+    if (!own.length || own.length >= codes(stacker.islot).length) return false;
+    return own.every(c => covers.has(c));
+  };
+
+  // never pulls a layer forward, only holds it back
+  const zOf = new Map(
+    layers.map(l => [
+      l.name,
+      stackedUnder(l) ? Math.max(rawZ(l), rear[side(l)] + 0.5) : rawZ(l),
+    ]),
+  );
+
+  // zmap runs front to back, so the biggest index is drawn first. islot breaks
+  // a straight tie, which happens on its own: 212 of the 644 trousers draw on
+  // pantsOverShoesBelowMailChest and so do 1591 of the overalls
+  placed.sort(
+    (a, b) =>
+      (zOf.get(b.name) ?? -1) - (zOf.get(a.name) ?? -1) ||
+      codes(a.islot).length - codes(b.islot).length,
+  );
 
   let l = Infinity;
   let t = Infinity;

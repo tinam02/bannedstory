@@ -191,10 +191,11 @@ const ItemAdjust = ({
           data-on={stacked ? '' : undefined}
           title={
             'Draw this even when something covering it would normally take its ' +
-            'place, so trousers show under an overall. Off by default'
+            'place, so pants show under an overall'
           }
         >
           {stacked ? 'Stacked' : 'Stack'}
+          <span className={styles.footNote}>experimental</span>
         </button>
         <button
           type='button'
