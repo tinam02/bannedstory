@@ -7,12 +7,14 @@
   width: fit-content;
   min-width: 500px;
 
-  // out of flow, like every other panel on the page
+  // out of flow, like every other panel on the page.
+  //
+  // the two item panels hug the bottom corners, so the middle of the window
+  // stays clear for the character
   position: fixed;
-  top: max(8px, calc(50vh - 400px));
-  left: 0;
-  right: 0;
-  margin: 0 auto;
+  bottom: 8px;
+  left: 8px;
+  max-height: calc(100vh - 16px);
 
   // minimized
   &[data-min] {

@@ -75,7 +75,7 @@ const Ctx = createContext<SceneApi>({
 export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
   const [bg, setBgState] = useState(DEFAULT_BG);
   const [mapId, setMapIdState] = useState<string | null>(null);
-  const [zoom, setZoomState] = useState(ZOOM_MIN);
+  const [zoom, setZoomState] = useState(2);
   const [maps, setMaps] = useState<MapInfo[]>([]);
   const [hydrated, setHydrated] = useState(false);
 

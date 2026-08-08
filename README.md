@@ -49,8 +49,18 @@ The closet will be empty without the extracted art, which is not in this repo an
 | `npm run webp` | convert plates and layer sprites to webp |
 | `npm run webp -- --prune-still` | drop sprites the renderer never requests |
 | `node scripts/deploy.mjs --dry` | say what a deploy would send |
+| `node scripts/deploy.mjs` | build and ship the site |
+| `node scripts/deploy.mjs --assets` | the site, + any assets the box is missing |
+| `node scripts/deploy.mjs --clean` | the site, after emptying the web root |
 
 Deploying needs `DEPLOY_HOST` and `DEPLOY_PATH` in `.env.local`
+
+A deploy unpacks a tar over what is already there, so a file deleted here goes
+on being served off the box. `--clean` wipes the web root first, keeping only
+`avatar/`, which is far too big to resend. It costs a second or two of 404s, so
+it is worth running after deleting a map or pruning sprites rather than every
+time. Deleted items under `avatar/` are never removed either, deliberately,
+since they are served `immutable` for a year
 
 ## Disclaimer
 

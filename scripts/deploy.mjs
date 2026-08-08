@@ -3,6 +3,7 @@
 //   node scripts/deploy.mjs --dry     say what it would do
 //   node scripts/deploy.mjs           site only, quick
 //   node scripts/deploy.mjs --assets  site and any assets the box is missing
+//   node scripts/deploy.mjs --clean   wipe the web root first, see below
 //
 // needs these in .env.local:
 //   DEPLOY_HOST=root@1.2.3.4
@@ -30,6 +31,11 @@ const PUBLIC_LINK = join(ROOT, 'public', 'avatar');
 
 const DRY = process.argv.includes('--dry');
 const WITH_ASSETS = process.argv.includes('--assets');
+const CLEAN = process.argv.includes('--clean');
+
+// what --clean leaves alone. assets travel separately and are 2.6 GB, so they
+// are never part of the tar that would put them back
+const KEEP = ['avatar'];
 
 const env = (() => {
   const out = { ...process.env };
@@ -156,6 +162,55 @@ const sendTar = (files, base, dest, label) => {
   unlinkSync(archive);
 };
 
+// ---------------------------------------------------------------- clean
+
+// unpacking a tar overwrites what it contains and leaves everything else
+// alone, so a file deleted here keeps being served off the box forever. the
+// hashed chunks under _next/static rename on every build, and anything dropped
+// out of public/ just stays. --clean empties the web root so the box matches.
+//
+// everything under DEPLOY_PATH comes out of the export except avatar, so that
+// is the one name held back. the site 404s for the second or two between the
+// wipe and the unpack, which is why this is opt in rather than the default
+const cleanRemote = () => {
+  // a wrong DEPLOY_PATH here is rm -rf on something that is not the web root.
+  // absolute, no shell metacharacters, and at least two segments deep, so a
+  // stray / or /var can never be the target
+  const sane =
+    /^\/[\w.-]+(\/[\w.-]+)+\/?$/.test(PATH_ON_BOX) &&
+    !PATH_ON_BOX.includes('..');
+  if (!sane) {
+    console.error(`refusing to clean, DEPLOY_PATH looks wrong: ${PATH_ON_BOX}`);
+    process.exit(1);
+  }
+
+  // cd fails on a first ever deploy, and && makes that the whole command, so
+  // there is nothing to remove and nothing to complain about
+  const keepExpr = KEEP.map(n => `! -name '${n}'`).join(' ');
+  const find = `cd ${PATH_ON_BOX} 2>/dev/null && find . -mindepth 1 -maxdepth 1 ${keepExpr}`;
+
+  if (DRY) {
+    if (!HOST) {
+      say(`  clean: would empty ${PATH_ON_BOX}, keeping ${KEEP.join(', ')}`);
+      return;
+    }
+    const listing = execFileSync('ssh', [HOST, `${find} || true`], {
+      encoding: 'utf8',
+      maxBuffer: 1 << 26,
+    })
+      .split('\n')
+      .map(s => s.replace(/^\.\//, '').trim())
+      .filter(Boolean);
+    say(`  clean: would remove ${listing.length} entries from ${PATH_ON_BOX}`);
+    for (const e of listing) say(`     ${e}`);
+    say(`   keeping ${KEEP.join(', ')}`);
+    return;
+  }
+
+  say(`  cleaning ${PATH_ON_BOX}, keeping ${KEEP.join(', ')}`);
+  run('ssh', [HOST, `${find} -exec rm -rf {} + || true`]);
+};
+
 // ---------------------------------------------------------------- go
 
 const main = () => {
@@ -185,6 +240,18 @@ const main = () => {
         return out;
       })(DIST)
     : [];
+
+  // nothing to put back means nothing should come down. build() throws on a
+  // bad build so a real run cannot get here empty, but the wipe is worth the
+  // cheap insurance
+  if (!DRY && !site.length) {
+    console.error(`no files in ${DIST_NAME}, refusing to deploy`);
+    process.exit(1);
+  }
+
+  // after the build, so a build that throws never leaves the box emptied with
+  // nothing to unpack into it
+  if (CLEAN) cleanRemote();
 
   if (!site.length && DRY) {
     say('  site: nothing built yet, a real run builds it first');
