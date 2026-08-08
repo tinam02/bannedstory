@@ -28,6 +28,15 @@
     pointer-events: auto;
   }
 
+  .link {
+    color: rgba(255, 255, 255, 0.45);
+    white-space: nowrap;
+
+    &:hover {
+      color: #ffe39a;
+    }
+  }
+
   @media (max-width: 900px) {
     display: none;
   }

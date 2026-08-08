@@ -1,3 +1,4 @@
+import { GITHUB_URL } from '@/lib/site';
 import styles from './SiteCopy.module.scss';
 
 const SiteCopy = () => (
@@ -15,7 +16,15 @@ const SiteCopy = () => (
     <footer className={styles.footer}>
       A free MapleStory character creator and dress up simulator. MapleStory and
       all related assets are © NEXON Korea Corp. Henehoe is an unofficial,
-      non-commercial fan project, not affiliated with Nexon
+      non-commercial fan project, not affiliated with Nexon.{' '}
+      <a
+        href={GITHUB_URL}
+        target='_blank'
+        rel='noopener noreferrer'
+        className={styles.link}
+      >
+        Source on GitHub
+      </a>
     </footer>
   </>
 );

@@ -22,8 +22,6 @@ export const POSE_GROUPS: { name: string; poses: Pose[] }[] = [
       { stance: 'stand1', label: 'Stand' },
       { stance: 'stand2', label: 'Stand 2H' },
       { stance: 'alert', label: 'Alert' },
-      { stance: 'default', label: 'Default' },
-      { stance: 'backDefault', label: 'From behind' },
       { stance: 'heal', label: 'Heal' },
     ],
   },

@@ -11,6 +11,7 @@ import MapPicker from '@/components/atoms/MapPicker';
 import CaptionPicker from '@/components/atoms/CaptionPicker';
 import CharRoster from '@/components/atoms/CharRoster';
 import PosePicker from '@/components/atoms/PosePicker';
+import GithubLink from '@/components/atoms/GithubLink';
 import styles from './Toolbar.module.scss';
 
 /**
@@ -24,6 +25,7 @@ const Toolbar = () => (
       <ImportButton />
       <ExportButton />
       <ZoomControls />
+      <GithubLink />
     </div>
     <div className={styles.row}>
       <EmotePicker />
