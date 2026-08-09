@@ -293,13 +293,61 @@ export const visibleLayers = (
 };
 
 /**
+ * Where a layer draws when zmap has never heard of its z name.
+ *
+ * 1637 items carry one. Some are typos wz never fixed, `backweapon` and
+ * `weaponBelowbody` and a `Cape` with a capital C. Some have a number where a
+ * name should be. And some are names this version's zmap simply has not got,
+ * `capBelowBody` on 73 hats and `hairBelowHead` on 24 hairs.
+ *
+ * All of them used to come back -1, and since the sort runs on that index, -1
+ * put them in front of the whole character: those 73 hats drew their brim over
+ * the face, and those 24 hairs drew over any hat.
+ *
+ * So the name gets read rather than dropped. Case first, since most of them are
+ * only miscapitalised. Then the name itself: `xBelowY` and `xOverY` say where
+ * they sit relative to Y, and that is the convention the real entries already
+ * follow, `capeBelowBody` sitting five places behind `body`. A `back` name
+ * looks for a `back` neighbour first, or backCapBelowHair would resolve onto
+ * the front hair and come out in front of the body. Then the layer's own name,
+ * which is what catches the numeric z.
+ *
+ * Anything still unplaced goes behind everything, where a mistake is hidden by
+ * the character instead of painted over its face.
+ */
+const zLookup = (zmap: string[]) => {
+  const exact = new Map(zmap.map((n, i) => [n, i]));
+  const loose = new Map(zmap.map((n, i) => [n.trim().toLowerCase(), i]));
+  const near = (name: string) => loose.get(name.trim().toLowerCase());
+
+  const relative = (z: string) => {
+    const m = /^(.*?)(Below|Over)([A-Z].*)$/.exec(z.trim());
+    if (!m) return undefined;
+    const [, , dir, tail] = m;
+    const at = (/^back/i.test(z.trim()) ? near(`back${tail}`) : undefined) ?? near(tail);
+    if (at === undefined) return undefined;
+    // half a place, so it lands beside its reference without displacing it
+    return dir === 'Below' ? at + 0.5 : at - 0.5;
+  };
+
+  return (z: string, layer: string) => {
+    for (const name of [z, layer]) {
+      if (!name) continue;
+      const hit = exact.get(name) ?? near(name) ?? relative(name);
+      if (hit !== undefined) return hit;
+    }
+    return zmap.length;
+  };
+};
+
+/**
  * Where each layer goes, and in what order.
  *
  * Positions come back relative to the body's origin, so they're negative above
  * and left of it. Sorted back to front, ready to draw one after another
  */
 export const placeLayers = (layers: AvatarLayer[], zmap: string[]) => {
-  const zIndex = new Map(zmap.map((n, i) => [n, i]));
+  const zAt = zLookup(zmap);
   const root = layers.find(l => l.part === 'body' && l.layer === 'body');
 
   // a layer that hangs off nothing lands at the origin and stays there in every
@@ -346,7 +394,7 @@ export const placeLayers = (layers: AvatarLayer[], zmap: string[]) => {
     l => l.vslot === '' && codes(l.islot).length > 1,
   );
   const covers = new Set(stacker ? codes(stacker.islot) : []);
-  const rawZ = (l: AvatarLayer) => zIndex.get(l.z) ?? -1;
+  const rawZ = (l: AvatarLayer) => zAt(l.z, l.layer);
 
   // front and back kept apart, or pushing a trouser behind a jumper would send
   // it behind the body as well

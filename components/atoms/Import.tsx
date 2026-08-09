@@ -1,12 +1,12 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import useChar from '@/app/context/CharCtx';
+import useChar, { MAX_CHARS } from '@/app/context/CharCtx';
 import { parseOutfit } from '@/lib/outfit';
 import styles from '@/components/molecules/Toolbar/Toolbar.module.scss';
 
 const ImportButton = () => {
-  const { setOutfit } = useChar();
+  const { importChar } = useChar();
   const inputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -17,7 +17,14 @@ const ImportButton = () => {
         JSON.parse(await file.text()),
         Date.now(),
       );
-      setOutfit(outfit);
+      // new character
+      if (!importChar(outfit)) {
+        setFailed(true);
+        setMessage(
+          `The cast is full at ${MAX_CHARS} — remove one before importing.`,
+        );
+        return;
+      }
       setFailed(false);
       setMessage(warnings.length ? warnings.join(' ') : null);
     } catch (err) {

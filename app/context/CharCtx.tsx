@@ -46,6 +46,14 @@ type CharContextValue = {
   addChar: () => void;
   /** copies one, offset so it doesn't land exactly on top of the original */
   duplicateChar: (id: number) => void;
+  /**
+   * Adds an imported outfit to the cast and makes it active.
+   *
+   * A character arrives rather than replacing whoever was selected, since an
+   * import is nearly always someone new and overwriting the character you had
+   * open is not undoable. False when the cast is full
+   */
+  importChar: (outfit: Outfit) => boolean;
   /** removing the last one leaves a fresh default, never an empty stage */
   removeChar: (id: number) => void;
   renameChar: (id: number, name: string) => void;
@@ -99,6 +107,7 @@ export const CharContext = createContext<CharContextValue>({
   setActiveId: () => {},
   addChar: () => {},
   duplicateChar: () => {},
+  importChar: () => false,
   removeChar: () => {},
   renameChar: () => {},
   outfit: FALLBACK,
@@ -273,6 +282,23 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // the file brings an id of its own, and it is the exporter's, so it gets a
+  // fresh one here the same way a duplicate does. keeping it would collide with
+  // whoever already holds that id and strand one of them
+  const importChar = useCallback(
+    (imported: Outfit) => {
+      if (chars.length >= MAX_CHARS) return false;
+      setChars(prev => {
+        if (prev.length >= MAX_CHARS) return prev;
+        const born = { ...imported, id: nextId(prev) };
+        setActiveId(born.id);
+        return [...prev, born];
+      });
+      return true;
+    },
+    [chars.length],
+  );
+
   const removeChar = useCallback((id: number) => {
     setChars(prev => {
       const left = prev.filter(c => c.id !== id);
@@ -371,6 +397,7 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
       setActiveId,
       addChar,
       duplicateChar,
+      importChar,
       removeChar,
       renameChar,
       outfit,
@@ -395,6 +422,7 @@ export function CharProvider({ children }: { children: React.ReactNode }) {
       activeId,
       addChar,
       duplicateChar,
+      importChar,
       removeChar,
       renameChar,
       outfit,
