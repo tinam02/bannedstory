@@ -3,7 +3,8 @@ import useChar from '@/app/context/CharCtx';
 import useScene from '@/app/context/SceneCtx';
 import Char from '@/components/atoms/Char';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import useMapLayers, { scrollsH, scrollsV } from './useMapLayers';
+import useMapLayers, { moves, scrollsH, scrollsV } from './useMapLayers';
+import BackLayer from './BackLayer';
 import useUiSprites from './useUiSprites';
 import Caption from './Caption';
 import styles from './Stage.module.scss';
@@ -105,10 +106,10 @@ const Stage = () => {
   //
   // sorted by wz draw order, obj layer then z, backs first since they're scenery
   const sprites = useMemo(() => {
-    if (!layers) return [];
+    if (!layers) return { backs: [], objs: [] };
     const cam = map?.cam;
-    const backs = layers.back
-      .filter(s => s.frames > 1)
+    const backs = (map?.backsHidden ? layers.back : layers.back.filter(moves))
+      .filter(s => !hidden(s.file))
       .map(s => ({
         ...s,
         dx: cam && !scrollsH(s) ? (cam.x * (100 + (s.rx ?? 0))) / 100 : 0,
@@ -116,13 +117,29 @@ const Stage = () => {
       }));
     const objs = (
       map?.objsHidden ? layers.obj : layers.obj.filter(s => s.frames > 1)
-    ).map(s => ({ ...s, dx: 0, dy: 0 }));
-    return [...backs, ...objs]
+    )
       .filter(s => !hidden(s.file))
-      .sort(
-        (a, b) => (a.layer ?? -1) - (b.layer ?? -1) || (a.z ?? 0) - (b.z ?? 0),
-      );
+      .map(s => ({ ...s, dx: 0, dy: 0 }));
+    return { backs, objs };
   }, [layers, map, hidden]);
+
+  /**
+   * Where the backs go relative to the plate.
+   *
+   * Normally the plate holds them and only the moving ones are drawn, over the
+   * top, covering their own baked still. A backsHidden plate holds none of
+   * them, so all of them are drawn and every one goes underneath: the plate is
+   * the ground the character stands on and the sky belongs behind it.
+   */
+  const skyBehind = !!map?.backsHidden;
+
+  const overlay = useMemo(
+    () =>
+      [...(skyBehind ? [] : sprites.backs), ...sprites.objs].sort(
+        (a, b) => (a.layer ?? -1) - (b.layer ?? -1) || (a.z ?? 0) - (b.z ?? 0),
+      ),
+    [skyBehind, sprites],
+  );
 
   // Mirrors, so the pointerup handler can save the final value without either going stale in its closure or re-subscribing on every mouse move
   const posRef = useRef(pos);
@@ -314,6 +331,20 @@ const Stage = () => {
             transform: `scale(${zoom})`,
           }}
         >
+          {/* under the plate, because this plate has no sky in it */}
+          {map &&
+            layers &&
+            skyBehind &&
+            sprites.backs.map(s => (
+              <BackLayer
+                key={s.file}
+                sprite={s}
+                src={asset(`layers/${s.file}`)}
+                vr={layers.vr}
+                space={space}
+              />
+            ))}
+
           {map && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -328,24 +359,36 @@ const Stage = () => {
               rect, so subtracting it puts wz coords into plate pixels */}
           {map &&
             layers &&
-            sprites.map(s => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={s.file}
-                className={styles.sprite}
-                src={asset(`layers/${s.file}`)}
-                alt=''
-                draggable={false}
-                style={{
-                  left:
-                    s.x + (s.f ? -s.ox - s.w : s.ox) + s.dx - layers.vr.l,
-                  top: s.y + s.oy + s.dy - layers.vr.t,
-                  width: s.w,
-                  height: s.h,
-                  transform: s.f ? 'scaleX(-1)' : undefined,
-                }}
-              />
-            ))}
+            overlay.map(s =>
+              // a back that tiles or drifts is a strip of copies rather than
+              // the single image an object is
+              s.front !== undefined && (scrollsH(s) || scrollsV(s)) ? (
+                <BackLayer
+                  key={s.file}
+                  sprite={s}
+                  src={asset(`layers/${s.file}`)}
+                  vr={layers.vr}
+                  space={space}
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={s.file}
+                  className={styles.sprite}
+                  src={asset(`layers/${s.file}`)}
+                  alt=''
+                  draggable={false}
+                  style={{
+                    left:
+                      s.x + (s.f ? -s.ox - s.w : s.ox) + s.dx - layers.vr.l,
+                    top: s.y + s.oy + s.dy - layers.vr.t,
+                    width: s.w,
+                    height: s.h,
+                    transform: s.f ? 'scaleX(-1)' : undefined,
+                  }}
+                />
+              ),
+            )}
 
           {chars.map(who => {
             const at = pos[who.id];

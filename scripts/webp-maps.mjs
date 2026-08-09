@@ -203,8 +203,12 @@ if (process.argv.includes('--prune-still')) {
       // no capture.json means the plate holds the objects
     }
 
+    // a still back is only dead if it also sits still. one with a scrolling
+    // type holds a single frame and drifts on a timer, and the Stage draws it
+    // over the plate, so pruning those took the sky off every outdoor map
+    const scrolls = s => s.type >= 4 && s.type <= 7;
     const dead = [
-      ...manifest.back,
+      ...manifest.back.filter(s => !scrolls(s)),
       ...(objsHidden ? [] : manifest.obj),
     ].filter(s => s.frames === 1);
 

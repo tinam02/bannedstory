@@ -20,6 +20,17 @@
     "webp": true
   },
   {
+    "id": "200080100",
+    "name": "Entrance to Orbis Tower",
+    "street": "Orbis",
+    "w": 800,
+    "h": 1160,
+    "front": false,
+    "layers": true,
+    "webp": true,
+    "backsHidden": true
+  },
+  {
     "id": "450005000",
     "name": "Grove of the Spirit Tree",
     "street": "Arcana",
@@ -131,7 +142,7 @@
     "w": 2813,
     "h": 850,
     "front": false,
-    "layers": false,
+    "layers": true,
     "webp": true
   },
   {

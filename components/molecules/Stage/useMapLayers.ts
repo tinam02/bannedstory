@@ -20,6 +20,8 @@ export type MapSprite = {
   frames: number;
   /** horizontal flip */
   f: number;
+  /** wz opacity, 0 to 255. absent means opaque */
+  a?: number;
   // obj only
   layer?: number;
   z?: number;
@@ -37,6 +39,46 @@ export type MapSprite = {
 // a scrolling axis is driven by a timer rather than the camera, see BackPatch.cs
 export const scrollsH = (s: MapSprite) => s.type === 4 || s.type === 6;
 export const scrollsV = (s: MapSprite) => s.type === 5 || s.type === 7;
+
+// which axes repeat. 1 and 3 tile across, 2 and 3 tile down, and the moving
+// types carry their own axis plus, for 6 and 7, the other one as well
+export const tilesH = (s: MapSprite) =>
+  s.type === 1 || s.type === 3 || s.type === 4 || s.type === 6 || s.type === 7;
+export const tilesV = (s: MapSprite) =>
+  s.type === 2 || s.type === 3 || s.type === 5 || s.type === 6 || s.type === 7;
+
+/**
+ * Whether the Stage has to draw this one over the plate.
+ *
+ * Two ways to move. A sprite with frames is an apng and animates in place. A
+ * sprite with a scrolling type holds one frame and drifts instead, which is
+ * how every sky in the game works: seven cloud layers at seven speeds and not
+ * an animation between them.
+ *
+ * Anything else is still, and the plate already has it.
+ */
+export const moves = (s: MapSprite) => s.frames > 1 || scrollsH(s) || scrollsV(s);
+
+/**
+ * How far apart the repeats go.
+ *
+ * cx and cy are the tile spacing, not the sprite size, so a 287px cloud on a
+ * 900px step leaves 613px of sky between copies. Zero means butt them together
+ */
+export const stepH = (s: MapSprite) => (s.cx ? s.cx : s.w) || s.w;
+export const stepV = (s: MapSprite) => (s.cy ? s.cy : s.h) || s.h;
+
+/**
+ * Pixels a second, from wz's rate number.
+ *
+ * On a scrolling layer rx and ry stop being parallax rates and become speeds,
+ * which is why the parallax shift skips whichever axis is scrolling. The
+ * multiplier is the client's, five pixels a second per unit, so this map's
+ * clouds run 20 to 40 and its one vertical layer runs 250
+ */
+const PX_PER_RATE = 5;
+export const speedH = (s: MapSprite) => (s.rx ?? 0) * PX_PER_RATE;
+export const speedV = (s: MapSprite) => (s.ry ?? 0) * PX_PER_RATE;
 
 export type MapLayers = {
   id: string;

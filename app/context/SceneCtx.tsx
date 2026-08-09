@@ -18,6 +18,20 @@ const KEY = 'scene';
 
 export const DEFAULT_BG = '#100E1A';
 
+/**
+ * What a first time visitor lands on.
+ *
+ * The index is sorted by name, so taking the first entry meant whatever happens
+ * to start with the earliest letter, which is nobody's idea of a front page.
+ * Arcana is wide, bright and has animated backs, so it shows what the thing
+ * does before anyone touches a control.
+ *
+ * By id, since the name is not ours: it comes out of UI.wz through maps.json.
+ * Falls back to the first map if that id is not in the index, so pruning a map
+ * cannot leave the stage empty
+ */
+export const DEFAULT_MAP_ID = '450005000';
+
 /** one entry of public/maps/index.json, written by `npm run maps` */
 export type MapInfo = {
   id: string;
@@ -34,6 +48,16 @@ export type MapInfo = {
   cam?: { x: number; y: number };
   /** plate was captured with ctrl+3, so objects come from the manifest instead */
   objsHidden?: boolean;
+  /**
+   * Plate holds no backgrounds, so every back comes from the manifest and all
+   * of them draw behind it.
+   *
+   * A sky cannot be captured into the plate and animated as well. The clouds
+   * would be baked in at the position they were photographed and drift over
+   * their own copy, so a map with a moving sky is captured without any of it,
+   * leaving the plate as the ground the character stands on
+   */
+  backsHidden?: boolean;
   /** sprite files to drop, a trailing * matches a prefix. `keep` wins over `hide` */
   hide?: string[];
   keep?: string[];

@@ -49,6 +49,59 @@
   image-rendering: pixelated;
 }
 
+// one repeating background layer, the cheap way to cover a plate in 50px sky
+.tiled {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+}
+
+// A tiled background layer that drifts, the sky in every outdoor map.
+//
+// The strip travels exactly one tile step and repeats. Its copies are a step
+// apart, so the last frame of the loop is pixel identical to the first and the
+// seam never shows. Distance comes in as --step and the time as an inline
+// animation-duration, since both are per layer
+.driftX,
+.driftY {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.driftX {
+  animation-name: driftX;
+}
+
+.driftY {
+  animation-name: driftY;
+}
+
+@keyframes driftX {
+  to {
+    transform: translateX(var(--step));
+  }
+}
+
+@keyframes driftY {
+  to {
+    transform: translateY(var(--step));
+  }
+}
+
+// nobody wants a sky sliding past while they are trying to look at an outfit
+@media (prefers-reduced-motion: reduce) {
+  .driftX,
+  .driftY {
+    animation: none;
+  }
+}
+
 // The `front=1` bg entries. Sits above the character and must never
 // swallow a drag, or the parts of the map that overhang char would be dead zones
 .front {

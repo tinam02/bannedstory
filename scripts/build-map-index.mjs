@@ -91,13 +91,15 @@ const readCapture = async dir => {
     return {
       cam: c.cam ? { x: c.cam.x ?? 0, y: c.cam.y ?? 0 } : null,
       objsHidden: c.objsHidden === true,
+      // plate has no sky in it, so every back is drawn from the manifest
+      backsHidden: c.backsHidden === true,
       // sprites to drop, and exceptions to that. a trailing * matches a prefix
       // redundant things like tutorial arrows
       hide: Array.isArray(c.hide) ? c.hide : null,
       keep: Array.isArray(c.keep) ? c.keep : null,
     };
   } catch {
-    return { cam: null, objsHidden: false, hide: null, keep: null };
+    return { cam: null, objsHidden: false, backsHidden: false, hide: null, keep: null };
   }
 };
 
@@ -108,7 +110,12 @@ const readLayers = async dir => {
     const l = JSON.parse(
       await readFile(join(MAPS_DIR, dir, 'layers', 'layers.json'), 'utf8'),
     );
-    const backs = l.back.filter(s => s.frames > 1);
+    // a back moves if it has frames or if it scrolls. the scrolling ones hold
+    // one frame and drift on a timer, which is how skies are built, so counting
+    // frames alone left a map with seven cloud layers looking like it had none
+    const moves = s =>
+      s.frames > 1 || s.type === 4 || s.type === 5 || s.type === 6 || s.type === 7;
+    const backs = l.back.filter(moves);
     return {
       animated: backs.length + l.obj.filter(s => s.frames > 1).length,
       // a back needs calibrating if either axis is driven by the camera. an
@@ -151,11 +158,12 @@ for (const dir of entries) {
     front: !!(await plateSize(dir.name, 'front')),
     // written by scripts/wz/dump-map-layers.lua, holds the animated sprites
     // the manifest is also needed when objects come from it rather than the plate
-    layers: lay.animated > 0 || cap.objsHidden,
+    layers: lay.animated > 0 || cap.objsHidden || cap.backsHidden,
     // npm run webp converts a whole map at once, so one plate is enough to tell
     webp: await exists(join(MAPS_DIR, dir.name, 'back.webp')),
     ...(cap.cam ? { cam: cap.cam } : {}),
     ...(cap.objsHidden ? { objsHidden: true } : {}),
+    ...(cap.backsHidden ? { backsHidden: true } : {}),
     ...(cap.hide ? { hide: cap.hide } : {}),
     ...(cap.keep ? { keep: cap.keep } : {}),
   });

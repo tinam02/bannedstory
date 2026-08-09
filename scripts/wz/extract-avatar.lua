@@ -493,12 +493,33 @@ for _, folder in ipairs(FOLDERS) do
         -- manifest can record which appearance we took and what else was there
         local usedType, allTypes = nil, nil
 
+        -- a canvas of a pixel or two is not art, it is a marker saying the art
+        -- is somewhere else. so an item whose every canvas is one counts as
+        -- nothing found, and the fallbacks below get their turn instead of the
+        -- placeholder being written out as if it were the item
+        --
+        -- this is what the 25 Expression face accessories were: one 1x1 under
+        -- `default`, which the stance pass found and was satisfied by, so it
+        -- never looked at the rest of the img
+        local function empty(total, slots, slotOrder)
+          if not total or total < 1 then return true end
+          for _, k in ipairs(slotOrder) do
+            local s = slots[k]
+            if s.w > 2 or s.h > 2 then return false end
+          end
+          return true
+        end
+
         local function doItem()
           local canvases, order, frames, total, slots, slotOrder = collect(img, keys)
 
+          -- what the stance pass got, in case a fallback comes back with less
+          local hadC, hadO, hadF, hadT, hadS, hadSO =
+            canvases, order, frames, total, slots, slotOrder
+
           -- nothing under the stance names, so try one level down. a cash
           -- weapon keeps a whole set of stances per weapon type it imitates
-          if (not total or total < 1) and keys == STANCES then
+          if empty(total, slots, slotOrder) and keys == STANCES then
             local vNode, vCode, codes = typeVariant(img)
             if vNode then
               usedType, allTypes = vCode, codes
@@ -517,7 +538,7 @@ for _, folder in ipairs(FOLDERS) do
           -- keyed its own way lands here too. retry on its own keys rather than
           -- skip it, and say what they were the first time so we learn the
           -- shape instead of guessing at it
-          if (not total or total < 1) and keys == STANCES then
+          if empty(total, slots, slotOrder) and keys == STANCES then
             local mine = ownKeys()
             if #mine > 0 then
               if not shapes[folder.name] then
@@ -528,6 +549,14 @@ for _, folder in ipairs(FOLDERS) do
               end
               canvases, order, frames, total, slots, slotOrder = collect(img, mine)
             end
+          end
+
+          -- the fallbacks found nothing better, so put back what the stance
+          -- pass had. a placeholder still beats nothing: the item stays in the
+          -- closet and stays wearable, it just draws a pixel
+          if empty(total, slots, slotOrder) then
+            canvases, order, frames, total, slots, slotOrder =
+              hadC, hadO, hadF, hadT, hadS, hadSO
           end
 
           if not total or total < 1 then return 0, 0 end
