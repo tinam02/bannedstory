@@ -1,7 +1,7 @@
 'use client';
 import useAvatar from '@/app/hooks/useAvatar';
 import useFrameDelays, { FrameDelays } from '@/app/hooks/useFrameDelays';
-import { buildAvatar } from '@/lib/avatar';
+import { buildAvatar, FACE_PARTS } from '@/lib/avatar';
 import { FRAME_MS, sequenceFor, timeline } from '@/lib/clock';
 import { boxFor, drawAvatar, mergeBoxes } from '@/lib/draw';
 import { effectDelays, placeEffects, type WornEffect } from '@/lib/effects';
@@ -293,7 +293,9 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
   const wornNow = useMemo(
     () =>
       avatar?.worn.map(w =>
-        w.part === 'face' ? { ...w, frame: who.animating ? faceTick : 0 } : w,
+        FACE_PARTS.has(w.part)
+          ? { ...w, frame: who.animating ? faceTick : 0 }
+          : w,
       ) ?? [],
     [avatar, faceTick, who.animating],
   );
@@ -455,7 +457,9 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
           // the face carries its own frame on the worn item, which is how
           // buildAvatar keeps one frame index for everything else
           const worn = avatar.worn.map(w =>
-            w.part === 'face' ? { ...w, frame: faceOrder[st.face] ?? 0 } : w,
+            FACE_PARTS.has(w.part)
+              ? { ...w, frame: faceOrder[st.face] ?? 0 }
+              : w,
           );
           const b = buildAvatar(
             worn, avatar.meta.zmap, avatar.meta.smap, who.action, st.body, opts,

@@ -1,5 +1,5 @@
 'use client';
-import { ItemManifest, WornItem } from '@/lib/avatar';
+import { FACE_PARTS, ItemManifest, WornItem } from '@/lib/avatar';
 import { EffectManifest, WornEffect } from '@/lib/effects';
 import { Outfit } from '@/types';
 import { ASSET_BASE, SHEET_EXT } from '@/lib/assets';
@@ -48,6 +48,22 @@ const folderFor = (slot: string, category?: string) =>
 // the part name only has to be stable and unique per worn item. body, head,
 // face and hair have to match by name though, they're the claim order
 const partFor = (slot: string) => slot.toLowerCase().replace(/\s+/g, '');
+
+/**
+ * The expression key to actually read, for a part that has expressions.
+ *
+ * Not just the emotion, because a face accessory does not carry the same set a
+ * face does: 743 of the 778 have no `default` node at all, so asking for one
+ * drew nothing and every moustache in the closet was invisible. Falling through
+ * to blink is safe, every one of them has it and its first frame is resting pose
+ */
+const expressionFor = (manifest: ItemManifest, emotion: string) => {
+  const has = manifest.frames;
+  if (has[emotion]) return emotion;
+  if (has.default) return 'default';
+  if (has.blink) return 'blink';
+  return Object.keys(has)[0];
+};
 
 export type AvatarMeta = { zmap: string[]; smap: Record<string, string> };
 
@@ -164,8 +180,11 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
               part,
               manifest,
               sheetUrl: `${ROOT}/${folder}/${item.id}${SHEET_EXT}`,
-              // the face is keyed by expression, everything else by pose
-              stance: part === 'face' ? outfit.emotion : undefined,
+              // the face and the face accessory are keyed by expression,
+              // everything else by pose
+              stance: FACE_PARTS.has(part)
+                ? expressionFor(manifest, outfit.emotion)
+                : undefined,
               // set by the stack toggle, and carried in an imported outfit
               vslot: item.vslot,
             } as WornItem,
