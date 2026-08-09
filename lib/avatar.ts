@@ -159,6 +159,11 @@ const NO_LOOSE_HAND: Record<string, string[]> = { heal: ['lHand'] };
 // fallback infers as never[] and nothing can be looked up in it
 const codes = (s: string | undefined): string[] => s?.match(/[A-Z][a-z0-9]/g) ?? [];
 
+/**
+ * The parts keyed by expression rather than by pose.
+ */
+export const FACE_PARTS = new Set(['face', 'faceaccessory']);
+
 /** body parts claim their slots before equips, so a hat beats the hair it covers */
 const CLAIM_ORDER = ['body', 'head', 'face', 'hair'];
 const claimRank = (part: string) => {
@@ -254,7 +259,7 @@ export const visibleLayers = (
   const kept = layers.filter(l => {
     if (UNRESOLVED.has(l.layer)) return false;
     if (loose.includes(l.layer)) return false;
-    if (facingAway && l.part === 'face') return false;
+    if (facingAway && FACE_PARTS.has(l.part)) return false;
     const flag = EAR_LAYERS[l.layer as keyof typeof EAR_LAYERS];
     if (flag) return opts[flag] === true;
     return true;
