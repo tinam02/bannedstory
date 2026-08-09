@@ -176,6 +176,11 @@ export function parseOutfit(
   const warnings: string[] = [];
   const selectedItems: SelectedItems = {};
   for (const [slot, rawItem] of Object.entries(src.selectedItems)) {
+    // sec
+    if (slot === '__proto__') {
+      // warnings.push('Dropped  __proto__.');
+      continue;
+    }
     const item = parseItem(slot, rawItem);
     if (item) selectedItems[slot] = item;
     else warnings.push(`Skipped “${slot}”: no usable item id.`);

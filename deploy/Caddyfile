@@ -17,6 +17,35 @@ henehoe.app {
 	@html path /
 	header @html Cache-Control "public, max-age=0, must-revalidate"
 
+	# Sent on everything.
+	#
+	# The site takes a file the visitor chose, an outfit export from another
+	# simulator, and renders names out of it. Nothing is written as html, react
+	# escapes it and the captions go through canvas, so there is no known way in.
+	# These are the second line for the day that changes
+	header {
+		# no sniffing a .json into a script
+		X-Content-Type-Options nosniff
+		# no framing, for the browsers predating frame-ancestors
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		# none of it is used, so none of it is granted
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+
+		# unsafe-inline twice, and both are load bearing rather than lazy.
+		#
+		# script: mantine's colour scheme script is inline in the exported html,
+		# and a static export has no server to mint a nonce. it could be pinned
+		# by hash, and then a mantine update would silently break the page.
+		# style: mantine and typestyle both inject <style> at runtime, and the
+		# export carries inline style attributes.
+		#
+		# so script-src is not stopping an injected inline script. what it is
+		# stopping is a script, a font, an image or a fetch from anywhere but
+		# here, which is what an exfiltration needs
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+	}
+
 	# next writes /foo.html but links to /foo, so try the file with .html on
 	try_files {path} {path}.html {path}/index.html
 
