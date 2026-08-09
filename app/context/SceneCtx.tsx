@@ -134,7 +134,12 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
       .then((list: MapInfo[]) => {
         if (stale) return;
         setMaps(list);
-        if (!hadSavedMap.current && list.length) setMapIdState(list[0].id);
+        if (!hadSavedMap.current && list.length) {
+          const wanted = list.some(m => m.id === DEFAULT_MAP_ID)
+            ? DEFAULT_MAP_ID
+            : list[0].id;
+          setMapIdState(wanted);
+        }
       })
       .catch(() => {
         // no index yet just means no maps, the backdrop colour still works
