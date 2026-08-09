@@ -31,7 +31,6 @@ const PosePicker = () => {
           className={toolbar.btn}
           onClick={toggle}
           aria-label='Pose'
-          title={`Pose: ${poseLabel(outfit.action)}`}
         >
           {poseLabel(outfit.action)}
         </button>

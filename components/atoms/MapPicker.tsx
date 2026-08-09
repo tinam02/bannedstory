@@ -29,7 +29,6 @@ const MapPicker = () => {
         <button
           className={toolbar.btn}
           onClick={toggle}
-          title={current ? `${current.street} / ${current.name}` : 'No map'}
           aria-label='Choose map'
         >
           {current?.name ?? 'No map'}

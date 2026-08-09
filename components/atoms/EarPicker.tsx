@@ -1,14 +1,15 @@
 'use client';
-import useChar from '@/app/context/CharCtx';
-import { EMOTES, emoteLabel, emotePreviewOutfit } from '@/lib/emotes';
 import AvatarCanvas from './AvatarCanvas';
+import useChar from '@/app/context/CharCtx';
+import { EAR_KINDS, earLabel, earOf, earSwatchOutfit, withEars } from '@/lib/ears';
 import { Popover } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import styles from './EmotePicker.module.scss';
+import styles from './EarPicker.module.scss';
 
-const EmotePicker = () => {
-  const { outfit, emotion, setEmotion } = useChar();
+const EarPicker = () => {
+  const { outfit, setOutfit } = useChar();
   const [opened, { toggle, close }] = useDisclosure(false);
+  const current = earOf(outfit);
 
   return (
     <div className={styles.picker}>
@@ -23,35 +24,35 @@ const EmotePicker = () => {
           <button
             className={styles.triggerBtn}
             onClick={toggle}
-            aria-label='Expression'
+            aria-label='Ears'
           >
             <AvatarCanvas
               className={styles.triggerImg}
               effects={false}
-              who={emotePreviewOutfit(outfit, emotion)}
+              who={earSwatchOutfit(outfit, current)}
             />
-            <span>{emoteLabel(emotion)}</span>
+            <span>EARS</span>
           </button>
         </Popover.Target>
         <Popover.Dropdown>
           <div className={styles.grid}>
-            {EMOTES.map(emote => (
+            {EAR_KINDS.map(({ kind, label }) => (
               <button
-                key={emote}
+                key={kind}
                 className={styles.swatchBtn}
-                data-active={emote === emotion ? '' : undefined}
+                data-active={kind === current ? '' : undefined}
                 onClick={() => {
-                  setEmotion(emote);
+                  setOutfit(prev => withEars(prev, kind));
                   close();
                 }}
-                title={emoteLabel(emote)}
+                title={`${label} ears`}
               >
                 <AvatarCanvas
                   className={styles.swatchImg}
                   effects={false}
-                  who={emotePreviewOutfit(outfit, emote)}
+                  who={earSwatchOutfit(outfit, kind)}
                 />
-                <span className={styles.swatchLabel}>{emoteLabel(emote)}</span>
+                <span className={styles.swatchLabel}>{label}</span>
               </button>
             ))}
           </div>
@@ -61,4 +62,4 @@ const EmotePicker = () => {
   );
 };
 
-export default EmotePicker;
+export default EarPicker;

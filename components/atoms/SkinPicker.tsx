@@ -26,7 +26,6 @@ const SkinPicker = () => {
             className={styles.triggerBtn}
             onClick={toggle}
             aria-label='Skin tone'
-            title={`${currentLabel} (${skinId})`}
           >
             <AvatarCanvas
               className={styles.triggerImg}

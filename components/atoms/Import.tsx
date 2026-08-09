@@ -43,7 +43,6 @@ const ImportButton = () => {
         className={styles.btn}
         onClick={() => inputRef.current?.click()}
         aria-label='Import outfit from JSON'
-        title='Import an outfit JSON'
       >
         Import
       </button>

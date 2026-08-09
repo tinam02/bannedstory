@@ -1,6 +1,7 @@
 'use client';
 import ZoomControls from '@/components/atoms/ZoomControls';
 import SkinPicker from '@/components/atoms/SkinPicker';
+import EarPicker from '@/components/atoms/EarPicker';
 import RandomizeButton from '@/components/atoms/RandomizeButton';
 import ExportButton from '@/components/atoms/Export';
 import ImportButton from '@/components/atoms/Import';
@@ -22,15 +23,16 @@ const Toolbar = () => (
     <div className={styles.row}>
       <MapPicker />
       <BgPicker />
-      <ZoomControls />
       <ImportButton />
       <ExportButton />
+      <RandomizeButton /> 
+      <ZoomControls />
       <GithubLink />
     </div>
     <div className={styles.row}>
       <CharRoster />
-      <RandomizeButton />
       <SkinPicker />
+      <EarPicker />
       <PosePicker />
       <EmotePicker />
       <CaptionPicker />

@@ -37,7 +37,6 @@ const CharRoster = () => {
           className={toolbar.btn}
           onClick={toggle}
           aria-label='Characters'
-          title='Add and switch characters'
         >
           Chars {chars.length > 1 ? `(${chars.length})` : ''}
         </button>

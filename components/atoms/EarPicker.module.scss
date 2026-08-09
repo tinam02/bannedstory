@@ -16,12 +16,8 @@
   @include picker.dropdown;
 }
 
-// forty odd skins, so this one scrolls where the ear picker's does not
 .grid {
-  @include picker.grid(5);
-
-  max-height: 320px;
-  overflow-y: auto;
+  @include picker.grid(4);
 }
 
 .swatchBtn {
