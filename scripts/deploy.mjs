@@ -115,6 +115,16 @@ const assetFiles = () => {
   return walk(OUT);
 };
 
+const relOf = f => relative(OUT, f).replace(/\\/g, '/');
+
+// what gets rewritten under the same name every time items are extracted.
+//
+// the box comparison below is by name, and that is only sound for art: an
+// item's sheet never changes under the same id. these do, so comparing names
+// would mean the box kept the first index it ever received and no item added
+// after the first deploy ever showed up in the closet
+const MUTABLE = /^(index\/|meta\.json$|delays\.json$|face-delays\.json$)/;
+
 /** what the box already has, so a patch only sends the new items */
 const remoteAssets = () => {
   if (DRY) return new Set();
@@ -262,10 +272,16 @@ const main = () => {
   if (WITH_ASSETS) {
     const have = remoteAssets();
     say(`  box already holds ${have.size.toLocaleString()} assets`);
-    const missing = assetFiles().filter(
-      f => !have.has(relative(OUT, f).replace(/\\/g, '/')),
-    );
-    sendTar(missing, OUT, `${PATH_ON_BOX}/avatar`, 'assets');
+    const all = assetFiles();
+
+    // two tars, art first, and the order is the point. the index is the list
+    // of what exists, so shipping it ahead of the sheets it names opens a
+    // window where the closet offers items that 404
+    const art = all.filter(f => !MUTABLE.test(relOf(f)) && !have.has(relOf(f)));
+    const index = all.filter(f => MUTABLE.test(relOf(f)));
+
+    sendTar(art, OUT, `${PATH_ON_BOX}/avatar`, 'art');
+    sendTar(index, OUT, `${PATH_ON_BOX}/avatar`, 'index');
   } else {
     say('  assets skipped, pass --assets to send them');
   }

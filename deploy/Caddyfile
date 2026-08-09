@@ -7,10 +7,27 @@ henehoe.app {
 	root * /var/www/henehoe
 	encode gzip zstd
 
-	# the assets never change under a given name, so they can be cached for a
-	# year and never revalidated. this is what keeps repeat visits free
-	@immutable path /avatar/*
-	header @immutable Cache-Control "public, max-age=31536000, immutable"
+	# an item's art never changes under a given id, so it can be cached for a
+	# year and never revalidated. this is what keeps repeat visits free.
+	#
+	# `file` is load bearing. the matcher used to be path only, so a 404 got the
+	# immutable header too, and a browser that asked for a sheet during the
+	# window where the index already listed it but the upload had not landed
+	# cached the miss for a year. immutable means it never even rechecks, so
+	# that item was dead in that browser until the visitor cleared site data
+	@art {
+		path /avatar/*
+		not path /avatar/index/* /avatar/meta.json /avatar/delays.json /avatar/face-delays.json
+		file
+	}
+	header @art Cache-Control "public, max-age=31536000, immutable"
+
+	# the index is the opposite. it is rebuilt every time items are added, under
+	# the same name, so caching it for a year means a returning visitor never
+	# sees a new item again. no-cache still stores it, it just has to revalidate
+	# first, and caddy's etag turns the unchanged case into a 304 with no body
+	@idx path /avatar/index/* /avatar/meta.json /avatar/delays.json /avatar/face-delays.json
+	header @idx Cache-Control "no-cache"
 
 	# the html is the opposite. it has to be rechecked or a deploy never
 	# reaches anyone still holding the old page
