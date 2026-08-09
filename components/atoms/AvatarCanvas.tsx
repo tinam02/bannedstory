@@ -215,6 +215,13 @@ const filterFor = (item: {
   return parts.length ? parts.join(' ') : 'none';
 };
 
+/**
+ * Worn, but not part of the character's own hitbox
+ *
+ * so it doesnt move the speech bubbles
+ */
+const CARRIED = new Set(['cape', 'weapon', 'shield']);
+
 /** what Char reaches for when someone asks for a picture */
 export type AvatarHandle = {
   /** exactly what is on screen, scaled up */
@@ -316,6 +323,52 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
     );
   }, [avatar, wornNow, who.action, frame, who.mercEars, who.illiumEars, who.highFloraEars]);
 
+  /**
+   * The rect the page lays out, which is the character and not everything it
+   * is carrying.
+   *
+   * Two things hang off the element's box: the speech balloon above it and the
+   * name tag below, and `left: 50%` centres both across it. Measuring the drawn
+   * bounds instead put a cape in charge of the caption. Takeda's Determination
+   * reaches 59px over the head, so the balloon floated up there with it, and
+   * the Detective Mush cape changes width by a pixel or two between frames, so
+   * the balloon slid from side to side as the character breathed.
+   *
+   * Hence both rules: cape and weapon are dropped, and the box is the union
+   * over every frame of the stance rather than this one, so it cannot move
+   * while the character animates. A hat still counts, since a tall hat really
+   * should push the balloon up
+   */
+  const layout = useMemo(() => {
+    if (!avatar?.worn.length) return null;
+    const opts = {
+      mercEars: who.mercEars,
+      illiumEars: who.illiumEars,
+      highFloraEars: who.highFloraEars,
+    };
+    let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+    for (let f = 0; f < frameCount; f++) {
+      const step = buildAvatar(
+        avatar.worn, avatar.meta.zmap, avatar.meta.smap, who.action, f, opts,
+      );
+      for (const p of step.placed) {
+        if (CARRIED.has(p.part)) continue;
+        l = Math.min(l, p.x);
+        t = Math.min(t, p.y);
+        r = Math.max(r, p.x + p.w);
+        b = Math.max(b, p.y + p.h);
+      }
+    }
+    return r > l ? { l, t, r, b } : null;
+  }, [
+    avatar, who.action, frameCount,
+    who.mercEars, who.illiumEars, who.highFloraEars,
+  ]);
+
+  // a character wearing nothing but a cape has no silhouette to measure, so
+  // the drawn bounds stand in rather than the layout collapsing
+  const rect = layout ?? built?.bounds ?? null;
+
   // the effects, on their own clocks and anchored by lib/effects.ts
   const wornEffects = useMemo(
     () => (effects ? (avatar?.effects ?? []) : []),
@@ -336,18 +389,18 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
    * stay where they were, the way an alpha 0 item keeps its place in the box
    */
   const box = useMemo(() => {
-    if (!built) return null;
+    if (!built || !rect) return null;
     const b = boxFor(built.bounds, placedEffects);
     return {
       ...b,
       pad: {
-        l: built.bounds.l - b.l,
-        t: built.bounds.t - b.t,
-        r: b.l + b.w - built.bounds.r,
-        b: b.t + b.h - built.bounds.b,
+        l: rect.l - b.l,
+        t: rect.t - b.t,
+        r: b.l + b.w - rect.r,
+        b: b.t + b.h - rect.b,
       },
     };
-  }, [built, placedEffects]);
+  }, [built, rect, placedEffects]);
 
   // adjustments by item id, so a redraw picks them up without rebuilding
   const tweaks = useMemo(() => {
@@ -395,7 +448,7 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
       // were actually looking at rather than a rebuild that might differ
       still: (scale: number) => {
         const c = canvasRef.current;
-        return c ? scaleUp(c, scale) : null;
+        return c ? scaleUp(c, scale, who.flipX) : null;
       },
 
       animation: async (
@@ -485,6 +538,7 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
           for (const f of frames) {
             drawAvatar(
               ctx, f.b.placed, f.fx, shared, avatar.images, tweaks, scale, background,
+              who.flipX,
             );
             shots.push(ctx.getImageData(0, 0, off.width, off.height).data);
           }
@@ -495,7 +549,10 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
 
         const pngs: Uint8Array[] = [];
         for (const f of frames) {
-          drawAvatar(ctx, f.b.placed, f.fx, shared, avatar.images, tweaks, scale);
+          drawAvatar(
+            ctx, f.b.placed, f.fx, shared, avatar.images, tweaks, scale, null,
+            who.flipX,
+          );
           pngs.push(await canvasToPngBytes(off));
         }
         return buildApng(pngs, ms);
@@ -504,16 +561,18 @@ const AvatarCanvas = forwardRef<AvatarHandle, {
     [avatar, who, frameCount, delays, faceCount, faceDelays, wornEffects, tweaks],
   );
 
-  if (!built || !box) return null;
+  if (!built || !box || !rect) return null;
 
   /**
    * The body origin's offset, as a share of the canvas.
    *
    * so weapons and capes dont stay anchored while body moves back and forth
    */
+  // measured off the same rect the layout does, or the two disagree and the
+  // character stands beside its own footprint
   const anchor = {
-    x: (100 * (built.bounds.l + built.bounds.r)) / (2 * Math.max(1, box.w)),
-    y: (100 * built.bounds.b) / Math.max(1, box.h),
+    x: (100 * (rect.l + rect.r)) / (2 * Math.max(1, box.w)),
+    y: (100 * rect.b) / Math.max(1, box.h),
   };
 
   return (

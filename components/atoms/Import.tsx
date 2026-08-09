@@ -21,7 +21,7 @@ const ImportButton = () => {
       if (!importChar(outfit)) {
         setFailed(true);
         setMessage(
-          `The cast is full at ${MAX_CHARS} — remove one before importing.`,
+          `The cast is full at ${MAX_CHARS}: remove one before importing.`,
         );
         return;
       }

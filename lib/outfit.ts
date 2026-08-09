@@ -139,6 +139,7 @@ const parseItem = (slot: string, raw: any): OutfitItem | null => {
   }
   if (typeof raw.vslot === 'string') item.vslot = raw.vslot;
   if (raw.visible === false) item.visible = false;
+  if (raw.effect === false) item.effect = false;
   const equipFrame = toNumber(raw.equipFrame);
   if (equipFrame) item.equipFrame = equipFrame;
   if (raw.noIcon) item.noIcon = true;
@@ -165,7 +166,7 @@ export function parseOutfit(
   now: number,
 ): { outfit: Outfit; warnings: string[] } {
   if (!raw || typeof raw !== 'object') {
-    throw new Error('That file is not an outfit — expected a JSON object.');
+    throw new Error('That file is not an outfit: expected a JSON object');
   }
   const src = raw as Record<string, any>;
   if (!src.selectedItems || typeof src.selectedItems !== 'object') {
@@ -177,7 +178,7 @@ export function parseOutfit(
   for (const [slot, rawItem] of Object.entries(src.selectedItems)) {
     const item = parseItem(slot, rawItem);
     if (item) selectedItems[slot] = item;
-    else warnings.push(`Skipped “${slot}” — no usable item id.`);
+    else warnings.push(`Skipped “${slot}”: no usable item id.`);
   }
 
   // Body is authoritative, but tolerate exports missing it by falling back to
@@ -214,7 +215,7 @@ export function parseOutfit(
   );
   if (regions.size > 1) {
     warnings.push(
-      `Outfit mixes regions (${Array.from(regions).join(', ')}) — kept as-is.`,
+      `Outfit mixes regions (${Array.from(regions).join(', ')}), kept as-is`,
     );
   }
 

@@ -1,4 +1,6 @@
-import { PieceName, SpriteFrame, SpritePiece } from './useUiSprites';
+// type-only, and said so, or a node script importing this file for the
+// placement maths drags in the hook and react with it
+import type { PieceName, SpriteFrame, SpritePiece } from './useUiSprites';
 
 // where every piece of a wz caption goes, and how to paint it. shared by the
 // live one on the stage and the previews in the picker

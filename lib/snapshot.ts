@@ -13,14 +13,27 @@
  * The art is 1:1 wz pixels, which is tiny on a modern screen. Nearest
  * neighbour on a whole number multiple is the only honest way up
  */
-export const scaleUp = (src: HTMLCanvasElement, scale: number) => {
-  if (scale === 1) return src;
+export const scaleUp = (
+  src: HTMLCanvasElement,
+  scale: number,
+  /**
+   * Mirrors on the way out.
+   *
+   * A still is copied straight off the live canvas, so it is the frame they
+   * were actually looking at. That canvas holds unmirrored pixels though, the
+   * flip on screen being a css transform on the element, so the copy is where
+   * it has to be applied
+   */
+  flip = false,
+) => {
+  if (scale === 1 && !flip) return src;
   const out = document.createElement('canvas');
   out.width = Math.max(1, src.width * scale);
   out.height = Math.max(1, src.height * scale);
   const ctx = out.getContext('2d');
   if (ctx) {
     ctx.imageSmoothingEnabled = false;
+    if (flip) ctx.setTransform(-1, 0, 0, 1, out.width, 0);
     ctx.drawImage(src, 0, 0, out.width, out.height);
   }
   return out;

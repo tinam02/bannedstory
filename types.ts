@@ -46,6 +46,10 @@ export interface OutfitItem {
   alpha?: number;
   vslot?: string;
   visible?: boolean;
+  /**
+   * Draws the item's Effect.wz art, when it has any.
+   */
+  effect?: boolean;
   frame?: number;
   equipFrame?: number;
 }

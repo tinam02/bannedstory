@@ -89,6 +89,23 @@ const loadEffectIds = () => {
   return effectIdsOnce;
 };
 
+/**
+ * The adjust popover only offers an effect toggle on the items that have one
+ */
+export const useEffectIds = () => {
+  const [ids, setIds] = useState<Set<number> | null>(null);
+  useEffect(() => {
+    let stale = false;
+    loadEffectIds().then(set => {
+      if (!stale) setIds(set);
+    });
+    return () => {
+      stale = true;
+    };
+  }, []);
+  return ids;
+};
+
 const loadEffect = (id: number) => {
   let hit = effectManifests.get(id);
   if (!hit) {
@@ -146,7 +163,12 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
   // applied when drawing, but vslot decides which layers exist at all, so it
   // has to reach buildAvatar through `worn`
   const key = Object.entries(outfit.selectedItems)
-    .map(([slot, item]) => `${slot}:${item?.id}:${item?.vslot ?? ''}`)
+    .map(
+      ([slot, item]) =>
+        // effect is in here for the same reason vslot is. it decides whether
+        // the effect is fetched at all, not how it is painted
+        `${slot}:${item?.id}:${item?.vslot ?? ''}:${item?.effect === false ? 'x' : ''}`,
+    )
     .sort()
     .join(',');
 
@@ -204,8 +226,14 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
       // its whole appearance when its Character.wz art is a 1x1 placeholder,
       // so this is not decoration
       const haveEffect = await loadEffectIds();
+      // switched off per item
+      const muted = new Set(
+        Object.values(outfit.selectedItems)
+          .filter(i => i?.effect === false)
+          .map(i => i.id),
+      );
       const effectIds = Array.from(new Set(worn.map(w => w.manifest.id))).filter(
-        id => haveEffect.has(id),
+        id => haveEffect.has(id) && !muted.has(id),
       );
       // positional for the same reason as `worn` above
       const effectManifests = await Promise.all(effectIds.map(id => loadEffect(id)));

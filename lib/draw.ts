@@ -54,12 +54,24 @@ export const drawAvatar = (
   scale = 1,
   /** filled before anything is drawn, for formats with no real alpha */
   background?: string | null,
+  /**
+   * Turns the character.
+   *
+   * On screen the flip is a css transform on the canvas element, because that
+   * has to mirror the stage anchoring with it. A file has no element and no
+   * stage, so the export mirrors the pixels here instead. Both read the same
+   * `flipX`, so what you save is what you were looking at
+   */
+  flip = false,
 ) => {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, box.w * scale, box.h * scale);
   if (background) {
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, box.w * scale, box.h * scale);
   }
+  // after the clear, so the region cleared is the one the caller sized
+  if (flip) ctx.setTransform(-1, 0, 0, 1, box.w * scale, 0);
   ctx.imageSmoothingEnabled = false;
 
   const put = (
@@ -99,4 +111,5 @@ export const drawAvatar = (
 
   ctx.globalAlpha = 1;
   ctx.filter = 'none';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 };

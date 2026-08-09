@@ -6,6 +6,7 @@ import RandomizeButton from '@/components/atoms/RandomizeButton';
 import ExportButton from '@/components/atoms/Export';
 import ImportButton from '@/components/atoms/Import';
 import AnimateToggle from '@/components/atoms/AnimateToggle';
+import FlipToggle from '@/components/atoms/FlipToggle';
 import EmotePicker from '@/components/atoms/EmotePicker';
 import BgPicker from '@/components/atoms/BgPicker';
 import MapPicker from '@/components/atoms/MapPicker';
@@ -36,6 +37,7 @@ const Toolbar = () => (
       <PosePicker />
       <EmotePicker />
       <CaptionPicker />
+      <FlipToggle />
       <AnimateToggle />
     </div>
   </div>

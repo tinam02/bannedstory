@@ -4,6 +4,7 @@ import { Slider } from '@mantine/core';
 import { useDominantHue } from '@/app/hooks/useDominantHue';
 import { ADJUSTMENTS, AdjustmentKey } from '@/lib/fetch';
 import { ItemIcon } from '@/app/hooks/useItemIndex';
+import { useEffectIds } from '@/app/hooks/useAvatar';
 import { OutfitItem } from '@/types';
 import styles from './ItemAdjust.module.scss';
 
@@ -44,9 +45,10 @@ const STACK_VSLOT = '';
 
 export const isStacked = (item: OutfitItem) => item.vslot !== undefined;
 
-/** Any non-neutral adjustment, a hidden layer, or a stacked one. Drives the "edited" marker. */
+/** Any non-neutral adjustment, a hidden layer, a stacked one, or a muted effect. Drives the "edited" marker. */
 export const isAdjusted = (item: OutfitItem) =>
   item.visible === false ||
+  item.effect === false ||
   isStacked(item) ||
   KEYS.some(k => valueOf(item, k) !== ADJUSTMENTS[k]);
 
@@ -137,13 +139,21 @@ const ItemAdjust = ({
 }) => {
   const hidden = item.visible === false;
   const stacked = isStacked(item);
+
+  const effectIds = useEffectIds();
+  const hasEffect = !!effectIds?.has(item.id);
+  const effectOff = item.effect === false;
   // Read off the icon, which is the item in its unmodified colour
   const baseHue = useDominantHue(icon ? icon.sheet : null, icon);
 
   // `undefined` for every key, so a reset removes them rather than writing
   // neutral numbers the export would then carry around.
   const reset = () => {
-    const patch: Partial<OutfitItem> = { visible: undefined, vslot: undefined };
+    const patch: Partial<OutfitItem> = {
+      visible: undefined,
+      vslot: undefined,
+      effect: undefined,
+    };
     for (const key of KEYS) patch[key] = undefined;
     onChange(patch);
   };
@@ -184,6 +194,17 @@ const ItemAdjust = ({
         >
           {hidden ? 'Hidden' : 'Visible'}
         </button>
+        {hasEffect && (
+          <button
+            type='button'
+            className={styles.footBtn}
+            onClick={() => onChange({ effect: effectOff ? undefined : false })}
+            data-on={effectOff ? '' : undefined}
+            id='effect-toggle'
+          >
+            {effectOff ? 'No FX' : 'FX'}
+          </button>
+        )}
         <button
           type='button'
           className={styles.footBtn}
