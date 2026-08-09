@@ -77,10 +77,14 @@
   transform: translateX(-50%);
 }
 
+// distance
+$caption-gap: 4px;
+
 .speechSlot {
   bottom: 100%;
 }
 
 .nametagSlot {
   top: 100%;
+  margin-top: $caption-gap;
 }

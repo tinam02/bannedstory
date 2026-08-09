@@ -43,6 +43,11 @@
   ],
   "exclude": [
     "node_modules",
-    "scripts"
+    "scripts",
+    ".avatar-out",
+    ".avatar-out-old",
+    ".avatar-spike",
+    ".next-deploy",
+    "public"
   ]
 }

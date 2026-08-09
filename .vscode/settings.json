@@ -1,4 +1,37 @@
 {
   "js/ts.tsdk.path": "node_modules/typescript/lib",
-  "js/ts.tsdk.promptToUseWorkspaceVersion": true
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+
+  // prevent editor indexing everything
+  "files.exclude": {
+    "**/.avatar-out": true,
+    "**/.avatar-out-old": true,
+    "**/.avatar-spike": true,
+    "public/avatar": true,
+    "**/.next": true,
+    "**/.next-check": true,
+    "**/.next-deploy": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/.avatar-out/**": true,
+    "**/.avatar-out-old/**": true,
+    "**/.avatar-spike/**": true,
+    "**/public/avatar/**": true,
+    "**/public/maps/**": true,
+    "**/.next/**": true,
+    "**/.next-check/**": true,
+    "**/.next-deploy/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.avatar-out": true,
+    "**/.avatar-out-old": true,
+    "**/.avatar-spike": true,
+    "**/public/avatar": true,
+    "**/.next": true,
+    "**/.next-check": true,
+    "**/.next-deploy": true
+  }
 }
