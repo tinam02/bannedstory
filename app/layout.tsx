@@ -11,16 +11,18 @@ const DISCLAIMER =
   'MapleStory and all related assets are © NEXON Korea Corp. Henehoe is an ' +
   'unofficial, non-commercial fan project and is not affiliated with Nexon.';
 
+
 const DESCRIPTION =
-  'A free animated MapleStory character creator and dress up simulator. Try on hats, ' +
-  'hair, faces, outfits, capes and weapons, pick a pose and an expression, ' +
-  'and build a character with every item from the latest cash shop updates.';
+  'Build a MapleStory character in your browser. Try on 52,000 hats, ' +
+  'hairstyles, faces and outfits, pick a pose, and save it as an animated PNG.';
+
+const HOME_TITLE = 'MapleStory character creator and dress up simulator';
 
 export const metadata: Metadata = {
   // makes every relative url below absolute, which og tags require
   metadataBase: new URL(SITE),
   title: {
-    default: 'Henehoe',
+    default: HOME_TITLE,
     template: '%s | Henehoe',
   },
   description: DESCRIPTION,

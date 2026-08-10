@@ -4,6 +4,7 @@
 //   node scripts/deploy.mjs           site only, quick
 //   node scripts/deploy.mjs --assets  site and any assets the box is missing
 //   node scripts/deploy.mjs --clean   wipe the web root first, see below
+//   node scripts/deploy.mjs --no-build  ship the export already on disk
 //
 // needs these in .env.local:
 //   DEPLOY_HOST=root@1.2.3.4
@@ -33,6 +34,12 @@ const PUBLIC_LINK = join(ROOT, 'public', 'avatar');
 const DRY = process.argv.includes('--dry');
 const WITH_ASSETS = process.argv.includes('--assets');
 const CLEAN = process.argv.includes('--clean');
+// ship the export that is already sitting in .next-deploy.
+//
+// for when a deploy died after the build, which is a 26,776 page rebuild you
+// do not want to sit through twice. it trusts what is on disk, so it prints
+// the export's date and it is on you to know that is the one you meant
+const NO_BUILD = process.argv.includes('--no-build');
 
 // what --clean leaves alone. assets travel separately and are 2.6 GB, so they
 // are never part of the tar that would put them back
@@ -186,7 +193,14 @@ const changedSite = (files, have) => {
   for (const f of files) {
     const rel = relative(DIST, f).replace(/\\/g, '/');
     seen.add(rel);
-    if (have.get(rel) === md5(f)) same += 1;
+    // hash only what the box could plausibly already have. a file it has never
+    // heard of is going regardless of its bytes, and hashing it first is 1.3 GB
+    // of reads to learn nothing.
+    //
+    // this is the whole first deploy of the catalogue: 55,000 files the box has
+    // none of, every one of them read in full to prove it
+    const known = have.get(rel);
+    if (known && known === md5(f)) same += 1;
     else send.push(f);
   }
   // on the box but not in this build. hashed chunks from older builds mostly,
@@ -326,14 +340,22 @@ const cleanRemote = () => {
 // ---------------------------------------------------------------- go
 
 const main = () => {
-  // before the junction goes, though it reads .avatar-out either way
-  digest();
+  if (NO_BUILD) {
+    if (!existsSync(DIST)) {
+      console.error(`--no-build, but there is no ${DIST_NAME} to ship`);
+      process.exit(1);
+    }
+    say(`skipping the build, shipping ${DIST_NAME} as built ${statSync(DIST).mtime.toISOString().replace('T', ' ').slice(0, 16)}`);
+  } else {
+    // before the junction goes, though it reads .avatar-out either way
+    digest();
 
-  const had = unlinkJunction();
-  try {
-    build();
-  } finally {
-    relinkJunction(had);
+    const had = unlinkJunction();
+    try {
+      build();
+    } finally {
+      relinkJunction(had);
+    }
   }
 
   // the export lands in distDir, html and js and everything under public/
