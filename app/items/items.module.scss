@@ -1,0 +1,388 @@
+// the catalogue's chrome. same palette as the changelog, since these are the
+// two places on the site that are pages rather than the tool
+
+.page {
+  height: auto;
+  min-height: 100vh;
+  display: block;
+  padding: 40px 24px 96px;
+  background: #14141a;
+  color: #e8e8ef;
+  font-family: Arial, Helvetica, sans-serif;
+  user-select: text;
+}
+
+.inner {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.narrow {
+  max-width: 780px;
+}
+
+.crumbs {
+  margin-bottom: 28px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.35);
+
+  ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    padding: 0;
+  }
+
+  li:not(:last-child)::after {
+    content: '/';
+    margin-left: 6px;
+    color: rgba(255, 255, 255, 0.2);
+  }
+
+  a {
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+
+    &:hover {
+      color: #ffe39a;
+    }
+  }
+}
+
+.title {
+  margin-bottom: 8px;
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.blurb {
+  margin-bottom: 32px;
+  max-width: 68ch;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+// ---------------------------------------------------------------- grid
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px 12px;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #e8e8ef;
+  text-decoration: none;
+  text-align: center;
+
+  &:hover {
+    border-color: rgba(255, 227, 154, 0.45);
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.cardName {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.cardMeta {
+  margin-top: auto;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+// a fixed box, so a 12 pixel earring and a 90 pixel greatsword sit on the same
+// baseline and the grid does not go ragged
+.shot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 72px;
+}
+
+.pixels {
+  image-rendering: pixelated;
+  // these are sprites, and the browser's default smoothing turns a hard edged
+  // 30 pixel hat into a smudge the moment it is drawn at 4x
+  display: block;
+  max-width: none;
+}
+
+// ---------------------------------------------------------------- item page
+
+.hero {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+
+.heroShot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 200px;
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%) 0 8px / 16px 16px,
+    #191920;
+}
+
+.heroBody {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+  list-style: none;
+  padding: 0;
+}
+
+.tag {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cash {
+  border-color: rgba(255, 227, 154, 0.35);
+  color: #ffe39a;
+}
+
+.wear {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 11px 20px;
+  border-radius: 8px;
+  background: #ffe39a;
+  color: #1a1a22;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+
+  &:hover {
+    background: #fff0c4;
+  }
+}
+
+.facts {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+
+  div {
+    display: flex;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  dt {
+    flex: none;
+    width: 130px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  dd {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.85);
+  }
+}
+
+// ---------------------------------------------------------------- sections
+
+.section {
+  margin-top: 44px;
+}
+
+.sectionTitle {
+  margin-bottom: 14px;
+  font-size: 17px;
+}
+
+.sectionNote {
+  margin: -8px 0 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+// ---------------------------------------------------------------- colours
+
+.colours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+}
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 76px;
+  padding: 10px 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #e8e8ef;
+  text-decoration: none;
+  scroll-margin-top: 24px;
+
+  &:target {
+    border-color: #ffe39a;
+  }
+
+  &:hover {
+    border-color: rgba(255, 227, 154, 0.45);
+  }
+}
+
+.swatchShot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+}
+
+.swatchName {
+  font-size: 11px;
+  text-transform: capitalize;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+// ---------------------------------------------------------------- hubs
+
+.cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+}
+
+.cat {
+  display: block;
+  padding: 18px 18px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #e8e8ef;
+  text-decoration: none;
+
+  &:hover {
+    border-color: rgba(255, 227, 154, 0.45);
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.catName {
+  margin-bottom: 4px;
+  font-size: 17px;
+}
+
+.catCount {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+// ---------------------------------------------------------------- pager
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 36px;
+  font-size: 14px;
+}
+
+.pageLink {
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+
+  &:hover {
+    border-color: rgba(255, 227, 154, 0.45);
+    color: #ffe39a;
+  }
+}
+
+.pageHere {
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 227, 154, 0.5);
+  border-radius: 6px;
+  color: #ffe39a;
+}
+
+.pageGap {
+  padding: 7px 2px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.footer {
+  margin-top: 72px;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 12px;
+  line-height: 1.5;
+
+  a {
+    color: rgba(255, 255, 255, 0.4);
+    text-decoration: underline;
+
+    &:hover {
+      color: #ffe39a;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 28px 16px 64px;
+  }
+
+  .title {
+    font-size: 25px;
+  }
+
+  .heroShot {
+    width: 100%;
+    height: 170px;
+  }
+
+  .facts dt {
+    width: 104px;
+  }
+}

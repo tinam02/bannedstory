@@ -4,6 +4,7 @@ import Wearing from '@/components/molecules/Items/Wearing/Wearing';
 import Toolbar from '@/components/molecules/Toolbar/Toolbar';
 import Stage from '@/components/molecules/Stage/Stage';
 import SiteCopy from '@/components/atoms/SiteCopy/SiteCopy';
+import WearParam from '@/components/atoms/WearParam';
 
 export default async function Home() {
   return (
@@ -14,6 +15,7 @@ export default async function Home() {
       <Closet />
       <Cursor />
       <Wearing />
+      <WearParam />
     </main>
   );
 }

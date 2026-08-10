@@ -18,6 +18,10 @@ const SiteCopy = () => (
       A free MapleStory character creator and dress up simulator. MapleStory and
       all related assets are © NEXON Korea Corp. Henehoe is an unofficial,
       non-commercial fan project, not affiliated with Nexon.{' '}
+      <Link href='/items' className={styles.link}>
+        Item catalogue
+      </Link>{' '}
+      &middot;{' '}
       <Link href='/changelog' className={styles.link}>
         Changelog
       </Link>{' '}

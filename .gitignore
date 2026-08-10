@@ -59,3 +59,6 @@ scripts/effect-spike.ts
 scripts/effect-check.ts
 scripts/wz/extract-effects.lua
 scripts/wz/probe-tree.lua
+# the item catalogue digest, built from the extraction by
+# scripts/build-item-pages.mjs. derived, like the sheets it reads
+/data/

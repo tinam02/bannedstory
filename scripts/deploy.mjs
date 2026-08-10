@@ -18,6 +18,7 @@
 // same id, which is what makes a name comparison enough
 
 import { execFileSync, execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readdirSync, statSync, writeFileSync, unlinkSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { join, relative, extname } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -90,12 +91,107 @@ const relinkJunction = had => {
   );
 };
 
+// the catalogue digest, rebuilt every deploy.
+//
+// it is 9 seconds and it is what every /items page is generated from, so
+// running it here rather than trusting a note means a forgotten step can never
+// quietly ship a site with 26k pages missing.
+//
+// --no-icons, because cutting the icons needs the sheets and converting them
+// needs ffmpeg. that is part of pulling in an update, not part of shipping
+const digest = () => {
+  say('building the item digest...');
+  if (DRY) return;
+  run(process.execPath, [join(ROOT, 'scripts', 'build-item-pages.mjs'), '--no-icons']);
+
+  // an item page points at /avatar/items/<id>.webp. if the cut icons were
+  // never converted the pages ship with every picture broken, and the only
+  // sign would be the art missing on a page nobody has opened yet
+  const pending = existsSync(join(OUT, 'items'))
+    ? readdirSync(join(OUT, 'items')).filter(f => f.endsWith('.png')).length
+    : 0;
+  if (pending) {
+    console.error(
+      `\n${pending.toLocaleString()} item icons are still png, so their pages would ship broken.\n` +
+        'run: node scripts/webp-avatar.mjs --only items --prune\n',
+    );
+    process.exit(1);
+  }
+};
+
 const build = () => {
   say('building...');
   if (DRY) return;
   run(process.execPath, [NEXT_BIN, 'build'], {
     env: { ...process.env, NEXT_DIST_DIR: DIST_NAME },
   });
+};
+
+// ---------------------------------------------------------------- site diff
+
+/**
+ * What the box already holds of the site, by content.
+ *
+ * The assets below are compared by name, which is sound because an item's art
+ * never changes under a given id. The site is the opposite: 26,776 pages that
+ * all keep their names forever and whose contents do change, so the only
+ * question worth asking is whether the bytes match.
+ *
+ * `avatar` is pruned rather than hashed. It is 162,065 files and 1.17 GB, it
+ * is not part of the site tar, and md5ing it would be the slowest thing in the
+ * deploy by a wide margin
+ */
+const remoteSite = () => {
+  if (DRY) return new Map();
+  try {
+    const listing = execFileSync(
+      'ssh',
+      [
+        HOST,
+        `cd ${PATH_ON_BOX} 2>/dev/null && find . -path ./avatar -prune -o -type f -print0 | xargs -0 -r md5sum || true`,
+      ],
+      { encoding: 'utf8', maxBuffer: 1 << 28 },
+    );
+    const out = new Map();
+    for (const line of listing.split('\n')) {
+      // "<32 hex>  ./path/to/file"
+      const m = line.match(/^([0-9a-f]{32})\s+\.\/(.+)$/);
+      if (m) out.set(m[2], m[1]);
+    }
+    return out;
+  } catch {
+    // no listing means send everything, which is what it used to do anyway
+    return new Map();
+  }
+};
+
+const md5 = file => createHash('md5').update(readFileSync(file)).digest('hex');
+
+/**
+ * The site files whose bytes are not already on the box.
+ *
+ * Next writes content-hashed chunk names, so a build with no source change
+ * emits byte identical html and every page is skipped. That is the normal
+ * weekly case: new items change the pages of those items, the hubs whose
+ * paging shifted, the category counts, and the sitemaps. Touch a shared
+ * component and every page's chunk reference moves, so everything goes, which
+ * is correct and is also exactly what happens today
+ */
+const changedSite = (files, have) => {
+  if (!have.size) return { send: files, same: 0, stale: [] };
+  const send = [];
+  let same = 0;
+  const seen = new Set();
+  for (const f of files) {
+    const rel = relative(DIST, f).replace(/\\/g, '/');
+    seen.add(rel);
+    if (have.get(rel) === md5(f)) same += 1;
+    else send.push(f);
+  }
+  // on the box but not in this build. hashed chunks from older builds mostly,
+  // which are harmless but never go away on their own
+  const stale = [...have.keys()].filter(k => !seen.has(k));
+  return { send, same, stale };
 };
 
 // ---------------------------------------------------------------- assets
@@ -224,6 +320,9 @@ const cleanRemote = () => {
 // ---------------------------------------------------------------- go
 
 const main = () => {
+  // before the junction goes, though it reads .avatar-out either way
+  digest();
+
   const had = unlinkJunction();
   try {
     build();
@@ -265,8 +364,21 @@ const main = () => {
 
   if (!site.length && DRY) {
     say('  site: nothing built yet, a real run builds it first');
-  } else {
+  } else if (CLEAN) {
+    // the web root was just emptied, so nothing is on the box to compare with
     sendTar(site, DIST, PATH_ON_BOX, 'site');
+  } else {
+    const { send, same, stale } = changedSite(site, remoteSite());
+    if (same) {
+      say(`  site: ${same.toLocaleString()} of ${site.length.toLocaleString()} files already on the box, unchanged`);
+    }
+    if (stale.length) {
+      // not deleted here. removing files from the web root is what --clean is
+      // for, and doing it silently on every deploy is how you find out your
+      // path filter had a bug
+      say(`  site: ${stale.length.toLocaleString()} files on the box are not in this build, --clean removes them`);
+    }
+    sendTar(send, DIST, PATH_ON_BOX, 'site');
   }
 
   if (WITH_ASSETS) {

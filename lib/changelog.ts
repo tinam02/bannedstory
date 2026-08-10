@@ -14,6 +14,17 @@ export type ChangeEntry = {
 export const CHANGELOG: ChangeEntry[] = [
   {
     date: '2026-08-10',
+    title: 'Every item has a page',
+    body:
+      'The closet is now browsable as a db',
+    notes: [
+      '26,317 item pages, and a hub for each of the 13 categories',
+      'Hairstyles and faces share 1 page with all of their colours',
+      'Every page says what the item hides and which slots it takes up'
+    ],
+  },
+  {
+    date: '2026-08-10',
     title: 'Henehoe is live',
     body:
       'The closet now runs entirely on art extracted from the game client, so it ' +
