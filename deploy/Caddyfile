@@ -29,9 +29,29 @@ henehoe.app {
 	@idx path /avatar/index/* /avatar/meta.json /avatar/delays.json /avatar/face-delays.json
 	header @idx Cache-Control "no-cache"
 
-	# the html is the opposite. it has to be rechecked or a deploy never
-	# reaches anyone still holding the old page
-	@html path /
+	# the rest of the art, on the same reasoning as the sheets above. map plates
+	# and ui sprites keep their names, and next's chunks carry a content hash so
+	# a change is a new name. `file` again, so a miss is not cached forever
+	@static {
+		path /_next/static/* /maps/* /ui/* /cursor/* /font/*
+		file
+	}
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# every page, not just the root.
+	#
+	# this used to be `path /`, which matches the exact root and nothing else.
+	# that was invisible while / was the only route, then /changelog shipped
+	# with no cache-control at all and inherited cloudflare's 4 hour default,
+	# which is exactly wrong for the one page whose job is to show what changed.
+	#
+	# stated as "not the things handled above" so a new route is covered the day
+	# it exists rather than the day someone notices. it also picks up sitemap,
+	# robots and opengraph-image.png, which all keep their names while their
+	# contents change, so revalidating is right for them too
+	@html {
+		not path /avatar/* /_next/static/* /maps/* /ui/* /cursor/* /font/*
+	}
 	header @html Cache-Control "public, max-age=0, must-revalidate"
 
 	# Sent on everything.

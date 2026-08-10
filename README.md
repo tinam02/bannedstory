@@ -20,7 +20,7 @@
 - Export as PNG / GIF, import from JSON
 
 <p align="center">
-  <img src="docs/ap.png"  width="752">
+  <img src="docs/out.png"  width="752">
 </p>
 
 
