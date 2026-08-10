@@ -142,7 +142,8 @@ const build = () => {
  * deploy by a wide margin
  */
 const remoteSite = () => {
-  if (DRY) return new Map();
+  //  if (DRY) return new Map();
+  // listing runs on a dry run too
   try {
     const listing = execFileSync(
       'ssh',
@@ -221,9 +222,14 @@ const relOf = f => relative(OUT, f).replace(/\\/g, '/');
 // after the first deploy ever showed up in the closet
 const MUTABLE = /^(index\/|meta\.json$|delays\.json$|face-delays\.json$)/;
 
-/** what the box already has, so a patch only sends the new items */
+/**
+ * What the box already has, so a patch only sends the new items.
+ *
+ * Listed on a dry run too. It used to bail out early, which meant --dry always
+ * printed "box already holds 0 assets" and the full 1.1 GB
+ */
 const remoteAssets = () => {
-  if (DRY) return new Set();
+  //  if (DRY) return new Set();
   try {
     const listing = execFileSync(
       'ssh',
@@ -349,6 +355,11 @@ const main = () => {
         return out;
       })(DIST)
     : [];
+
+  // a dry run does not build, so what it just listed is whatever the last rea deploy left behind.
+  if (DRY && site.length) {
+    say(`  site: listing the last build, ${DIST_NAME} is from ${statSync(DIST).mtime.toISOString().slice(0, 10)}. a dry run does not rebuild`);
+  }
 
   // nothing to put back means nothing should come down. build() throws on a
   // bad build so a real run cannot get here empty, but the wipe is worth the
