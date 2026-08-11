@@ -227,4 +227,4 @@ export function parseOutfit(
   return { outfit, warnings };
 }
 
-export const outfitFilename = (now: number) => `bannedstory-${now}.json`;
+export const outfitFilename = (now: number) => `henehoeapp-${now}.json`;

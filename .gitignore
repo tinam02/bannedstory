@@ -8,6 +8,12 @@
 
 # testing
 /coverage
+# playwright: its own dist dir so `npm run e2e` leaves the dev server alone
+/.next-e2e/
+/test-results/
+/playwright-report/
+/blob-report/
+/.playwright/
 
 # next.js
 /.next/

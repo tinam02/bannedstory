@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
     "maps": "node scripts/build-map-index.mjs",
     "webp": "node scripts/webp-maps.mjs"
   },
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1105.0",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

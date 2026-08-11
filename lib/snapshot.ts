@@ -52,10 +52,10 @@ export const canvasToPngBytes = async (canvas: HTMLCanvasElement) =>
  *
  * Both come out of the same menu seconds apart and windows shows them with
  * the same icon and the same first frame, so two files called
- * bannedstory-1786118894592.png is a guessing game
+ * henehoeapp-1786118894592.png is a guessing game
  */
 export const snapshotFilename = (ext: string, animated = false, now = Date.now()) =>
-  `bannedstory-${now}${animated ? '-animated' : ''}.${ext}`;
+  `henehoeapp-${now}${animated ? '-animated' : ''}.${ext}`;
 
 /** hands the blob to the browser, then lets go of it */
 export const save = (blob: Blob, filename: string) => {
