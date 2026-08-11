@@ -1,5 +1,24 @@
 [
   {
+    "id": "230000000",
+    "name": "Aquarium",
+    "street": "Aquarium",
+    "w": 3042,
+    "h": 1493,
+    "front": false,
+    "layers": true,
+    "webp": true,
+    "hide": [
+      "obj-1-9",
+      "obj-1-10",
+      "obj-1-11",
+      "obj-1-51",
+      "obj-1-52",
+      "obj-1-53",
+      "obj-1-54"
+    ]
+  },
+  {
     "id": "410000820",
     "name": "Destroyed Chamber of the Holy Sword",
     "street": "Burning Cernium",
