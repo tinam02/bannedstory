@@ -61,7 +61,10 @@ type Props = {
 };
 
 const ParticleLayer = ({ data, asset, origin, space, view, tags }: Props) => {
-  const ref = useRef<HTMLCanvasElement>(null);
+  // two canvases, one composited over the map and one added to it, see
+  // ParticleField.paint
+  const paintRef = useRef<HTMLCanvasElement>(null);
+  const lightRef = useRef<HTMLCanvasElement>(null);
 
   // a mirror, so panning and zooming change what gets drawn without tearing
   // down the field and starting the simulation over
@@ -72,10 +75,9 @@ const ParticleLayer = ({ data, asset, origin, space, view, tags }: Props) => {
   // emitters and runs the clock. splitting it would mean holding the field in
   // state and rebuilding it on every unrelated render
   useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const paintCtx = paintRef.current?.getContext('2d');
+    const lightCtx = lightRef.current?.getContext('2d');
+    if (!paintCtx || !lightCtx) return;
 
     let frame = 0;
     let stale = false;
@@ -112,8 +114,16 @@ const ParticleLayer = ({ data, asset, origin, space, view, tags }: Props) => {
             ),
         );
 
+        const draw = () => {
+          const at = viewRef.current;
+          if (field.has(false))
+            field.paint(paintCtx, space.w, space.h, RESOLUTION, at, false);
+          if (field.has(true))
+            field.paint(lightCtx, space.w, space.h, RESOLUTION, at, true);
+        };
+
         field.warm(WARM_SECONDS);
-        field.paint(ctx, space.w, space.h, RESOLUTION, viewRef.current);
+        draw();
 
         // a still picture of a warmed field, for anyone who asked not to be
         // moved. same call the css keyframes answer for the drifting backs
@@ -123,7 +133,7 @@ const ParticleLayer = ({ data, asset, origin, space, view, tags }: Props) => {
         const tick = (now: number) => {
           field.step((now - last) / 1000);
           last = now;
-          field.paint(ctx, space.w, space.h, RESOLUTION, viewRef.current);
+          draw();
           frame = requestAnimationFrame(tick);
         };
         frame = requestAnimationFrame(tick);
@@ -138,14 +148,20 @@ const ParticleLayer = ({ data, asset, origin, space, view, tags }: Props) => {
 
   // the backing store is short and css stretches it back to the plate's size,
   // so everything else on the Stage still lines up in plate pixels
+  const size = {
+    width: Math.ceil(space.w * RESOLUTION),
+    height: Math.ceil(space.h * RESOLUTION),
+    style: { width: space.w, height: space.h },
+  };
   return (
-    <canvas
-      ref={ref}
-      className={styles.particles}
-      width={Math.ceil(space.w * RESOLUTION)}
-      height={Math.ceil(space.h * RESOLUTION)}
-      style={{ width: space.w, height: space.h }}
-    />
+    <>
+      <canvas ref={paintRef} className={styles.particles} {...size} />
+      <canvas
+        ref={lightRef}
+        className={`${styles.particles} ${styles.light}`}
+        {...size}
+      />
+    </>
   );
 };
 

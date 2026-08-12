@@ -553,16 +553,25 @@ const clamp255 = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : Math.round(v));
 /**
  * Runs a set of emitters and paints them.
  *
- * Additive and normal emitters are drawn in two passes rather than interleaved,
- * because switching the composite operation per emitter costs more than the
- * order is worth. Particles from one emitter never overlap another's in a way
- * that the order would show.
+ * Additive and normal emitters go on separate canvases, because the difference
+ * between them is not only how they stack against each other, it is how the
+ * whole layer meets the map underneath. Adding light to a sky and painting over
+ * a sky are different pictures: olive sunshafts at a fifth opacity read as a
+ * warm glow added to the blue, and as a dirty yellow wash painted onto it.
+ *
+ * So the additive canvas is composited with plus-lighter and this paints one
+ * kind at a time.
  */
 export class ParticleField {
   private readonly emitters: Emitter[];
 
   constructor(emitters: Emitter[]) {
     this.emitters = emitters;
+  }
+
+  /** whether any emitter of this kind exists, so the layer can skip a canvas */
+  has(additive: boolean) {
+    return this.emitters.some(e => e.additive === additive);
   }
 
   step(dt: number) {
@@ -586,15 +595,17 @@ export class ParticleField {
     h: number,
     k: number,
     at: Rect,
+    additive: boolean,
   ) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, w * k, h * k);
 
-    for (const e of this.emitters) if (!e.additive) e.draw(ctx, k, at);
-    ctx.globalCompositeOperation = 'lighter';
-    for (const e of this.emitters) if (e.additive) e.draw(ctx, k, at);
+    // within the additive canvas the particles add to each other too, which is
+    // the other half of what the wz blend asks for
+    if (additive) ctx.globalCompositeOperation = 'lighter';
+    for (const e of this.emitters) if (e.additive === additive) e.draw(ctx, k, at);
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;

@@ -66,6 +66,19 @@
   user-select: none;
 }
 
+// The emitters that add light rather than lay paint, which the wz blend mode
+// says outright and which the picture insists on: olive sunshafts at a fifth
+// opacity are a warm glow added to a blue sky, and a dirty yellow wash painted
+// over one.
+//
+// plus-lighter is the exact operation. screen is the near miss for anything
+// that hasn't got it yet, and the browsers without it are old enough that a
+// slightly soft glow is a fair trade
+.light {
+  mix-blend-mode: screen;
+  mix-blend-mode: plus-lighter;
+}
+
 // one repeating background layer, the cheap way to cover a plate in 50px sky
 .tiled {
   position: absolute;
