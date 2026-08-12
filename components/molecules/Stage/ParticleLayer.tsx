@@ -37,6 +37,37 @@ const WARM_SECONDS = 6;
  */
 const RESOLUTION = 0.5;
 
+/**
+ * How slow a frame has to get before the layer stands down, as the gap between
+ * frames rather than the time spent drawing one.
+ *
+ * On any machine with a working GPU this layer is free: frame times come out
+ * identical with it and without it, because a couple of hundred blended quads
+ * at half resolution is nothing to a graphics card. On a machine with no
+ * acceleration at all it costs about 17ms, which halves the frame rate of the
+ * whole page, closet and all.
+ *
+ * So rather than making it static for everyone, it watches and stops where it
+ * is expensive. What is left is the last frame it drew, which is a warmed field
+ * and looks like a picture of the map rather than an empty one.
+ *
+ * It has to be the gap and not the drawing, because a canvas hands its work off
+ * and returns: timing draw() said under a millisecond on the machine that was
+ * taking 33. This threshold is a little under 36fps, so a healthy 60Hz page at
+ * 16.7ms is nowhere near it.
+ */
+const SLOW_FRAME_MS = 28;
+
+// a gap this long was not a slow frame, it was the tab sitting in the
+// background, where rAF is throttled to about one a second. counting those
+// would stand the layer down for the rest of the session over nothing
+const STALL_MS = 100;
+
+// the first frames bake a tinted copy of every texture, so they say nothing
+// about what a steady frame costs. after that, a second or so to judge by
+const SETTLE_FRAMES = 30;
+const BUDGET_FRAMES = 90;
+
 // an emitter with no texture, or one that never loads, is skipped rather than
 // left to draw nothing at a cost
 const loadImage = (src: string) =>
@@ -130,10 +161,24 @@ const ParticleLayer = ({ data, asset, origin, space, view, tags }: Props) => {
         if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
         let last = performance.now();
+        let seen = 0;
+        let judged = 0;
+        let gaps = 0;
         const tick = (now: number) => {
-          field.step((now - last) / 1000);
+          const gap = now - last;
+          field.step(gap / 1000);
           last = now;
           draw();
+          seen++;
+
+          if (seen > SETTLE_FRAMES && gap < STALL_MS) {
+            gaps += gap;
+            judged++;
+            // a whole window of frames too slow, so leave the last one up
+            // rather than spend the rest of the page's frame rate on it
+            if (judged === BUDGET_FRAMES && gaps / judged > SLOW_FRAME_MS) return;
+          }
+
           frame = requestAnimationFrame(tick);
         };
         frame = requestAnimationFrame(tick);
