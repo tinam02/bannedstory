@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { Emitter, ParticleField } from './particles';
 import type { MapParticles, Rect } from './particles';
+import { inState } from './useMapLayers';
 import styles from './Stage.module.scss';
 
 /**
@@ -55,14 +56,7 @@ type Props = {
   space: { w: number; h: number };
   /** what the frame can see, in plate pixels. anything outside is not drawn */
   view: Rect;
-  /**
-   * Which sets to draw.
-   *
-   * A map can hold more than one state of itself. Temple of Tears carries a
-   * clean set and a polluted one, and only the polluted backs were captured, so
-   * drawing both would put clean water over a corrupted map. Unset draws
-   * everything, which is right for a map with one state
-   */
+  /** which state of the map to run, see inState. unset runs everything */
   tags?: string[];
 };
 
@@ -86,13 +80,7 @@ const ParticleLayer = ({ data, asset, origin, space, view, tags }: Props) => {
     let frame = 0;
     let stale = false;
 
-    const wanted = data.instances.filter(i => {
-      if (!tags?.length) return true;
-      const own = (i.tags ?? '').trim();
-      // an instance with no tag belongs to every state
-      if (!own) return true;
-      return own.split(/[\s,]+/).some(t => tags.includes(t));
-    });
+    const wanted = data.instances.filter(i => inState(i.tags, tags));
 
     // one load a definition, however many times the map places it
     const names = Object.keys(data.defs).filter(

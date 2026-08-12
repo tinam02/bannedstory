@@ -217,8 +217,8 @@
       "t": -750
     },
     "bg": "#ccffff",
-    "particleTags": [
-      "pollution"
+    "tags": [
+      "clean"
     ]
   },
   {

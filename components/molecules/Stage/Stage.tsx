@@ -3,7 +3,9 @@ import useChar from '@/app/context/CharCtx';
 import useScene from '@/app/context/SceneCtx';
 import Char from '@/components/atoms/Char';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { MapSprite } from './useMapLayers';
 import useMapLayers, {
+  inState,
   moves,
   scrollsH,
   scrollsV,
@@ -123,8 +125,12 @@ const Stage = () => {
   const sprites = useMemo(() => {
     if (!layers) return { backs: [], fronts: [], objs: [] };
     const cam = map?.cam;
+    // a map that carries two versions of itself only wants the one the plate
+    // was captured in, or the pillars come out doubled and the smoke sits on a
+    // temple that has none
+    const shown = (s: MapSprite) => !hidden(s.file) && inState(s.tags, map?.tags);
     const backs = (map?.backsHidden ? layers.back : layers.back.filter(moves))
-      .filter(s => !hidden(s.file))
+      .filter(shown)
       .map(s => ({
         ...s,
         dx: cam && !scrollsH(s) ? (cam.x * (100 + (s.rx ?? 0))) / 100 : 0,
@@ -133,7 +139,7 @@ const Stage = () => {
     const objs = (
       map?.objsHidden ? layers.obj : layers.obj.filter(s => s.frames > 1)
     )
-      .filter(s => !hidden(s.file))
+      .filter(shown)
       .map(s => ({ ...s, dx: 0, dy: 0 }));
     // wz marks some backs as foreground, the pillars you walk behind. they are
     // backs like any other, they just belong on the far side of the character
@@ -447,7 +453,7 @@ const Stage = () => {
               origin={origin}
               space={space}
               view={viewRect}
-              tags={map.particleTags}
+              tags={map.tags}
             />
           )}
 

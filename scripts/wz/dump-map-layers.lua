@@ -224,6 +224,20 @@ end
 
 local function slug(s) return (tostring(s):gsub('[^%w%-]', '_')) end
 
+-- which state of itself a sprite belongs to
+--
+-- a map can carry more than one version of its own scenery, at the same
+-- coordinates, and pick between them: Temple of Tears holds a clean set and a
+-- polluted one, right down to two copies of each pillar with different bands
+--
+-- comes out only when there is one, so a single state map's manifest is
+-- unchanged
+local function tags(entry)
+  local t = str(entry, 'tags', '')
+  if t == '' then return '' end
+  return ',' .. ks('tags', t)
+end
+
 ------------------------------------------------------------
 -- particles
 --
@@ -381,6 +395,7 @@ if backRoot then
             .. ki('a', num(entry, 'a', 255)) .. ','
             .. ki('f', num(entry, 'f', 0)) .. ','
             .. ki('front', num(entry, 'front', 0))
+            .. tags(entry)
             .. '}')
           env:WriteLine('back ' .. entry.Text .. ' -> ' .. base .. ext
             .. ' (' .. string.format('%d', frames) .. 'f)')
@@ -435,6 +450,7 @@ for layer = 0, 7 do
               .. ki('w', w) .. ',' .. ki('h', h) .. ','
               .. ki('frames', frames) .. ','
               .. ki('f', num(entry, 'f', 0))
+              .. tags(entry)
               .. '}')
             if frames > 1 then
               env:WriteLine('obj ' .. base .. ext

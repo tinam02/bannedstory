@@ -106,8 +106,8 @@ const readCapture = async dir => {
       // a colour behind everything, for a plate the sky doesn't reach the end
       // of, see MapInfo.bg
       bg: typeof c.bg === 'string' ? c.bg : null,
-      // which particle sets the plate was captured in, see MapInfo.particleTags
-      particleTags: Array.isArray(c.particleTags) ? c.particleTags : null,
+      // which state of itself the plate was captured in, see MapInfo.tags
+      tags: Array.isArray(c.tags) ? c.tags : null,
     };
   } catch {
     return {
@@ -118,7 +118,7 @@ const readCapture = async dir => {
       keep: null,
       plate: null,
       bg: null,
-      particleTags: null,
+      tags: null,
     };
   }
 };
@@ -199,7 +199,7 @@ for (const dir of entries) {
     ...(cap.keep ? { keep: cap.keep } : {}),
     ...(cap.plate ? { plate: cap.plate } : {}),
     ...(cap.bg ? { bg: cap.bg } : {}),
-    ...(cap.particleTags ? { particleTags: cap.particleTags } : {}),
+    ...(cap.tags ? { tags: cap.tags } : {}),
   });
   if (!meta) console.warn(`${dir.name}: no name in maps.json, using the id`);
   if (lay.parallax && !cap.cam)

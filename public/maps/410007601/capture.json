@@ -1,8 +1,18 @@
 {
   "objsHidden": true,
   "backsHidden": true,
-  "plate": { "l": -623, "t": -750 },
+  "plate": {
+    "l": -623,
+    "t": -750
+  },
   "bg": "#ccffff",
-  "hide": ["back-24", "back-25", "back-26", "back-27"],
-  "particleTags": ["pollution"]
+  "hide": [
+    "back-24",
+    "back-25",
+    "back-26",
+    "back-27"
+  ],
+  "tags": [
+    "clean"
+  ]
 }

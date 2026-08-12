@@ -34,6 +34,26 @@ export type MapSprite = {
   type?: number;
   cx?: number;
   cy?: number;
+  /** which state of the map this belongs to, see inState */
+  tags?: string;
+};
+
+/**
+ * Whether a sprite or an emitter belongs to the state the map is being shown in.
+ *
+ * A map can carry more than one version of its own scenery, at the same
+ * coordinates, and pick between them. Temple of Tears holds a clean set and a
+ * polluted one, right down to two copies of each pillar with different bands,
+ * which is why drawing all of them put smoke on a temple that has none.
+ *
+ * Untagged belongs to every state, and a map with no state chosen shows the lot,
+ * which is every other map.
+ */
+export const inState = (tags: string | undefined, want: string[] | undefined) => {
+  if (!want?.length) return true;
+  const own = tags?.trim();
+  if (!own) return true;
+  return own.split(/[\s,]+/).some(t => want.includes(t));
 };
 
 // a scrolling axis is driven by a timer rather than the camera, see BackPatch.cs

@@ -64,13 +64,14 @@ export type MapInfo = {
   hide?: string[];
   keep?: string[];
   /**
-   * Which particle sets to run.
+   * Which state of itself the map is being shown in.
    *
-   * A map can carry more than one state of itself, tagged on the emitter. The
-   * plate only ever shows one of them, so this says which. Absent means the map
-   * has one state and every emitter runs
+   * A map can carry more than one version of its own scenery at the same
+   * coordinates, tagged on the back, the object and the emitter alike. The
+   * plate was captured in one of them, so this says which, and it applies to
+   * all three. Absent means the map has one state and everything draws
    */
-  particleTags?: string[];
+  tags?: string[];
   /**
    * Where the plate's top left sits in map coordinates.
    *
