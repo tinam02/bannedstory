@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { mapManifestUrl } from '@/lib/assets';
 
 // reads the layers.json that scripts/wz/dump-map-layers.lua writes
 //
@@ -127,7 +126,7 @@ const useMapLayers = (mapId: string | null, has: boolean) => {
     // drop the old map's manifest before fetching the new one. prevent 404s
     setLayers(null);
     let stale = false;
-    fetch(mapManifestUrl(`${mapId}/layers/layers.json`))
+    fetch(`/maps/${mapId}/layers/layers.json`)
       .then(r => (r.ok ? r.json() : null))
       .then((data: MapLayers | null) => {
         if (!stale) setLayers(data);

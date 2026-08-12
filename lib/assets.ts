@@ -30,32 +30,3 @@ export const asSheet = (path: string) => path.replace(/\.png$/, SHEET_EXT);
 /** a file under the asset root */
 export const assetUrl = (path: string) =>
   `${ASSET_BASE}/${path.replace(/^\//, '')}`;
-
-/**
- * A way to reach a browser that has stopped asking.
- *
- * Two aggregates were being served `immutable` for a year despite being
- * rewritten under their own names, both found on 2026-08-13: the map manifests,
- * which sat inside the `/maps/*` art rule, and `/avatar/Effect/index.json`,
- * which sits in a folder of per-item art rather than beside the other indexes.
- * Caddy sends both `no-cache` now, but that only helps a browser willing to
- * ask, and `immutable` is precisely the instruction not to. Everyone who opened
- * the site before that fix holds copies they would keep until 2027.
- *
- * A query string is a different cache entry, so this is the one thing that
- * reaches them. Bump it and every stale copy is abandoned.
- *
- * It buys nothing for anyone whose cache is already healthy and costs nothing
- * either, so it can ride along with any deploy rather than needing one of its
- * own. Only for aggregates: per-item art is immutable under its id and rightly
- * cached forever, and busting 54,696 of those would be a real loss.
- */
-export const MANIFEST_V = '2';
-
-/** an aggregate url, carrying the cache buster above */
-export const busted = (url: string) =>
-  `${url}${url.includes('?') ? '&' : '?'}v=${MANIFEST_V}`;
-
-/** a map manifest url, carrying the cache buster above */
-export const mapManifestUrl = (path: string) =>
-  busted(`/maps/${path.replace(/^\//, '')}`);

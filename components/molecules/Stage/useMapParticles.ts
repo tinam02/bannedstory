@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { mapManifestUrl } from '@/lib/assets';
 import type { MapParticles } from './particles';
 
 // reads the particles.json that scripts/wz/dump-map-layers.lua writes
@@ -21,7 +20,7 @@ const useMapParticles = (mapId: string | null, has: boolean) => {
     // layer manifest, or the wrong map paints for a frame
     setData(null);
     let stale = false;
-    fetch(mapManifestUrl(`${mapId}/layers/particles.json`))
+    fetch(`/maps/${mapId}/layers/particles.json`)
       .then(r => (r.ok ? r.json() : null))
       .then((next: MapParticles | null) => {
         if (!stale) setData(next);

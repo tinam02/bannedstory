@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { mapManifestUrl } from '@/lib/assets';
 
 /**
  * Everything about the *setting* rather than the character.
@@ -160,7 +159,7 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
   // shows up without a rebuild
   useEffect(() => {
     let stale = false;
-    fetch(mapManifestUrl('index.json'))
+    fetch('/maps/index.json')
       .then(r => (r.ok ? r.json() : []))
       .then((list: MapInfo[]) => {
         if (stale) return;

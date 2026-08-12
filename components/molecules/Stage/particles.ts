@@ -108,7 +108,7 @@ export type Rect = { l: number; t: number; r: number; b: number };
  */
 const D3DBLEND_ONE = 2;
 const D3DBLEND_DESTALPHA = 7;
-export const isAdditive = (def: ParticleDef) =>
+const isAdditive = (def: ParticleDef) =>
   def.blendFuncDst === D3DBLEND_ONE || def.blendFuncDst === D3DBLEND_DESTALPHA;
 
 /**
@@ -167,7 +167,7 @@ const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
  *
  * Linear between the points, flat outside them.
  */
-export type Curve = { t: number; v: number }[];
+type Curve = { t: number; v: number }[];
 
 /**
  * SpeedPoint, which is a numbered list rather than a map.
@@ -536,16 +536,6 @@ export class Emitter {
       }
     }
   }
-
-  /** true once nothing is left to draw and nothing more will be emitted */
-  get spent() {
-    const d = this.def.duration ?? -1;
-    return this.count === 0 && d >= 0 && this.elapsed > d;
-  }
-
-  get live() {
-    return this.count;
-  }
 }
 
 const clamp255 = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : Math.round(v));
@@ -610,9 +600,5 @@ export class ParticleField {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
-  }
-
-  get count() {
-    return this.emitters.reduce((n, e) => n + e.live, 0);
   }
 }

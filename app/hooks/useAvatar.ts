@@ -2,7 +2,7 @@
 import { FACE_PARTS, ItemManifest, WornItem } from '@/lib/avatar';
 import { EffectManifest, WornEffect } from '@/lib/effects';
 import { Outfit } from '@/types';
-import { ASSET_BASE, SHEET_EXT, busted } from '@/lib/assets';
+import { ASSET_BASE, SHEET_EXT } from '@/lib/assets';
 import { useEffect, useState } from 'react';
 
 /**
@@ -82,8 +82,7 @@ const sheets = new Map<string, Promise<HTMLImageElement | null>>();
  * right way round: the character still renders
  */
 const loadEffectIds = () => {
-  // an aggregate, not per item art, so it carries the cache buster
-  effectIdsOnce ??= fetch(busted(`${ROOT}/Effect/index.json`))
+  effectIdsOnce ??= fetch(`${ROOT}/Effect/index.json`)
     .then(r => (r.ok ? (r.json() as Promise<number[]>) : []))
     .then(ids => new Set(ids))
     .catch(() => new Set<number>());
