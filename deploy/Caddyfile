@@ -17,7 +17,7 @@ henehoe.app {
 	# that item was dead in that browser until the visitor cleared site data
 	@art {
 		path /avatar/*
-		not path /avatar/index/* /avatar/meta.json /avatar/delays.json /avatar/face-delays.json
+		not path /avatar/index/* /avatar/*/index.json /avatar/meta.json /avatar/delays.json /avatar/face-delays.json
 		file
 	}
 	header @art Cache-Control "public, max-age=31536000, immutable"
@@ -26,7 +26,15 @@ henehoe.app {
 	# the same name, so caching it for a year means a returning visitor never
 	# sees a new item again. no-cache still stores it, it just has to revalidate
 	# first, and caddy's etag turns the unchanged case into a 304 with no body
-	@idx path /avatar/index/* /avatar/meta.json /avatar/delays.json /avatar/face-delays.json
+	#
+	# /avatar/*/index.json is Effect/index.json, which was missed until
+	# 2026-08-13 because it sits inside a folder of per-item art rather than
+	# beside the other aggregates. it is the list of which items have an effect,
+	# 1,664 of them and one longer after every drop, so a year of immutable meant
+	# a returning visitor's new capes rendered with no effect on them. written as
+	# a wildcard rather than the one filename, so a second folder growing an
+	# index is covered the day it does
+	@idx path /avatar/index/* /avatar/*/index.json /avatar/meta.json /avatar/delays.json /avatar/face-delays.json
 	header @idx Cache-Control "no-cache"
 
 	# the rest of the art, on the same reasoning as the sheets above. map plates
