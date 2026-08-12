@@ -19,7 +19,7 @@ import 'System.Drawing.Imaging'
 ------------------------------------------------------------
 
 -- leave this empty to do every map that already has plates on disk
-local MAP_IDS = {
+local MAP_IDS = {"410007601"
 }
 local OUT_ROOT = 'C:\\TINA\\CODE\\bannedstory\\bannedstory\\public\\maps'
 
@@ -28,7 +28,7 @@ local OUT_ROOT = 'C:\\TINA\\CODE\\bannedstory\\bannedstory\\public\\maps'
 --
 -- set both of these back (empty MAP_IDS, SCREEN_ONLY false) to go back to
 -- dumping every map that has plates
-local SCREEN_ONLY = false
+local SCREEN_ONLY = true
 
 ------------------------------------------------------------
 -- node helpers
@@ -387,16 +387,70 @@ local function screenMap(MAP_ID)
 
   -- particles are emitters rather than sprite sequences, so print the raw
   -- fields and we can work out whether they are reproducible at all
+  --
+  -- the map holds instances, not emitters: a name and a `0` that carries the
+  -- placement. so this walks down rather than reading one layer, and then goes
+  -- looking for whatever `0` points at, which is where the numbers must live
+  local function dumpFields(node, indent, depth)
+    for f in each_node(node) do
+      local v = f.Value
+      if v ~= nil then
+        env:WriteLine(indent .. f.Text .. ' = ' .. tostring(v))
+      elseif depth > 0 then
+        env:WriteLine(indent .. f.Text .. ':')
+        dumpFields(f, indent .. '  ', depth - 1)
+      else
+        env:WriteLine(indent .. f.Text .. ': ...')
+      end
+    end
+  end
+
+  -- three in full is enough to see the shape, the rest would be pages of it
+  local PARTICLE_SAMPLE = 3
+
   local particle = child(mapNode, 'particle')
   if particle then
+    local n = 0
+    local found = false
     for p in each_node(particle) do
-      local fields = {}
-      for f in each_node(p) do
-        local v = f.Value
-        table.insert(fields, f.Text .. (v ~= nil and ('=' .. tostring(v)) or ''))
+      n = n + 1
+      if n <= PARTICLE_SAMPLE then
+        env:WriteLine('   particle ' .. p.Text)
+        dumpFields(p, '     ', 4)
+        -- the map node names a definition but does not hold it, so try where
+        -- it could be. wz node names are case sensitive, hence both spellings
+        for _, base in ipairs({
+          'Effect/particle.img/', 'Effect/Particle.img/', 'Map/Particle/',
+          'Map/particle/', 'Particle/', 'Effect/BasicEff.img/',
+        }) do
+          local def = resolve(base .. p.Text .. '.img')
+            or resolve(base .. p.Text)
+          if def then
+            found = true
+            env:WriteLine('     -> definition at ' .. base .. p.Text)
+            dumpFields(def, '        ', 3)
+          end
+        end
       end
-      env:WriteLine('   particle ' .. p.Text .. ':  ' .. table.concat(fields, '  '))
     end
+
+    -- still nowhere, so stop guessing and list what the roots actually hold.
+    -- one of these names is the folder the emitters are in
+    if not found then
+      for _, root in ipairs({'Effect', 'Map', 'Particle'}) do
+        local r = resolve(root)
+        if not r then
+          env:WriteLine('   root ' .. root .. ': not found')
+        else
+          local names = {}
+          for c in each_node(r) do table.insert(names, c.Text) end
+          table.sort(names)
+          env:WriteLine('   root ' .. root .. ' holds: ' .. table.concat(names, ' '))
+        end
+      end
+    end
+    env:WriteLine('   ' .. string.format('%d', n) .. ' particle instance(s), '
+      .. 'showed the first ' .. string.format('%d', PARTICLE_SAMPLE))
   end
 end
 
