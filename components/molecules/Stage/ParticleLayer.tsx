@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { Emitter, ParticleField } from './particles';
-import type { MapParticles } from './particles';
+import type { MapParticles, Rect } from './particles';
 import styles from './Stage.module.scss';
 
 /**
@@ -22,6 +22,20 @@ import styles from './Stage.module.scss';
 // this is still fading in, which is what it would be doing anyway
 const WARM_SECONDS = 6;
 
+/**
+ * Canvas pixels a plate pixel.
+ *
+ * Particles are the one layer that can be drawn short and not be missed. Temple
+ * of Tears asks for 54 megapixels of blending a frame, forty times the plate's
+ * own area, because a dozen of its emitters throw 600px quads around and the
+ * pile of them is the whole point. Nothing in that pile has an edge: it is
+ * smoke, steam, sunshafts and glitter, so halving the resolution takes three
+ * quarters of the work off and leaves a picture that is hard to tell apart.
+ *
+ * The map's sprites keep their own full resolution. This is only the canvas.
+ */
+const RESOLUTION = 0.5;
+
 // an emitter with no texture, or one that never loads, is skipped rather than
 // left to draw nothing at a cost
 const loadImage = (src: string) =>
@@ -39,6 +53,8 @@ type Props = {
   /** the plate's top left in map coordinates */
   origin: { l: number; t: number };
   space: { w: number; h: number };
+  /** what the frame can see, in plate pixels. anything outside is not drawn */
+  view: Rect;
   /**
    * Which sets to draw.
    *
@@ -50,8 +66,13 @@ type Props = {
   tags?: string[];
 };
 
-const ParticleLayer = ({ data, asset, origin, space, tags }: Props) => {
+const ParticleLayer = ({ data, asset, origin, space, view, tags }: Props) => {
   const ref = useRef<HTMLCanvasElement>(null);
+
+  // a mirror, so panning and zooming change what gets drawn without tearing
+  // down the field and starting the simulation over
+  const viewRef = useRef(view);
+  viewRef.current = view;
 
   // one effect for the whole life of the field: it loads textures, builds the
   // emitters and runs the clock. splitting it would mean holding the field in
@@ -104,7 +125,7 @@ const ParticleLayer = ({ data, asset, origin, space, tags }: Props) => {
         );
 
         field.warm(WARM_SECONDS);
-        field.paint(ctx, canvas.width, canvas.height);
+        field.paint(ctx, space.w, space.h, RESOLUTION, viewRef.current);
 
         // a still picture of a warmed field, for anyone who asked not to be
         // moved. same call the css keyframes answer for the drifting backs
@@ -114,7 +135,7 @@ const ParticleLayer = ({ data, asset, origin, space, tags }: Props) => {
         const tick = (now: number) => {
           field.step((now - last) / 1000);
           last = now;
-          field.paint(ctx, canvas.width, canvas.height);
+          field.paint(ctx, space.w, space.h, RESOLUTION, viewRef.current);
           frame = requestAnimationFrame(tick);
         };
         frame = requestAnimationFrame(tick);
@@ -125,14 +146,17 @@ const ParticleLayer = ({ data, asset, origin, space, tags }: Props) => {
       stale = true;
       cancelAnimationFrame(frame);
     };
-  }, [data, asset, origin.l, origin.t, tags]);
+  }, [data, asset, origin.l, origin.t, space.w, space.h, tags]);
 
+  // the backing store is short and css stretches it back to the plate's size,
+  // so everything else on the Stage still lines up in plate pixels
   return (
     <canvas
       ref={ref}
       className={styles.particles}
-      width={space.w}
-      height={space.h}
+      width={Math.ceil(space.w * RESOLUTION)}
+      height={Math.ceil(space.h * RESOLUTION)}
+      style={{ width: space.w, height: space.h }}
     />
   );
 };

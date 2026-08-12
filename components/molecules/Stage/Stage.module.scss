@@ -55,6 +55,8 @@
 // charAnchor. Map particles are scenery: fog, smoke and glitter belong behind
 // whoever is standing in them, the same side of the character as the objects
 // they drift out of
+// Drawn short and stretched back up, so unlike every other layer this one wants
+// smoothing. Nothing in it has an edge to keep crisp
 .particles {
   position: absolute;
   top: 0;
@@ -62,7 +64,6 @@
   display: block;
   pointer-events: none;
   user-select: none;
-  image-rendering: pixelated;
 }
 
 // one repeating background layer, the cheap way to cover a plate in 50px sky

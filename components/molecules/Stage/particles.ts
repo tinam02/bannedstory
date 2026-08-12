@@ -47,13 +47,19 @@ export type ParticleDef = {
   blendFuncSrc?: number;
   blendFuncDst?: number;
   positionType?: number;
-  // the alpha envelope, as two interior keyframes over normalised life
+  // the alpha envelope, as two interior keyframes. the points are percentages
+  // of the life and the alphas are 0 to 255
   MiddlePoint0?: number;
   MiddlePoint1?: number;
   MiddlePointAlpha0?: number;
   MiddlePointAlpha1?: number;
-  /** time to speed, as a percentage. 0:100 0.5:2 means it stops almost at once */
-  SpeedPoint?: Record<string, number>;
+  /**
+   * Time to speed, as a percentage, in numbered keyframes.
+   *
+   * Every definition carries the same one: full speed at birth, 2% at half
+   * life, 1% at the end. Particles are thrown and then hang where they land
+   */
+  SpeedPoint?: Record<string, { time?: number; speed?: number }>;
   GRAVITY?: {
     x?: number;
     y?: number;
@@ -89,15 +95,55 @@ export type MapParticles = {
   instances: ParticleInstance[];
 };
 
-// a D3DBLEND destination of ONE is additive, anything else is ordinary alpha.
-// the magenta glitter blends additively, the black smoke does not
-const D3DBLEND_ONE = 2;
-export const isAdditive = (def: ParticleDef) => def.blendFuncDst === D3DBLEND_ONE;
+/** a rect in plate pixels */
+export type Rect = { l: number; t: number; r: number; b: number };
 
-// how much colour has to change before a particle gets its own tinted copy of
-// the texture. five bits a channel, so a life spent fading from magenta to
-// violet passes through about thirty of them
-const TINT_SHIFT = 3;
+/**
+ * Whether an emitter adds light or lays paint.
+ *
+ * The destination factor is D3DBLEND, not GL. ONE is plainly additive.
+ * DESTALPHA is too, in practice: the game draws onto an opaque framebuffer
+ * where the destination alpha is always 1, which is what the sunshine shafts
+ * rely on. Everything else here is INVSRCALPHA, ordinary painting
+ */
+const D3DBLEND_ONE = 2;
+const D3DBLEND_DESTALPHA = 7;
+export const isAdditive = (def: ParticleDef) =>
+  def.blendFuncDst === D3DBLEND_ONE || def.blendFuncDst === D3DBLEND_DESTALPHA;
+
+/**
+ * How much colour has to change before a particle gets its own copy.
+ *
+ * Three bits a channel, eight levels. This wants to be coarse: half the
+ * emitters here randomise every particle's colour over a range of +-127, and
+ * with a fine bucket that is not a cache at all, it is an allocator. Coarse
+ * bands do not show, because nothing being tinted has an edge and the colours
+ * were random to begin with.
+ */
+const TINT_SHIFT = 5;
+
+/** copies an emitter will bake before it starts reusing what it has */
+const TINT_CACHE = 192;
+
+/**
+ * The biggest a copy is kept at.
+ *
+ * The quad is square and never bigger than the emitter's largest size, so a
+ * 250px sparkle sheet drawn at 30px is kept at 30, and both the memory and the
+ * sampling come down with it. The cap on top of that is for the 649px steam
+ * sheets: they draw at 300 and a soft cloud upscaled from 128 is the same
+ * cloud, where a full copy is half a megabyte
+ */
+const TINT_MAX = 128;
+
+// past this a tint is white, and white multiplied over the texture is the
+// texture. fourteen of this map's emitters are exactly that, including every
+// one of the big steam and mist sheets
+const NEAR_WHITE = 248;
+
+// below this a particle is a rounding error on the backdrop, and the ones this
+// catches are the huge faint smoke quads that cost the most to draw
+const MIN_ALPHA = 2 / 255;
 
 // a frame long enough that the tab was probably in the background, so the
 // simulation steps as if it were one frame rather than trying to catch up
@@ -119,17 +165,23 @@ const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 /**
  * A keyframe curve over normalised life.
  *
- * Both nexon extensions are the same shape: a handful of times mapped to
- * values, linear between them, flat outside. SpeedPoint arrives as an object
- * keyed by the time, which is why the keys get sorted numerically rather than
- * trusted in wz order.
+ * Linear between the points, flat outside them.
  */
 export type Curve = { t: number; v: number }[];
 
-const toCurve = (raw: Record<string, number> | undefined): Curve | null => {
+/**
+ * SpeedPoint, which is a numbered list rather than a map.
+ *
+ * The wz node holds `0`, `1`, `2`, each a subnode with its own `time` and
+ * `speed`. So the keys are indices and mean nothing, and sorting has to be on
+ * the time inside
+ */
+const toCurve = (
+  raw: Record<string, { time?: number; speed?: number }> | undefined,
+): Curve | null => {
   if (!raw) return null;
-  const pts = Object.entries(raw)
-    .map(([t, v]) => ({ t: Number(t), v: Number(v) }))
+  const pts = Object.values(raw)
+    .map(p => ({ t: Number(p?.time), v: Number(p?.speed) }))
     .filter(p => Number.isFinite(p.t) && Number.isFinite(p.v))
     .sort((a, b) => a.t - b.t);
   return pts.length > 1 ? pts : null;
@@ -153,8 +205,13 @@ const curveAt = (c: Curve, t: number) => {
  * The alpha envelope, as a curve from birth to death.
  *
  * The endpoints come out of the packed colours, which put alpha in the top
- * byte, and that byte is zero on every definition seen so far. So a particle
- * fades in, holds through the two interior keyframes, and fades out.
+ * byte, and that byte is zero on every definition. So a particle fades in,
+ * passes through the two interior keyframes, and fades out.
+ *
+ * The interior points are percentages of the life, not fractions of it, which
+ * matters a great deal: read as fractions they all clamp to the end and the
+ * envelope collapses into one long ramp. The black smoke really does spend its
+ * life between 50 and 5 out of 255, which is why the map is not a grey wall.
  *
  * A definition with neither the envelope nor an alpha byte would be invisible,
  * so that one falls back to opaque.
@@ -164,9 +221,9 @@ const alphaCurve = (def: ParticleDef): Curve => {
   const dead = (def.endColor ?? 0) >>> 24;
   const mid: Curve = [];
   if (def.MiddlePoint0 !== undefined && def.MiddlePointAlpha0 !== undefined)
-    mid.push({ t: clamp01(def.MiddlePoint0), v: def.MiddlePointAlpha0 });
+    mid.push({ t: clamp01(def.MiddlePoint0 / 100), v: def.MiddlePointAlpha0 });
   if (def.MiddlePoint1 !== undefined && def.MiddlePointAlpha1 !== undefined)
-    mid.push({ t: clamp01(def.MiddlePoint1), v: def.MiddlePointAlpha1 });
+    mid.push({ t: clamp01(def.MiddlePoint1 / 100), v: def.MiddlePointAlpha1 });
   if (!mid.length && !born && !dead) return [{ t: 0, v: 255 }, { t: 1, v: 255 }];
   return [{ t: 0, v: born }, ...mid.sort((a, b) => a.t - b.t), { t: 1, v: dead }];
 };
@@ -185,7 +242,9 @@ export class Emitter {
   readonly oy: number;
 
   private readonly def: ParticleDef;
-  private readonly tex: CanvasImageSource;
+  /** the texture squashed into the square quad, at the size it is drawn */
+  private readonly base: HTMLCanvasElement;
+  private readonly bake: number;
   private readonly max: number;
   private readonly rate: number;
   private readonly alpha: Curve;
@@ -221,7 +280,6 @@ export class Emitter {
 
   constructor(def: ParticleDef, at: ParticleInstance, tex: CanvasImageSource) {
     this.def = def;
-    this.tex = tex;
     this.ox = at.x ?? 0;
     this.oy = at.y ?? 0;
     this.additive = isAdditive(def);
@@ -234,6 +292,24 @@ export class Emitter {
 
     this.alpha = alphaCurve(def);
     this.speed = toCurve(def.SpeedPoint);
+
+    // the quad is square, so the tinted copy is too and the texture's own
+    // aspect is squashed into it once here rather than on every draw
+    const biggest = Math.max(
+      (def.startSize ?? 0) + Math.abs(def.startSizeVar ?? 0),
+      (def.endSize ?? 0) < 0 ? 0 : (def.endSize ?? 0) + Math.abs(def.endSizeVar ?? 0),
+    );
+    this.bake = Math.max(
+      1,
+      Math.min(TINT_MAX, Math.max(def.tw, def.th), Math.ceil(biggest)),
+    );
+
+    // squashing the texture into the square happens once, here, and every tint
+    // afterwards works from this rather than from the full sized sheet
+    this.base = document.createElement('canvas');
+    this.base.width = this.bake;
+    this.base.height = this.bake;
+    this.base.getContext('2d')?.drawImage(tex, 0, 0, this.bake, this.bake);
 
     const n = this.max;
     this.px = new Float32Array(n);
@@ -390,54 +466,73 @@ export class Emitter {
    * textured sprite keeps its texture, without having to know which it was.
    */
   private tintOf(r: number, g: number, b: number) {
+    // white over the texture is the texture, and this is the common case
+    if (r >= NEAR_WHITE && g >= NEAR_WHITE && b >= NEAR_WHITE) return this.base;
+
     const key = ((r >> TINT_SHIFT) << 12) | ((g >> TINT_SHIFT) << 6) | (b >> TINT_SHIFT);
     const hit = this.tints.get(key);
     if (hit) return hit;
+    // full, so take whatever is already there rather than growing without end.
+    // only reachable on an emitter that randomises colour per particle, where
+    // one shade stands in for another perfectly well
+    if (this.tints.size >= TINT_CACHE) return this.tints.values().next().value!;
 
-    const { tw, th } = this.def;
+    const n = this.bake;
     const c = document.createElement('canvas');
-    c.width = tw;
-    c.height = th;
+    c.width = n;
+    c.height = n;
     const ctx = c.getContext('2d');
     if (ctx) {
-      ctx.drawImage(this.tex, 0, 0, tw, th);
+      ctx.drawImage(this.base, 0, 0);
       ctx.globalCompositeOperation = 'multiply';
       ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillRect(0, 0, tw, th);
+      ctx.fillRect(0, 0, n, n);
+      // multiply touches alpha as well, so the original is laid back over it
       ctx.globalCompositeOperation = 'destination-in';
-      ctx.drawImage(this.tex, 0, 0, tw, th);
+      ctx.drawImage(this.base, 0, 0);
     }
     this.tints.set(key, c);
     return c;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  /**
+   * @param k canvas pixels a plate pixel, folded into the transform
+   * @param at what the frame can see, in plate pixels
+   */
+  draw(ctx: CanvasRenderingContext2D, k: number, at: Rect) {
     for (let i = 0; i < this.count; i++) {
       const t = this.age[i] / this.life[i];
       const a = curveAt(this.alpha, t) / 255;
       const s = this.size[i];
-      if (a <= 0 || s <= 0) continue;
+      if (a < MIN_ALPHA || s <= 0) continue;
+
+      const x = this.ox + this.px[i];
+      const y = this.oy + this.py[i];
+
+      // the emitters spawn far wider than the plate, black smoke alone over
+      // 2732px of a 1187px map, and the frame shows less of it again. testing
+      // the quad against the visible rect throws away most of both
+      const r = s / 2;
+      if (x + r < at.l || x - r > at.r || y + r < at.t || y - r > at.b) continue;
 
       const tint = this.tintOf(
         clamp255(this.cr[i]),
         clamp255(this.cg[i]),
         clamp255(this.cb[i]),
       );
-      const x = this.ox + this.px[i];
-      const y = this.oy + this.py[i];
 
       ctx.globalAlpha = a > 1 ? 1 : a;
-      // cocos builds a square quad from the size, so a texture that is not
-      // square gets stretched into one. same as the game
+      // cocos builds a square quad from the size, and the tinted copy was baked
+      // square to match, so this is one drawImage whatever the texture was
       if (this.rot[i]) {
         const rad = (this.rot[i] * Math.PI) / 180;
-        const cos = Math.cos(rad);
-        const sin = Math.sin(rad);
-        ctx.setTransform(cos, sin, -sin, cos, x, y);
-        ctx.drawImage(tint, -s / 2, -s / 2, s, s);
+        const cos = Math.cos(rad) * k;
+        const sin = Math.sin(rad) * k;
+        ctx.setTransform(cos, sin, -sin, cos, x * k, y * k);
+        ctx.drawImage(tint, -r, -r, s, s);
       } else {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.drawImage(tint, x - s / 2, y - s / 2, s, s);
+        ctx.setTransform(k, 0, 0, k, 0, 0);
+        ctx.drawImage(tint, x - r, y - r, s, s);
       }
     }
   }
@@ -480,15 +575,26 @@ export class ParticleField {
     for (let t = 0; t < seconds; t += stepSize) this.step(stepSize);
   }
 
-  paint(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  /**
+   * @param w plate width, in plate pixels
+   * @param k canvas pixels a plate pixel, see RESOLUTION
+   * @param at what the frame can see, in plate pixels
+   */
+  paint(
+    ctx: CanvasRenderingContext2D,
+    w: number,
+    h: number,
+    k: number,
+    at: Rect,
+  ) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
-    ctx.clearRect(0, 0, w, h);
+    ctx.clearRect(0, 0, w * k, h * k);
 
-    for (const e of this.emitters) if (!e.additive) e.draw(ctx);
+    for (const e of this.emitters) if (!e.additive) e.draw(ctx, k, at);
     ctx.globalCompositeOperation = 'lighter';
-    for (const e of this.emitters) if (e.additive) e.draw(ctx);
+    for (const e of this.emitters) if (e.additive) e.draw(ctx, k, at);
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;

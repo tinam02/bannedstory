@@ -202,6 +202,7 @@
     "h": 1121,
     "front": false,
     "layers": true,
+    "particles": true,
     "webp": true,
     "objsHidden": true,
     "backsHidden": true,
@@ -215,7 +216,10 @@
       "l": -623,
       "t": -750
     },
-    "bg": "#ccffff"
+    "bg": "#ccffff",
+    "particleTags": [
+      "pollution"
+    ]
   },
   {
     "id": "211042000",

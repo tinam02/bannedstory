@@ -154,6 +154,27 @@ const Stage = () => {
    */
   const skyBehind = !!map?.backsHidden;
 
+  /**
+   * What the frame can actually see, in plate pixels.
+   *
+   * Only the particle layer wants this. Every other layer is elements, and the
+   * browser already skips the ones scrolled out of view, but the canvas is one
+   * element covering the whole plate and it would happily blend a thousand
+   * sprites nobody can see. At the default zoom the frame shows about a quarter
+   * of Temple of Tears, so this is most of the work
+   */
+  const viewRect = useMemo(() => {
+    if (view.w <= 0 || view.h <= 0) return { l: 0, t: 0, r: space.w, b: space.h };
+    const l = (space.w * zoom - view.w) / 2 - pan.x;
+    const t = (space.h * zoom - view.h) / 2 - pan.y;
+    return {
+      l: l / zoom,
+      t: t / zoom,
+      r: (l + view.w) / zoom,
+      b: (t + view.h) / zoom,
+    };
+  }, [space.w, space.h, zoom, view.w, view.h, pan.x, pan.y]);
+
   const overlay = useMemo(
     () =>
       [...(skyBehind ? [] : sprites.backs), ...sprites.objs].sort(
@@ -425,6 +446,7 @@ const Stage = () => {
               asset={asset}
               origin={origin}
               space={space}
+              view={viewRect}
               tags={map.particleTags}
             />
           )}
