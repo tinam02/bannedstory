@@ -13,14 +13,21 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [
   {
+    date: '2026-08-12',
+    title: 'Maps have their weather back',
+    body: "Backdrops run the map's own particle emitters",
+    notes: [
+      'Maps that hold two versions of themselves now pick 1 instead of drawing both on top of each other',
+    ],
+  },
+  {
     date: '2026-08-10',
     title: 'Every item has a page',
-    body:
-      'The closet is now browsable as a db',
+    body: 'The closet is now browsable as a db',
     notes: [
       '26,317 item pages, and a hub for each of the 13 categories',
       'Hairstyles and faces share 1 page with all of their colours',
-      'Every page says what the item hides and which slots it takes up'
+      'Every page says what the item hides and which slots it takes up',
     ],
   },
   {
