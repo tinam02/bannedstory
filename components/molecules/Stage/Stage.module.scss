@@ -109,6 +109,16 @@
   pointer-events: none;
 }
 
+// holds the backs wz flagged as foreground. sits at the plate corner so the
+// sprites inside keep positioning against it exactly as they do behind
+.frontLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
 // Anchored at the character's feet: `left`/`top` is where xhar stands
 .charAnchor {
   position: absolute;

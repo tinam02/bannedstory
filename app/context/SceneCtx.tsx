@@ -61,6 +61,25 @@ export type MapInfo = {
   /** sprite files to drop, a trailing * matches a prefix. `keep` wins over `hide` */
   hide?: string[];
   keep?: string[];
+  /**
+   * Where the plate's top left sits in map coordinates.
+   *
+   * Normally that is the vr rect, since MapRender captures exactly that, so
+   * this is absent and the manifest's vr stands in. Some maps draw scenery
+   * outside vr though: the camera clamps to it but the screen does not, so a
+   * short map shows art above and below that a vr sized plate cuts off. Those
+   * get captured wider than vr and say here where the capture starts
+   */
+  plate?: { l: number; t: number };
+  /**
+   * A colour behind everything, any css value.
+   *
+   * The sky is a sprite like any other and it stops where wz says it stops.
+   * That is fine in game, where the camera never leaves vr, but a plate drawn
+   * wider than vr can run past the end of it. Temple of Tears is 221px taller
+   * than its sky, so without this the bottom of the map is the page's grey
+   */
+  bg?: string;
 };
 
 // zoom scales .plates, which holds the map and every character standing in it,

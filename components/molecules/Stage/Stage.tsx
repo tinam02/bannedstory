@@ -3,7 +3,13 @@ import useChar from '@/app/context/CharCtx';
 import useScene from '@/app/context/SceneCtx';
 import Char from '@/components/atoms/Char';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import useMapLayers, { moves, scrollsH, scrollsV } from './useMapLayers';
+import useMapLayers, {
+  moves,
+  scrollsH,
+  scrollsV,
+  tilesH,
+  tilesV,
+} from './useMapLayers';
 import BackLayer from './BackLayer';
 import useUiSprites from './useUiSprites';
 import Caption from './Caption';
@@ -72,6 +78,12 @@ const Stage = () => {
 
   const layers = useMapLayers(mapId, map?.layers ?? false);
 
+  // where the plate starts, in map coordinates, so wz coords can be turned into
+  // plate pixels. the capture is normally the vr rect exactly, and then vr is
+  // that origin. a map drawn outside vr gets a wider capture and carries its
+  // own, see MapInfo.plate
+  const origin = map?.plate ?? layers?.vr ?? { l: 0, t: 0 };
+
   // layers.json is written by the lua dump and always names the png, so the
   // extension gets swapped here rather than rewritten on disk. that way
   // re-running the dump doesn't undo the conversion
@@ -106,7 +118,7 @@ const Stage = () => {
   //
   // sorted by wz draw order, obj layer then z, backs first since they're scenery
   const sprites = useMemo(() => {
-    if (!layers) return { backs: [], objs: [] };
+    if (!layers) return { backs: [], fronts: [], objs: [] };
     const cam = map?.cam;
     const backs = (map?.backsHidden ? layers.back : layers.back.filter(moves))
       .filter(s => !hidden(s.file))
@@ -120,7 +132,13 @@ const Stage = () => {
     )
       .filter(s => !hidden(s.file))
       .map(s => ({ ...s, dx: 0, dy: 0 }));
-    return { backs, objs };
+    // wz marks some backs as foreground, the pillars you walk behind. they are
+    // backs like any other, they just belong on the far side of the character
+    return {
+      backs: backs.filter(s => s.front !== 1),
+      fronts: backs.filter(s => s.front === 1),
+      objs,
+    };
   }, [layers, map, hidden]);
 
   /**
@@ -277,7 +295,10 @@ const Stage = () => {
           JSON.stringify(at),
         );
       if (panGrab.current)
-        localStorage.setItem(`${PAN_KEY}:${key}`, JSON.stringify(panRef.current));
+        localStorage.setItem(
+          `${PAN_KEY}:${key}`,
+          JSON.stringify(panRef.current),
+        );
       grab.current = null;
       panGrab.current = null;
     };
@@ -329,6 +350,8 @@ const Stage = () => {
             width: space.w,
             height: space.h,
             transform: `scale(${zoom})`,
+            // what shows where no layer reaches, see MapInfo.bg
+            background: map?.bg,
           }}
         >
           {/* under the plate, because this plate has no sky in it */}
@@ -340,7 +363,7 @@ const Stage = () => {
                 key={s.file}
                 sprite={s}
                 src={asset(`layers/${s.file}`)}
-                vr={layers.vr}
+                origin={origin}
                 space={space}
               />
             ))}
@@ -355,19 +378,21 @@ const Stage = () => {
             />
           )}
 
-          {/* vr.l/vr.t is the map's own origin, and back.png is exactly the vr
-              rect, so subtracting it puts wz coords into plate pixels */}
+          {/* subtracting the plate origin puts wz coords into plate pixels */}
           {map &&
             layers &&
             overlay.map(s =>
-              // a back that tiles or drifts is a strip of copies rather than
-              // the single image an object is
-              s.front !== undefined && (scrollsH(s) || scrollsV(s)) ? (
+              // a back that repeats is a strip of copies rather than the single
+              // image an object is. every scrolling type tiles as well, so the
+              // two tile tests are the whole set: asking about scrolling alone
+              // left the animated tiled ones, a jellyfish every 2000px, drawn
+              // once and the rest of the row showing the plate's baked stills
+              s.front !== undefined && (tilesH(s) || tilesV(s)) ? (
                 <BackLayer
                   key={s.file}
                   sprite={s}
                   src={asset(`layers/${s.file}`)}
-                  vr={layers.vr}
+                  origin={origin}
                   space={space}
                 />
               ) : (
@@ -379,9 +404,8 @@ const Stage = () => {
                   alt=''
                   draggable={false}
                   style={{
-                    left:
-                      s.x + (s.f ? -s.ox - s.w : s.ox) + s.dx - layers.vr.l,
-                    top: s.y + s.oy + s.dy - layers.vr.t,
+                    left: s.x + (s.f ? -s.ox - s.w : s.ox) + s.dx - origin.l,
+                    top: s.y + s.oy + s.dy - origin.t,
                     width: s.w,
                     height: s.h,
                     transform: s.f ? 'scaleX(-1)' : undefined,
@@ -395,61 +419,77 @@ const Stage = () => {
             if (!at) return null;
             const cap = captionsOf(who.id);
             return (
-            <div
-              key={who.id}
-              className={styles.charAnchor}
-              // the selected one sits above the rest, so dragging a character
-              // out of a pile doesn't put it back underneath
-              data-active={who.id === activeId ? '' : undefined}
-              style={{ left: at.x, top: at.y }}
-              onPointerDown={e => {
-                const p = toMap(e.clientX, e.clientY);
-                if (!p) return;
-                // Or the frame beneath would start panning at the same time.
-                e.stopPropagation();
-                e.preventDefault();
-                e.currentTarget.setPointerCapture(e.pointerId);
-                // touching a character is also how you pick one
-                setActiveId(who.id);
-                grab.current = { id: who.id, dx: p.x - at.x, dy: p.y - at.y };
-              }}
-            >
-              {/* above the sprite whatever height it is. both captions swallow
+              <div
+                key={who.id}
+                className={styles.charAnchor}
+                // the selected one sits above the rest, so dragging a character
+                // out of a pile doesn't put it back underneath
+                data-active={who.id === activeId ? '' : undefined}
+                style={{ left: at.x, top: at.y }}
+                onPointerDown={e => {
+                  const p = toMap(e.clientX, e.clientY);
+                  if (!p) return;
+                  // Or the frame beneath would start panning at the same time.
+                  e.stopPropagation();
+                  e.preventDefault();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  // touching a character is also how you pick one
+                  setActiveId(who.id);
+                  grab.current = { id: who.id, dx: p.x - at.x, dy: p.y - at.y };
+                }}
+              >
+                {/* above the sprite whatever height it is. both captions swallow
                   their own pointerdown, or typing in one would drag the
                   character out from under it */}
-              {cap.speech.on && balloons?.styles[cap.speech.style] && (
-                <div className={styles.speechSlot}>
-                  <Caption
-                    kind='balloon'
-                    set='balloons'
-                    style={balloons.styles[cap.speech.style]}
-                    styleId={cap.speech.style}
-                    text={cap.speech.text}
-                    onChange={text => setCaption(who.id, 'speech', { text })}
-                    placeholder={'LF> MESOS\nPL0X\n@@@@\n@@@@\n@@@@'}
-                  />
-                </div>
-              )}
+                {cap.speech.on && balloons?.styles[cap.speech.style] && (
+                  <div className={styles.speechSlot}>
+                    <Caption
+                      kind='balloon'
+                      set='balloons'
+                      style={balloons.styles[cap.speech.style]}
+                      styleId={cap.speech.style}
+                      text={cap.speech.text}
+                      onChange={text => setCaption(who.id, 'speech', { text })}
+                      placeholder={'LF> MESOS\nPL0X\n@@@@\n@@@@\n@@@@'}
+                    />
+                  </div>
+                )}
 
-              <Char who={who} />
+                <Char who={who} />
 
-              {/* under the feet, where the game puts it */}
-              {cap.nametag.on && nametags?.styles[cap.nametag.style] && (
-                <div className={styles.nametagSlot}>
-                  <Caption
-                    kind='tag'
-                    set='nametags'
-                    style={nametags.styles[cap.nametag.style]}
-                    styleId={cap.nametag.style}
-                    text={cap.nametag.text}
-                    onChange={text => setCaption(who.id, 'nametag', { text })}
-                    placeholder={who.name || 'Name'}
-                  />
-                </div>
-              )}
-            </div>
+                {/* under the feet, where the game puts it */}
+                {cap.nametag.on && nametags?.styles[cap.nametag.style] && (
+                  <div className={styles.nametagSlot}>
+                    <Caption
+                      kind='tag'
+                      set='nametags'
+                      style={nametags.styles[cap.nametag.style]}
+                      styleId={cap.nametag.style}
+                      text={cap.nametag.text}
+                      onChange={text => setCaption(who.id, 'nametag', { text })}
+                      placeholder={who.name || 'Name'}
+                    />
+                  </div>
+                )}
+              </div>
             );
           })}
+
+          {/* the map's own foreground, ctrl+9 in the renderer. same treatment as
+              a front plate: over the character, never a drag target */}
+          {map && layers && sprites.fronts.length > 0 && (
+            <div className={styles.frontLayer}>
+              {sprites.fronts.map(s => (
+                <BackLayer
+                  key={s.file}
+                  sprite={s}
+                  src={asset(`layers/${s.file}`)}
+                  origin={origin}
+                  space={space}
+                />
+              ))}
+            </div>
+          )}
 
           {/* drawn over the character, and never a drag target */}
           {map?.front && (

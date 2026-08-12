@@ -24,12 +24,16 @@ import styles from './Stage.module.scss';
  * cloud layers tiling and drifting sideways at seven speeds, and one animated
  * sprite tiling and drifting up.
  *
- * Two ways of drawing, picked by whether it moves.
+ * Three ways of drawing, and the step is what picks between the first two.
  *
- * Still layers are one element with background-repeat, so the blue sky costs a
- * single div rather than the 384 images a 50px tile over this plate would be.
- * The anchor decides the phase, not the position, since the tiling covers
- * everything anyway.
+ * A still layer whose step is its own size is one element with
+ * background-repeat, so the blue sky costs a single div rather than the 384
+ * images a 50px tile over this plate would be. The anchor decides the phase,
+ * not the position, since the tiling covers everything anyway.
+ *
+ * A still layer with a step of its own is real copies. background-repeat can
+ * only repeat one background-size apart, so it cannot leave a gap between the
+ * copies or overlap them, and both are things wz asks for.
  *
  * Moving layers are a strip of copies one step apart, slid by exactly one step
  * and repeated. background-repeat cannot do those: the step is not the sprite
@@ -41,12 +45,15 @@ import styles from './Stage.module.scss';
 const BackLayer = ({
   sprite,
   src,
-  vr,
+  origin,
   space,
 }: {
-  sprite: MapSprite;
+  // dx/dy is the parallax shift MapRender baked into the plate, which the
+  // Stage works out from the camera. zero on a map captured without one
+  sprite: MapSprite & { dx?: number; dy?: number };
   src: string;
-  vr: { l: number; t: number; r: number; b: number };
+  /** the plate's top left in map coordinates, usually the vr corner */
+  origin: { l: number; t: number };
   /** the plate, which is the area that has to stay covered */
   space: { w: number; h: number };
 }) => {
@@ -61,13 +68,28 @@ const BackLayer = ({
   const stepX = stepH(sprite);
   const stepY = stepV(sprite);
 
-  // the sprite's own anchor, in plate pixels
-  const left = sprite.x + (sprite.f ? -sprite.ox - sprite.w : sprite.ox) - vr.l;
-  const top = sprite.y + sprite.oy - vr.t;
+  // the sprite's own anchor, in plate pixels. on a tiled axis this only sets
+  // the phase, since the copies cover everything either way
+  const left =
+    sprite.x +
+    (sprite.f ? -sprite.ox - sprite.w : sprite.ox) +
+    (sprite.dx ?? 0) -
+    origin.l;
+  const top = sprite.y + sprite.oy + (sprite.dy ?? 0) - origin.t;
 
   // where in the repeat the anchor falls, so a tiled layer lines up with the
   // capture instead of starting at the plate corner
-  const phase = (at: number, step: number) => (((at % step) + step) % step);
+  const phase = (at: number, step: number) => ((at % step) + step) % step;
+
+  // every copy's position on one axis, in plate pixels, starting one step early
+  // so the plate corner is covered
+  const spread = (at: number, step: number, span: number) => {
+    const first = phase(at, step) - step;
+    return Array.from(
+      { length: Math.ceil((span - first) / step) + 1 },
+      (_, i) => first + i * step,
+    );
+  };
 
   const copies = useMemo(() => {
     if (!moveX && !moveY) return [];
@@ -114,6 +136,53 @@ const BackLayer = ({
               : null),
           }}
         />
+      );
+    }
+    // wz spaces the copies by cx/cy and that is not always the sprite size.
+    // background-repeat can only step by the background size, so anything else
+    // has to be drawn. this map's sky is the reason: a soft 479px band laid
+    // down every 100px, the copies overlapping into one solid colour, where
+    // repeating it every 479px left a transparent seam at each junction
+    const stepsX = tileX && stepX !== sprite.w;
+    const stepsY = tileY && stepY !== sprite.h;
+    const xs =
+      stepsX || stepsY ? (tileX ? spread(left, stepX, space.w) : [left]) : [];
+    const ys =
+      stepsX || stepsY ? (tileY ? spread(top, stepY, space.h) : [top]) : [];
+    // a tiny step over a big plate runs into the thousands, and no backdrop is
+    // worth that many elements. those fall through to the cheap repeat
+    if (xs.length * ys.length > 0 && xs.length * ys.length <= 600) {
+      return (
+        <div
+          className={styles.tiled}
+          style={{
+            left: 0,
+            top: 0,
+            width: space.w,
+            height: space.h,
+            overflow: 'hidden',
+          }}
+        >
+          {xs.map(x =>
+            ys.map(y => (
+              <div
+                key={`${x},${y}`}
+                className={styles.tiled}
+                style={{
+                  ...tile,
+                  left: x,
+                  top: y,
+                  width: sprite.w,
+                  height: sprite.h,
+                  backgroundRepeat: 'no-repeat',
+                  transform: sprite.f ? 'scaleX(-1)' : undefined,
+                }}
+              />
+            )),
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt='' hidden onError={() => setBroken(true)} />
+        </div>
       );
     }
     return (

@@ -195,6 +195,29 @@
     "webp": true
   },
   {
+    "id": "410007601",
+    "name": "Temple of Tears",
+    "street": "Carcion",
+    "w": 1187,
+    "h": 1121,
+    "front": false,
+    "layers": true,
+    "webp": true,
+    "objsHidden": true,
+    "backsHidden": true,
+    "hide": [
+      "back-24",
+      "back-25",
+      "back-26",
+      "back-27"
+    ],
+    "plate": {
+      "l": -623,
+      "t": -750
+    },
+    "bg": "#ccffff"
+  },
+  {
     "id": "211042000",
     "name": "The Cave of Trials I",
     "street": "El Nath",

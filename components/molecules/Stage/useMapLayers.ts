@@ -65,8 +65,8 @@ export const moves = (s: MapSprite) => s.frames > 1 || scrollsH(s) || scrollsV(s
  * cx and cy are the tile spacing, not the sprite size, so a 287px cloud on a
  * 900px step leaves 613px of sky between copies. Zero means butt them together
  */
-export const stepH = (s: MapSprite) => (s.cx ? s.cx : s.w) || s.w;
-export const stepV = (s: MapSprite) => (s.cy ? s.cy : s.h) || s.h;
+export const stepH = (s: MapSprite) => s.cx || s.w;
+export const stepV = (s: MapSprite) => s.cy || s.h;
 
 /**
  * Pixels a second, from wz's rate number.
@@ -82,7 +82,14 @@ export const speedV = (s: MapSprite) => (s.ry ?? 0) * PX_PER_RATE;
 
 export type MapLayers = {
   id: string;
-  /** the playable rect, and also exactly the size of back.png */
+  /**
+   * The playable rect.
+   *
+   * Also the plate's top left, and the size of back.png, on every map captured
+   * straight out of MapRender. A map whose art runs outside vr gets a plate of
+   * its own instead: then MapInfo.plate is the origin and this is only a rect
+   * somewhere in the middle of it
+   */
   vr: { l: number; t: number; r: number; b: number };
   back: MapSprite[];
   obj: MapSprite[];
@@ -96,6 +103,8 @@ const useMapLayers = (mapId: string | null, has: boolean) => {
       setLayers(null);
       return;
     }
+    // drop the old map's manifest before fetching the new one. prevent 404s
+    setLayers(null);
     let stale = false;
     fetch(`/maps/${mapId}/layers/layers.json`)
       .then(r => (r.ok ? r.json() : null))
@@ -110,7 +119,9 @@ const useMapLayers = (mapId: string | null, has: boolean) => {
     };
   }, [mapId, has]);
 
-  return layers;
+  // only ever hand back the manifest that belongs to the map being asked about
+  // checking the id here is synchronous with mapId, so that render never happens
+  return layers && layers.id === mapId ? layers : null;
 };
 
 export default useMapLayers;

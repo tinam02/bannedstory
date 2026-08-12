@@ -97,9 +97,26 @@ const readCapture = async dir => {
       // redundant things like tutorial arrows
       hide: Array.isArray(c.hide) ? c.hide : null,
       keep: Array.isArray(c.keep) ? c.keep : null,
+      // where the capture starts, for a plate that is not the vr rect. only
+      // maps whose art runs outside vr need one, see MapInfo.plate
+      plate:
+        c.plate && Number.isFinite(c.plate.l) && Number.isFinite(c.plate.t)
+          ? { l: c.plate.l, t: c.plate.t }
+          : null,
+      // a colour behind everything, for a plate the sky doesn't reach the end
+      // of, see MapInfo.bg
+      bg: typeof c.bg === 'string' ? c.bg : null,
     };
   } catch {
-    return { cam: null, objsHidden: false, backsHidden: false, hide: null, keep: null };
+    return {
+      cam: null,
+      objsHidden: false,
+      backsHidden: false,
+      hide: null,
+      keep: null,
+      plate: null,
+      bg: null,
+    };
   }
 };
 
@@ -114,9 +131,15 @@ const readLayers = async dir => {
     // one frame and drift on a timer, which is how skies are built, so counting
     // frames alone left a map with seven cloud layers looking like it had none
     const moves = s =>
-      s.frames > 1 || s.type === 4 || s.type === 5 || s.type === 6 || s.type === 7;
+      s.frames > 1 ||
+      s.type === 4 ||
+      s.type === 5 ||
+      s.type === 6 ||
+      s.type === 7;
     const backs = l.back.filter(moves);
     return {
+      // so the plate can be checked against the rect it is supposed to be
+      vr: { w: l.vr.r - l.vr.l, h: l.vr.b - l.vr.t },
       animated: backs.length + l.obj.filter(s => s.frames > 1).length,
       // a back needs calibrating if either axis is driven by the camera. an
       // axis is off the hook when it scrolls on a timer (4 and 6 horizontally,
@@ -130,7 +153,7 @@ const readLayers = async dir => {
       ),
     };
   } catch {
-    return { animated: 0, parallax: false };
+    return { vr: null, animated: 0, parallax: false };
   }
 };
 
@@ -166,10 +189,18 @@ for (const dir of entries) {
     ...(cap.backsHidden ? { backsHidden: true } : {}),
     ...(cap.hide ? { hide: cap.hide } : {}),
     ...(cap.keep ? { keep: cap.keep } : {}),
+    ...(cap.plate ? { plate: cap.plate } : {}),
+    ...(cap.bg ? { bg: cap.bg } : {}),
   });
   if (!meta) console.warn(`${dir.name}: no name in maps.json, using the id`);
   if (lay.parallax && !cap.cam)
     console.warn(`${dir.name}: animated parallax backs, wants a camera.json`);
+  // a plate that is not the vr rect puts every sprite at the wrong offset
+  // unless capture.json says where the capture starts
+  if (!cap.plate && lay.vr && (lay.vr.w !== size.w || lay.vr.h !== size.h))
+    console.warn(
+      `${dir.name}: plate is ${size.w}x${size.h} but vr is ${lay.vr.w}x${lay.vr.h}, wants a plate origin in capture.json`,
+    );
 }
 
 maps.sort((a, b) => a.name.localeCompare(b.name));
