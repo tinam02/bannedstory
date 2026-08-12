@@ -49,6 +49,22 @@
   image-rendering: pixelated;
 }
 
+// Every emitter on the map, on one canvas the size of the plate.
+//
+// No z-index, so it sits above the sprites drawn before it and under
+// charAnchor. Map particles are scenery: fog, smoke and glitter belong behind
+// whoever is standing in them, the same side of the character as the objects
+// they drift out of
+.particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  image-rendering: pixelated;
+}
+
 // one repeating background layer, the cheap way to cover a plate in 50px sky
 .tiled {
   position: absolute;

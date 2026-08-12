@@ -1,5 +1,8 @@
 -- dumps one map's back + obj layers as separate sprites, plus a layers.json manifest
 --
+-- particles come out alongside as particles.json plus one png per emitter,
+-- since they are a simulation rather than a sprite sequence
+--
 -- run it from the LuaConsole plugin in WzComparerR2, with Base.wz loaded
 -- set MAP_ID below, hit run, then npm run maps
 --
@@ -26,9 +29,12 @@ local OUT_ROOT = 'C:\\TINA\\CODE\\bannedstory\\bannedstory\\public\\maps'
 -- true reports what each map holds and writes nothing, for deciding which ones
 -- are worth screenshotting before you do the manual work
 --
+-- it also names each map's emitters, so an empty MAP_IDS with this on is how
+-- you find which maps have particles at all
+--
 -- set both of these back (empty MAP_IDS, SCREEN_ONLY false) to go back to
 -- dumping every map that has plates
-local SCREEN_ONLY = true
+local SCREEN_ONLY = false
 
 ------------------------------------------------------------
 -- node helpers
@@ -141,6 +147,35 @@ local function saveSprite(node, dirPath, baseName)
   return rect.Width, rect.Height, rect.X, rect.Y, ext, count
 end
 
+-- a particle texture is one bare canvas, not a sequence, so it skips
+-- CreateFromNode entirely. that one walks numbered children and a texture has
+-- none, so it would come back empty every time
+--
+-- returns w, h
+local function saveTexture(node, dirPath, baseName)
+  local fileName = Path.Combine(dirPath, baseName .. '.png')
+
+  local frame = Gif.CreateFrameFromNode(node, findNodeFunc)
+  if frame and frame.Bitmap then
+    local w, h = frame.Bitmap.Width, frame.Bitmap.Height
+    frame.Bitmap:Save(fileName, ImageFormat.Png)
+    frame.Bitmap:Dispose()
+    return w, h
+  end
+
+  -- no frame, so go at the raw png. these are inline rather than linked, so
+  -- there is nothing for the frame machinery to resolve anyway
+  local ok, bmp = pcall(function() return node.Value:ExtractPng() end)
+  if ok and bmp then
+    local w, h = bmp.Width, bmp.Height
+    bmp:Save(fileName, ImageFormat.Png)
+    bmp:Dispose()
+    return w, h
+  end
+
+  return nil
+end
+
 ------------------------------------------------------------
 -- manifest
 
@@ -150,6 +185,131 @@ local function q(s) return '"' .. tostring(s):gsub('\\', '\\\\'):gsub('"', '\\"'
 local function kv(k, v) return q(k) .. ':' .. v end
 local function ki(k, v) return kv(k, string.format('%d', v)) end
 local function ks(k, v) return kv(k, q(v)) end
+
+-- a wz float prints through the current culture, so on a comma decimal machine
+-- 0.5 arrives as "0,5" and would land in the json as a broken literal
+--
+-- returns nil for anything that is not a plain number, and the caller quotes it
+local function numLit(s)
+  local t = tostring(s):gsub(',', '.')
+  if t:match('^%-?%d+$')
+    or t:match('^%-?%d*%.%d+$')
+    or t:match('^%-?%d+%.?%d*[eE][%+%-]?%d+$') then
+    return t
+  end
+  return nil
+end
+
+-- everything a node holds, verbatim, as json fields without the braces
+--
+-- the fields go through unfiltered rather than off a known list. the format is
+-- cocos2d plus whatever nexon bolted on, and a field dropped here is one that
+-- costs another run of the whole dump to get back
+local function nodeFields(node, skip, depth)
+  local parts = {}
+  for f in each_node(node) do
+    if not (skip and skip[f.Text]) then
+      local v = f.Value
+      if v ~= nil then
+        local s = tostring(v)
+        local n = numLit(s)
+        table.insert(parts, n and kv(f.Text, n) or ks(f.Text, s))
+      elseif depth > 0 then
+        table.insert(parts, kv(f.Text, '{' .. nodeFields(f, nil, depth - 1) .. '}'))
+      end
+    end
+  end
+  return table.concat(parts, ',')
+end
+
+local function slug(s) return (tostring(s):gsub('[^%w%-]', '_')) end
+
+------------------------------------------------------------
+-- particles
+--
+-- the map node names emitters and places them, it does not hold them. the
+-- numbers live in Effect/particle.img under the same name, and one definition
+-- can be placed more than once, so the two go into particles.json separately
+--
+-- the definition is a cocos2d-x ParticleSystem in gravity mode, plus a couple
+-- of nexon additions, so the whole thing is a simulation we run rather than
+-- frames we can bake
+
+local PARTICLE_DEF_ROOT = 'Effect/particle.img/'
+
+-- returns the number of instances written
+local function dumpParticles(mapNode, MAP_ID, outDir)
+  local root = child(mapNode, 'particle')
+  if not root then return 0 end
+
+  local defs, defOrder, instances = {}, {}, {}
+
+  for p in each_node(root) do
+    local name = p.Text
+    local def = resolve(PARTICLE_DEF_ROOT .. name)
+
+    if not def then
+      env:WriteLine('missing particle definition ' .. PARTICLE_DEF_ROOT .. name)
+    else
+      if not defs[name] then
+        local base = 'particle-' .. slug(name)
+        local tex = child(def, 'texture')
+        local tw, th
+        if tex then tw, th = saveTexture(tex, outDir, base) end
+        if not tw then
+          env:WriteLine('EMPTY texture for particle ' .. name)
+          tw, th = 0, 0
+        end
+
+        local head = ks('texture', tw > 0 and (base .. '.png') or '') .. ','
+          .. ki('tw', tw) .. ',' .. ki('th', th)
+        -- the texture is a png, not a value, so it does not belong in the json
+        local rest = nodeFields(def, {texture = true}, 2)
+        defs[name] = '{' .. head .. (rest ~= '' and (',' .. rest) or '') .. '}'
+        table.insert(defOrder, name)
+        env:WriteLine(string.format('particle def %s  texture %dx%d', name, tw, th))
+      end
+
+      -- the numbered children are the placements, so a definition dropped in
+      -- twice comes out as two instances
+      local placed = 0
+      for inst in each_node(p) do
+        if tonumber(inst.Text) then
+          placed = placed + 1
+          local rest = nodeFields(inst, nil, 2)
+          table.insert(instances, '{' .. ks('name', name)
+            .. (rest ~= '' and (',' .. rest) or '') .. '}')
+        end
+      end
+      if placed == 0 then
+        env:WriteLine('particle ' .. name .. ' has no numbered placement, skipped')
+      end
+    end
+  end
+
+  -- a map whose emitters all failed to resolve gets no file at all, since the
+  -- file existing is what tells the index builder the map has particles
+  if #instances == 0 then
+    env:WriteLine('-- no particle instances resolved, wrote nothing')
+    return 0
+  end
+
+  local out = {'{'}
+  table.insert(out, ks('id', MAP_ID) .. ',')
+  table.insert(out, q('defs') .. ':{')
+  for i, name in ipairs(defOrder) do
+    table.insert(out, q(name) .. ':' .. defs[name] .. (i < #defOrder and ',' or ''))
+  end
+  table.insert(out, '},')
+  table.insert(out, q('instances') .. ':[')
+  table.insert(out, table.concat(instances, ',\n'))
+  table.insert(out, ']}')
+
+  File.WriteAllText(Path.Combine(outDir, 'particles.json'), table.concat(out, '\n'))
+  env:WriteLine(string.format('-- particles.json: %d def(s), %d instance(s)',
+    #defOrder, #instances))
+  return #instances
+end
 
 ------------------------------------------------------------
 -- main
@@ -291,6 +451,11 @@ put(']}')
 ------------------------------------------------------------
 
 File.WriteAllText(Path.Combine(outDir, 'layers.json'), table.concat(json, '\n'))
+
+-- particles go in their own file. they share nothing with the sprite entries
+-- and most maps have none, so the Stage only fetches it when the index says so
+dumpParticles(mapNode, MAP_ID, outDir)
+
 env:WriteLine('-------- wrote ' .. outDir .. ' --------')
 end
 
@@ -385,72 +550,25 @@ local function screenMap(MAP_ID)
   env:WriteLine('   nodes: ' .. table.concat(kids, ' ')
     .. (link ~= 0 and ('   LINK -> ' .. string.format('%d', link)) or ''))
 
-  -- particles are emitters rather than sprite sequences, so print the raw
-  -- fields and we can work out whether they are reproducible at all
-  --
-  -- the map holds instances, not emitters: a name and a `0` that carries the
-  -- placement. so this walks down rather than reading one layer, and then goes
-  -- looking for whatever `0` points at, which is where the numbers must live
-  local function dumpFields(node, indent, depth)
-    for f in each_node(node) do
-      local v = f.Value
-      if v ~= nil then
-        env:WriteLine(indent .. f.Text .. ' = ' .. tostring(v))
-      elseif depth > 0 then
-        env:WriteLine(indent .. f.Text .. ':')
-        dumpFields(f, indent .. '  ', depth - 1)
-      else
-        env:WriteLine(indent .. f.Text .. ': ...')
-      end
-    end
-  end
-
-  -- three in full is enough to see the shape, the rest would be pages of it
-  local PARTICLE_SAMPLE = 3
-
+  -- particles are emitters rather than sprite sequences, so the screen just
+  -- names them and says whether the definition is where we expect. anything
+  -- that prints "?" here is a map worth looking at by hand before dumping
   local particle = child(mapNode, 'particle')
   if particle then
-    local n = 0
-    local found = false
+    local names, n, missing = {}, 0, 0
     for p in each_node(particle) do
       n = n + 1
-      if n <= PARTICLE_SAMPLE then
-        env:WriteLine('   particle ' .. p.Text)
-        dumpFields(p, '     ', 4)
-        -- the map node names a definition but does not hold it, so try where
-        -- it could be. wz node names are case sensitive, hence both spellings
-        for _, base in ipairs({
-          'Effect/particle.img/', 'Effect/Particle.img/', 'Map/Particle/',
-          'Map/particle/', 'Particle/', 'Effect/BasicEff.img/',
-        }) do
-          local def = resolve(base .. p.Text .. '.img')
-            or resolve(base .. p.Text)
-          if def then
-            found = true
-            env:WriteLine('     -> definition at ' .. base .. p.Text)
-            dumpFields(def, '        ', 3)
-          end
-        end
-      end
+      local tags = str(child(p, '0'), 'tags', '')
+      local ok = resolve(PARTICLE_DEF_ROOT .. p.Text) ~= nil
+      if not ok then missing = missing + 1 end
+      table.insert(names, p.Text
+        .. (tags ~= '' and (':' .. tags) or '')
+        .. (ok and '' or ' ?'))
     end
-
-    -- still nowhere, so stop guessing and list what the roots actually hold.
-    -- one of these names is the folder the emitters are in
-    if not found then
-      for _, root in ipairs({'Effect', 'Map', 'Particle'}) do
-        local r = resolve(root)
-        if not r then
-          env:WriteLine('   root ' .. root .. ': not found')
-        else
-          local names = {}
-          for c in each_node(r) do table.insert(names, c.Text) end
-          table.sort(names)
-          env:WriteLine('   root ' .. root .. ' holds: ' .. table.concat(names, ' '))
-        end
-      end
-    end
-    env:WriteLine('   ' .. string.format('%d', n) .. ' particle instance(s), '
-      .. 'showed the first ' .. string.format('%d', PARTICLE_SAMPLE))
+    env:WriteLine(string.format('   particle %d instance(s)%s: %s',
+      n,
+      missing > 0 and string.format(', %d with no definition', missing) or '',
+      table.concat(names, ' ')))
   end
 end
 

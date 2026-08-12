@@ -41,6 +41,8 @@ export type MapInfo = {
   h: number;
   front: boolean;
   layers: boolean;
+  /** the map has a particles.json, so it runs emitters as well as sprites */
+  particles?: boolean;
   /** true once npm run webp has converted this map's plates and sprites */
   webp: boolean;
   // both from an optional capture.json
@@ -61,6 +63,14 @@ export type MapInfo = {
   /** sprite files to drop, a trailing * matches a prefix. `keep` wins over `hide` */
   hide?: string[];
   keep?: string[];
+  /**
+   * Which particle sets to run.
+   *
+   * A map can carry more than one state of itself, tagged on the emitter. The
+   * plate only ever shows one of them, so this says which. Absent means the map
+   * has one state and every emitter runs
+   */
+  particleTags?: string[];
   /**
    * Where the plate's top left sits in map coordinates.
    *

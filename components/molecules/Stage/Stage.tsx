@@ -11,6 +11,8 @@ import useMapLayers, {
   tilesV,
 } from './useMapLayers';
 import BackLayer from './BackLayer';
+import useMapParticles from './useMapParticles';
+import ParticleLayer from './ParticleLayer';
 import useUiSprites from './useUiSprites';
 import Caption from './Caption';
 import styles from './Stage.module.scss';
@@ -77,6 +79,7 @@ const Stage = () => {
   const space = map ?? { w: Math.max(view.w, 1), h: Math.max(view.h, 1) };
 
   const layers = useMapLayers(mapId, map?.layers ?? false);
+  const particles = useMapParticles(mapId, map?.particles ?? false);
 
   // where the plate starts, in map coordinates, so wz coords can be turned into
   // plate pixels. the capture is normally the vr rect exactly, and then vr is
@@ -413,6 +416,18 @@ const Stage = () => {
                 />
               ),
             )}
+
+          {/* over the map's own scenery and under whoever is standing in it,
+              which is where fog and smoke and falling glitter belong */}
+          {map && particles && (
+            <ParticleLayer
+              data={particles}
+              asset={asset}
+              origin={origin}
+              space={space}
+              tags={map.particleTags}
+            />
+          )}
 
           {chars.map(who => {
             const at = pos[who.id];

@@ -106,6 +106,8 @@ const readCapture = async dir => {
       // a colour behind everything, for a plate the sky doesn't reach the end
       // of, see MapInfo.bg
       bg: typeof c.bg === 'string' ? c.bg : null,
+      // which particle sets the plate was captured in, see MapInfo.particleTags
+      particleTags: Array.isArray(c.particleTags) ? c.particleTags : null,
     };
   } catch {
     return {
@@ -116,6 +118,7 @@ const readCapture = async dir => {
       keep: null,
       plate: null,
       bg: null,
+      particleTags: null,
     };
   }
 };
@@ -182,6 +185,11 @@ for (const dir of entries) {
     // written by scripts/wz/dump-map-layers.lua, holds the animated sprites
     // the manifest is also needed when objects come from it rather than the plate
     layers: lay.animated > 0 || cap.objsHidden || cap.backsHidden,
+    // emitters, from the same dump. most maps have no particle node, so the
+    // Stage only fetches the file when there is one
+    ...(await exists(join(MAPS_DIR, dir.name, 'layers', 'particles.json'))
+      ? { particles: true }
+      : {}),
     // npm run webp converts a whole map at once, so one plate is enough to tell
     webp: await exists(join(MAPS_DIR, dir.name, 'back.webp')),
     ...(cap.cam ? { cam: cap.cam } : {}),
@@ -191,6 +199,7 @@ for (const dir of entries) {
     ...(cap.keep ? { keep: cap.keep } : {}),
     ...(cap.plate ? { plate: cap.plate } : {}),
     ...(cap.bg ? { bg: cap.bg } : {}),
+    ...(cap.particleTags ? { particleTags: cap.particleTags } : {}),
   });
   if (!meta) console.warn(`${dir.name}: no name in maps.json, using the id`);
   if (lay.parallax && !cap.cam)
