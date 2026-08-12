@@ -34,9 +34,28 @@ henehoe.app {
 	# a change is a new name. `file` again, so a miss is not cached forever
 	@static {
 		path /_next/static/* /maps/* /ui/* /cursor/* /font/*
+		not path *.json
 		file
 	}
 	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# the manifests sitting beside that art are the avatar index story again, and
+	# were caught by the rule above because they live under the same paths.
+	#
+	# /maps/index.json is rewritten by every `npm run maps`, and layers.json and
+	# particles.json by every re-dump, all under their own names. a year of
+	# immutable on those means a returning visitor is pinned to the map list they
+	# first loaded: the day a map gains particles, everyone who has ever opened
+	# the site keeps the version that says it has none. purging cloudflare does
+	# not reach a browser, so there is no fixing it after the fact
+	#
+	# suffix matched rather than /maps/*.json, because a caddy wildcard in the
+	# middle of a path does not cross a slash and the manifests are three deep
+	@manifest {
+		path *.json
+		not path /avatar/*
+	}
+	header @manifest Cache-Control "no-cache"
 
 	# every page, not just the root.
 	#
