@@ -13,6 +13,11 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [
   {
+    date: '2026-08-14',
+    title: 'Gun hold',
+    body: 'Added gun sprites, the stand is available in the pose picker',
+  },
+  {
     date: '2026-08-12',
     title: 'Maps have their weather back',
     body: "Backdrops run the map's own particle emitters",
