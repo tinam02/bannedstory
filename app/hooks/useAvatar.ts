@@ -117,8 +117,8 @@ const loadEffect = (id: number) => {
   return hit;
 };
 
-const loadManifest = (folder: string, id: number) => {
-  const url = `${ROOT}/${folder}/${id}.json`;
+const loadManifest = (folder: string, file: string) => {
+  const url = `${ROOT}/${folder}/${file}.json`;
   let hit = manifests.get(url);
   if (!hit) {
     hit = fetch(url)
@@ -127,6 +127,24 @@ const loadManifest = (folder: string, id: number) => {
     manifests.set(url, hit);
   }
   return hit;
+};
+
+/**
+ * The item as carried, which for most items is just the item.
+ *
+ * A weapon keyed by weapon type has one sheet per carry, the item's own +
+ * `<id>-<type>` beside it, so a gun carry is a different file rather than a
+ * different pose. `types` says the art exists in wz; whether it has been
+ * extracted yet is what the fetch answers, and a miss falls back to the normal
+ * carry rather than leaving the character holding nothing
+ */
+const loadCarried = async (folder: string, id: number, carry?: number) => {
+  const own = await loadManifest(folder, String(id));
+  if (!own || !carry || carry === own.type) return { manifest: own, file: String(id) };
+  if (!own.types?.includes(carry)) return { manifest: own, file: String(id) };
+  const file = `${id}-${carry}`;
+  const variant = await loadManifest(folder, file);
+  return variant ? { manifest: variant, file } : { manifest: own, file: String(id) };
 };
 
 const loadSheet = (url: string) => {
@@ -193,7 +211,7 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
           if (!item) return null;
           const folder = folderFor(slot, item.typeInfo?.category);
           if (!folder) return null;
-          const manifest = await loadManifest(folder, item.id);
+          const { manifest, file } = await loadCarried(folder, item.id, outfit.carry);
           if (!manifest) return { slot, item: null };
           const part = partFor(slot);
           return {
@@ -201,7 +219,7 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
             item: {
               part,
               manifest,
-              sheetUrl: `${ROOT}/${folder}/${item.id}${SHEET_EXT}`,
+              sheetUrl: `${ROOT}/${folder}/${file}${SHEET_EXT}`,
               // the face and the face accessory are keyed by expression,
               // everything else by pose
               stance: FACE_PARTS.has(part)
@@ -267,7 +285,9 @@ const useAvatar = (outfit: Outfit, enabled: boolean) => {
     return () => {
       stale = true;
     };
-  }, [enabled, key, outfit.emotion, outfit.selectedItems]);
+    // carry is in here bc it decides which sheet is fetched, the same way vslot
+    // decides which layers exist. it is not something the canvas can apply
+  }, [enabled, key, outfit.emotion, outfit.carry, outfit.selectedItems]);
 
   return loaded;
 };

@@ -8,7 +8,21 @@ import { Outfit } from '@/types';
  * look wrong with the wrong weapon equipped or none at all
  */
 
-export type Pose = { stance: string; label: string };
+export type Pose = {
+  stance: string;
+  label: string;
+  /**
+   * The weapon type this cell carries the weapon as.
+   *
+   * Only the standing row uses it. The three carries are one choice in game and
+   * they read as one row here, but two of them are body stances and the gun is
+   * weapon art, so this rides alongside the stance rather than being one
+   */
+  carry?: number;
+};
+
+/** the gun carry, the weapon in the other arm. 1007 weapons have the art */
+export const GUN_CARRY = 49;
 
 /**
  * The O/T/P in an attack stance is the weapon class it was drawn for, one
@@ -21,6 +35,10 @@ export const POSE_GROUPS: { name: string; poses: Pose[] }[] = [
     poses: [
       { stance: 'stand1', label: 'Stand' },
       { stance: 'stand2', label: 'Stand 2H' },
+      // the same stance as Stand, so the difference is entirely the weapon.
+      // a weapon with no type 49 art draws its normal carry and this cell just
+      // looks like Stand, which is the honest fallback
+      { stance: 'stand1', label: 'Stand gun', carry: GUN_CARRY },
       { stance: 'alert', label: 'Alert' },
       { stance: 'heal', label: 'Heal' },
     ],
@@ -78,9 +96,15 @@ export const POSE_GROUPS: { name: string; poses: Pose[] }[] = [
 
 export const POSES: Pose[] = POSE_GROUPS.flatMap(g => g.poses);
 
+/** the same stance and the same carry, which is what makes a cell the active one */
+export const samePose = (p: Pose, stance: string, carry?: number) =>
+  p.stance === stance && (p.carry ?? undefined) === (carry ?? undefined);
+
 /** the stance the outfit is standing in, or the raw string if it's unknown */
-export const poseLabel = (stance: string) =>
-  POSES.find(p => p.stance === stance)?.label ?? stance;
+export const poseLabel = (stance: string, carry?: number) =>
+  POSES.find(p => samePose(p, stance, carry))?.label ??
+  POSES.find(p => p.stance === stance)?.label ??
+  stance;
 
 /**
  * The character in one pose, for a picker thumbnail.
@@ -89,9 +113,10 @@ export const poseLabel = (stance: string) =>
  * makes a pose readable, and a weapon decides whether the attack ones look
  * like anything at all
  */
-export const posePreviewOutfit = (outfit: Outfit, stance: string): Outfit => ({
+export const posePreviewOutfit = (outfit: Outfit, pose: Pose): Outfit => ({
   ...outfit,
-  action: stance,
+  action: pose.stance,
+  carry: pose.carry,
   // a still frame, so the grid isn't 35 animations running at once
   animating: false,
   frame: 0,

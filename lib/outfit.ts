@@ -201,6 +201,9 @@ export function parseOutfit(
   const outfit: Outfit = {
     ...base,
     action: typeof src.action === 'string' ? src.action : base.action,
+    // nobody else writes it, so an outfit from another sim
+    // simply has none and carries its weapon the normal way
+    carry: toNumber(src.carry),
     emotion: typeof src.emotion === 'string' ? src.emotion : base.emotion,
     skin: String(skinId),
     zoom: toNumber(src.zoom) ?? base.zoom,

@@ -72,6 +72,15 @@ export interface Outfit {
   id: number;
   type: 'character';
   action: string;
+  /**
+   * Which weapon type the equipped weapon is carried as, eg 49 for the gun
+   * carry, where it sits in the other arm.
+   *
+   * A cash weapon holds a whole stance set per weapon type it imitates, so this
+   * picks the art rather than the pose. Absent is the weapon's own carry, which
+   * is what every weapon that has only one does
+   */
+  carry?: number;
   /** Applied as `animationName` on the Face and Face Accessory layers. */
   emotion: string;
   /** Body item id as a string. Kept for compatibility; Body entry wins. */

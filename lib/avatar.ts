@@ -40,6 +40,15 @@ export type ItemManifest = {
   sheet: string;
   islot: string;
   vslot: string;
+  /**
+   * Weapons only, and only the ones keyed by weapon type.
+   *
+   * `type` is the carry this manifest holds and `types` is every carry the item
+   * has art for, eg `[30, 49]` for a cash sword that can also be held as a gun.
+   * The extra carries are written beside the item as `<id>-<type>`
+   */
+  type?: number;
+  types?: number[];
   canvases: Record<string, Canvas>;
   frames: Record<string, Array<Record<string, number>>>;
 };

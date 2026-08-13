@@ -46,6 +46,18 @@ local ONLY = ''
 -- last one stopped
 local REDO = false
 
+-- write the weapon type variants for items already extracted, and nothing else.
+--
+-- a cash weapon holds a whole stance set per weapon type it imitates and the
+-- normal pass takes the lowest code, so the gun carry (type 49, on 1007 of
+-- them) was never written. with this on, an item whose <id>.json already exists
+-- is still opened and only its missing <id>-<code> files are written. the
+-- primary sheet is not touched, which is the point: it stays byte identical and
+-- the deploy ships only the new carries
+--
+-- set ONLY = 'Weapon' with this, nothing else has type variants
+local VARIANTS = false
+
 -- redo just these ids and nothing else, for checking a change without sitting
 -- through a full run. ids are as they appear in the output, leading zeros
 -- stripped, so 00002000.img is '2000'. these eight are what avatar-spike wears
@@ -54,6 +66,16 @@ local REDO = false
 local ITEMS = {
   -- '2000', '12000', '20000', '30000', '1000000', '1040000', '1060000', '1070000',
 }
+
+-- the same list from a file, one id per line, for when it is too long to paste.
+-- node scripts/variant-ids.mjs writes the 1191 weapons that carry type variants
+--
+-- empty for a normal run. left set, it would quietly turn every future run into
+-- a targeted one, which looks like an extraction that skipped nearly everything
+--
+-- for a carries run, paste:
+-- 'C:\\TINA\\CODE\\bannedstory\\bannedstory\\.avatar-out\\variant-ids.txt'
+local ITEMS_FILE = ''
 
 -- how wide a packed sheet gets before it wraps to a new row
 local SHEET_W = 1024
@@ -113,7 +135,9 @@ local function onDisk(dir)
   local ok = pcall(function()
     for _, f in each(Directory.GetFiles(dir)) do
       bytes = bytes + FileInfo(f).Length
-      if f:find('%.json$') then items = items + 1 end
+      -- <id>-49.json is a carry of an item, not an item, so it is not counted
+      -- as one. the bytes are still its own
+      if f:find('%.json$') and not f:find('%-%d+%.json$') then items = items + 1 end
     end
   end)
   if not ok then return nil, nil end
@@ -203,18 +227,21 @@ end
 -- the rest in the manifest. that is what makes ~2200 cash weapons, almost every
 -- cash weapon there is, wearable instead of absent
 local function typeVariant(img)
-  local bestCode, bestNode, codes = nil, nil, {}
+  local bestCode, bestNode, codes, nodes = nil, nil, {}, {}
   for n in each_node(img) do
     local code = tonumber(textOf(n) or '')
     -- a real type node holds stances, which is what tells it apart from a
     -- frame number on an item that just happens to be shallow
     if code and child(n, 'stand1') then
       table.insert(codes, code)
+      nodes[code] = n
       if not bestCode or code < bestCode then bestCode, bestNode = code, n end
     end
   end
   table.sort(codes)
-  return bestNode, bestCode, codes
+  -- nodes as well, so the carries the primary pass does not take can still be
+  -- reached without walking the img again
+  return bestNode, bestCode, codes, nodes
 end
 
 -- has to extract the target, not just look it up.
@@ -432,6 +459,24 @@ if #ITEMS > 0 then
   say('targeted redo of ' .. #ITEMS .. ' items, everything else skipped')
 end
 
+-- the same thing from a file, one id per line, for a list too long to paste.
+--
+-- worth it for VARIANTS: without a list it opens every img in the folder to
+-- find out which carry extras, and opening an img is the whole cost. only 1191
+-- weapons have any, and node scripts/variant-ids.mjs writes exactly those
+if ITEMS_FILE ~= '' and File.Exists(ITEMS_FILE) then
+  wanted = wanted or {}
+  local n = 0
+  for line in File.ReadAllText(ITEMS_FILE):gmatch('[^\r\n]+') do
+    local id = line:match('^%s*(%d+)%s*$')
+    if id then
+      wanted[id] = true
+      n = n + 1
+    end
+  end
+  say('targeted redo from ' .. ITEMS_FILE .. ', ' .. string.format('%d', n) .. ' ids')
+end
+
 for _, folder in ipairs(FOLDERS) do
   if ONLY ~= '' and folder.name ~= ONLY then goto nextFolder end
   local root = resolve(folder.path)
@@ -451,6 +496,11 @@ for _, folder in ipairs(FOLDERS) do
     table.sort(names)
 
     local done, canvasCount, byteCount, failed = 0, 0, 0, 0
+    -- extra carries written beside a primary, counted apart bc they are not
+    -- items and would make `done` disagree with the file count
+    local variantCount = 0
+    -- images actually opened, which is what the gc sweep has to be paced off
+    local opened = 0
     -- counts every item, where `done` only counts the ones that produced
     -- something. beating on `done` meant a folder yielding nothing logged a
     -- heartbeat per item, since 0 % 250 is 0 every time
@@ -464,14 +514,20 @@ for _, folder in ipairs(FOLDERS) do
       end
       seen = seen + 1
       local doneId = name:gsub('%.img$', ''):gsub('^0+', '')
+      -- declared up here bc a goto cannot jump past a local into its scope
+      local primaryDone = false
       if wanted then
         -- a targeted redo, so everything else is not our business and the
         -- already-written check does not apply to the ones that are
         if not wanted[doneId] then goto nextItem end
       elseif not REDO and File.Exists(Path.Combine(dir, doneId .. '.json')) then
-        -- already done on an earlier pass
-        done = done + 1
-        goto nextItem
+        -- already done on an earlier pass. VARIANTS falls through anyway, since
+        -- its whole job is the carries beside a primary that already exists
+        if not VARIANTS then
+          done = done + 1
+          goto nextItem
+        end
+        primaryDone = true
       end
 
       local img = resolve(folder.path .. '/' .. name)
@@ -490,8 +546,9 @@ for _, folder in ipairs(FOLDERS) do
         if folder.byExpression then keys = ownKeys() end
 
         -- set when this item turned out to be keyed by weapon type, so the
-        -- manifest can record which appearance we took and what else was there
-        local usedType, allTypes = nil, nil
+        -- manifest can record which appearance we took and what else was there.
+        -- typeNodes is how the carries we did not take are reached afterwards
+        local usedType, allTypes, typeNodes = nil, nil, nil
 
         -- a canvas of a pixel or two is not art, it is a marker saying the art
         -- is somewhere else. so an item whose every canvas is one counts as
@@ -510,53 +567,65 @@ for _, folder in ipairs(FOLDERS) do
           return true
         end
 
-        local function doItem()
-          local canvases, order, frames, total, slots, slotOrder = collect(img, keys)
+        -- one appearance of one item.
+        --
+        -- no argument is the item's own art, which is what every folder gets.
+        -- a weapon type node writes that carry instead, beside the primary as
+        -- <id>-<code>, and skips the fallbacks: a type node holds stances by
+        -- definition, that is how typeVariant recognised it
+        local function doItem(vNode, vCode)
+          local canvases, order, frames, total, slots, slotOrder
+          if vNode then
+            canvases, order, frames, total, slots, slotOrder = collect(vNode, STANCES)
+            if not total or total < 1 then return 0, 0 end
+          else
+            canvases, order, frames, total, slots, slotOrder = collect(img, keys)
 
-          -- what the stance pass got, in case a fallback comes back with less
-          local hadC, hadO, hadF, hadT, hadS, hadSO =
-            canvases, order, frames, total, slots, slotOrder
+            -- what the stance pass got, in case a fallback comes back with less
+            local hadC, hadO, hadF, hadT, hadS, hadSO =
+              canvases, order, frames, total, slots, slotOrder
 
-          -- nothing under the stance names, so try one level down. a cash
-          -- weapon keeps a whole set of stances per weapon type it imitates
-          if empty(total, slots, slotOrder) and keys == STANCES then
-            local vNode, vCode, codes = typeVariant(img)
-            if vNode then
-              usedType, allTypes = vCode, codes
-              if not shapes[folder.name .. ':type'] then
-                shapes[folder.name .. ':type'] = true
-                say(string.format(
-                  '  %s has weapon type variants, taking the lowest. first one: %d of %d codes',
-                  folder.name, vCode, #codes))
+            -- nothing under the stance names, so try one level down. a cash
+            -- weapon keeps a whole set of stances per weapon type it imitates
+            if empty(total, slots, slotOrder) and keys == STANCES then
+              local vNode, vCode, codes, vNodes = typeVariant(img)
+              if vNode then
+                usedType, allTypes, typeNodes = vCode, codes, vNodes
+                if not shapes[folder.name .. ':type'] then
+                  shapes[folder.name .. ':type'] = true
+                  say(string.format(
+                    '  %s has weapon type variants, taking the lowest. first one: %d of %d codes',
+                    folder.name, vCode, #codes))
+                end
+                canvases, order, frames, total, slots, slotOrder = collect(vNode, keys)
               end
-              canvases, order, frames, total, slots, slotOrder = collect(vNode, keys)
             end
-          end
 
-          -- still nothing, so this item isn't keyed by pose at all. face
-          -- accessories follow expressions the way Face does, and anything else
-          -- keyed its own way lands here too. retry on its own keys rather than
-          -- skip it, and say what they were the first time so we learn the
-          -- shape instead of guessing at it
-          if empty(total, slots, slotOrder) and keys == STANCES then
-            local mine = ownKeys()
-            if #mine > 0 then
-              if not shapes[folder.name] then
-                shapes[folder.name] = true
-                say('  ' .. folder.name .. ' is not keyed by stance, using its own: '
-                  .. table.concat(mine, ' ', 1, math.min(#mine, 12))
-                  .. (#mine > 12 and (' ... ' .. #mine .. ' total') or ''))
+            -- still nothing, so this item isn't keyed by pose at all. face
+            -- accessories follow expressions the way Face does, and anything else
+            -- keyed its own way lands here too. retry on its own keys rather than
+            -- skip it, and say what they were the first time so we learn the
+            -- shape instead of guessing at it
+            if empty(total, slots, slotOrder) and keys == STANCES then
+              local mine = ownKeys()
+              if #mine > 0 then
+                if not shapes[folder.name] then
+                  shapes[folder.name] = true
+                  say('  ' .. folder.name .. ' is not keyed by stance, using its own: '
+                    .. table.concat(mine, ' ', 1, math.min(#mine, 12))
+                    .. (#mine > 12 and (' ... ' .. #mine .. ' total') or ''))
+                end
+                canvases, order, frames, total, slots, slotOrder = collect(img, mine)
               end
-              canvases, order, frames, total, slots, slotOrder = collect(img, mine)
             end
-          end
 
-          -- the fallbacks found nothing better, so put back what the stance
-          -- pass had. a placeholder still beats nothing: the item stays in the
-          -- closet and stays wearable, it just draws a pixel
-          if empty(total, slots, slotOrder) then
-            canvases, order, frames, total, slots, slotOrder =
-              hadC, hadO, hadF, hadT, hadS, hadSO
+            -- the fallbacks found nothing better, so put back what the stance
+            -- pass had. a placeholder still beats nothing: the item stays in the
+            -- closet and stays wearable, it just draws a pixel
+            if empty(total, slots, slotOrder) then
+              canvases, order, frames, total, slots, slotOrder =
+                hadC, hadO, hadF, hadT, hadS, hadSO
+            end
           end
 
           if not total or total < 1 then return 0, 0 end
@@ -585,7 +654,12 @@ for _, folder in ipairs(FOLDERS) do
 
           local id = name:gsub('%.img$', ''):gsub('^0+', '')
           if id == '' then error('no id in ' .. name) end
-          local png = Path.Combine(dir, id .. '.png')
+          -- the carries sit beside the item, <id>-49.png next to <id>.png, so
+          -- the primary keeps its name and a re-run of this pass adds files
+          -- rather than rewriting any
+          local fileId = id
+          if vCode then fileId = id .. '-' .. string.format('%d', vCode) end
+          local png = Path.Combine(dir, fileId .. '.png')
           bmp:Save(png, ImageFormat.Png)
           bmp:Dispose()
           for _, k in ipairs(slotOrder) do
@@ -643,18 +717,19 @@ for _, folder in ipairs(FOLDERS) do
           -- took, `types` is everything that was on offer, so a later pass can
           -- let people switch without re-reading the wz
           local typeBits = ''
-          if usedType then
+          local mine = vCode or usedType
+          if mine then
             local list = {}
             for _, c in ipairs(allTypes or {}) do
               table.insert(list, string.format('%d', c))
             end
-            typeBits = q('type') .. ':' .. string.format('%d', usedType) .. ','
+            typeBits = q('type') .. ':' .. string.format('%d', mine) .. ','
               .. q('types') .. ':[' .. table.concat(list, ',') .. '],'
           end
 
-          File.WriteAllText(Path.Combine(dir, id .. '.json'),
+          File.WriteAllText(Path.Combine(dir, fileId .. '.json'),
             '{' .. q('id') .. ':' .. id .. ','
-            .. q('sheet') .. ':' .. q(id .. '.png') .. ','
+            .. q('sheet') .. ':' .. q(fileId .. '.png') .. ','
             .. typeBits
             .. q('islot') .. ':' .. q(islot and tostring(islot.Value) or '') .. ','
             .. q('vslot') .. ':' .. q(vslot and tostring(vslot.Value) or '') .. ','
@@ -666,7 +741,45 @@ for _, folder in ipairs(FOLDERS) do
 
         -- one odd item out of tens of thousands shouldn't end the run, so it
         -- gets logged and skipped instead
-        local ok, gotCanvases, gotBytes = pcall(doItem)
+        local ok, gotCanvases, gotBytes = true, 0, 0
+        if primaryDone then
+          -- VARIANTS on an item already extracted. the primary is not touched,
+          -- so the codes come from the img rather than from a doItem that never
+          -- ran. the lowest is the one that pass took, by definition
+          local _, _, codes, nodes = typeVariant(img)
+          if #codes > 0 then
+            allTypes, typeNodes, usedType = codes, nodes, codes[1]
+          end
+        else
+          ok, gotCanvases, gotBytes = pcall(doItem)
+        end
+
+        -- the other carries.
+        --
+        -- a cash weapon holds a full stance set per weapon type it imitates and
+        -- the pass above takes one, so the rest are written beside it. type 49
+        -- is the gun carry, the weapon in the other arm, and 1007 weapons have
+        -- one. skipped when the file is already there, so this is resumable the
+        -- same way the primary is
+        if ok and allTypes and #allTypes > 1 and typeNodes then
+          for _, code in ipairs(allTypes) do
+            local vfile = Path.Combine(dir, doneId .. '-' .. string.format('%d', code) .. '.json')
+            if code ~= usedType and typeNodes[code] and (REDO or not File.Exists(vfile)) then
+              local vok, vCanvases, vBytes = pcall(doItem, typeNodes[code], code)
+              if vok and vCanvases and vCanvases > 0 then
+                canvasCount = canvasCount + vCanvases
+                byteCount = byteCount + vBytes
+                variantCount = variantCount + 1
+              elseif not vok then
+                failed = failed + 1
+                if failed <= 20 then
+                  say('  FAILED variant ' .. name .. ' type ' .. tostring(code)
+                    .. ': ' .. tostring(vCanvases))
+                end
+              end
+            end
+          end
+        end
 
         -- hand the pixels back. without this every image we open stays in
         -- memory and the process falls over a few thousand items in, which is
@@ -682,7 +795,16 @@ for _, folder in ipairs(FOLDERS) do
           say(freed and '  releasing images as we go, memory should hold'
             or '  WARNING Unextract did not bind, this will run out of memory')
         end
-        if done % 50 == 0 then sweep() end
+        -- every 50 images opened, NOT every 50 items written.
+        --
+        -- those are the same number on a normal run and wildly different on a
+        -- VARIANTS one, where `done` stays 0 because the primary already
+        -- existed. 0 % 50 is 0 every time, so this ran a full blocking GC with
+        -- WaitForPendingFinalizers on a 536 MB heap once per item and the run
+        -- crawled. same trap as the heartbeat above, which is why that one
+        -- counts `seen`
+        opened = opened + 1
+        if opened % 50 == 0 then sweep() end
         if ok and gotCanvases and gotCanvases > 0 then
           done = done + 1
           canvasCount = canvasCount + gotCanvases
@@ -708,6 +830,10 @@ for _, folder in ipairs(FOLDERS) do
       folder.name, diskItems, #names, canvasCount, diskBytes / 1048576,
       diskItems > 0 and (diskBytes / diskItems / 1024) or 0,
       failed > 0 and ('  ' .. string.format('%d', failed) .. ' FAILED') or ''))
+    if variantCount > 0 then
+      say(string.format('           %d extra weapon type carries written beside them',
+        variantCount))
+    end
   end
   ::nextFolder::
 end
