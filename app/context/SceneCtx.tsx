@@ -113,6 +113,17 @@ type SceneApi = Scene & {
   maps: MapInfo[];
   /** False until localStorage has been read, so nothing flashes the default. */
   hydrated: boolean;
+
+  /**
+   * Puts everything draggable back where it started
+   */
+  recenter: () => void;
+  /**
+   * The standing recenter request. A counter for the same reason focusReq
+   * carries one: pressing the button twice has to read as two requests, or the
+   * second press would be no change at all
+   */
+  resetReq: number;
 };
 
 const Ctx = createContext<SceneApi>({
@@ -124,6 +135,8 @@ const Ctx = createContext<SceneApi>({
   setZoom: () => {},
   maps: [],
   hydrated: false,
+  recenter: () => {},
+  resetReq: 0,
 });
 
 export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
@@ -132,6 +145,7 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
   const [zoom, setZoomState] = useState(2);
   const [maps, setMaps] = useState<MapInfo[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [resetReq, setResetReq] = useState(0);
 
   // null is a real choice, it means "no map, just the backdrop colour"
   //
@@ -212,6 +226,8 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
     [save],
   );
 
+  const recenter = useCallback(() => setResetReq(n => n + 1), []);
+
   const value = useMemo(
     () => ({
       bg,
@@ -222,8 +238,10 @@ export const SceneProvider = ({ children }: { children: React.ReactNode }) => {
       setZoom,
       maps,
       hydrated,
+      recenter,
+      resetReq,
     }),
-    [bg, setBg, mapId, setMapId, zoom, setZoom, maps, hydrated],
+    [bg, setBg, mapId, setMapId, zoom, setZoom, maps, hydrated, recenter, resetReq],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

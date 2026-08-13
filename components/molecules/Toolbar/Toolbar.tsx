@@ -3,8 +3,7 @@ import ZoomControls from '@/components/atoms/ZoomControls';
 import SkinPicker from '@/components/atoms/SkinPicker';
 import EarPicker from '@/components/atoms/EarPicker';
 import RandomizeButton from '@/components/atoms/RandomizeButton';
-import ExportButton from '@/components/atoms/Export';
-import ImportButton from '@/components/atoms/Import';
+import RecenterButton from '@/components/atoms/RecenterButton';
 import AnimateToggle from '@/components/atoms/AnimateToggle';
 import FlipToggle from '@/components/atoms/FlipToggle';
 import EmotePicker from '@/components/atoms/EmotePicker';
@@ -24,9 +23,8 @@ const Toolbar = () => (
     <div className={styles.row}>
       <MapPicker />
       <BgPicker />
-      <ImportButton />
-      <ExportButton />
-      <RandomizeButton /> 
+      <RecenterButton />
+      <RandomizeButton />
       <ZoomControls />
       <GithubLink />
     </div>

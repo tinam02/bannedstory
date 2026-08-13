@@ -227,4 +227,32 @@ export function parseOutfit(
   return { outfit, warnings };
 }
 
-export const outfitFilename = (now: number) => `henehoeapp-${now}.json`;
+export const outfitFilename = (now: number, name?: string) => {
+  const slug = (name ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return `henehoeapp-${slug ? `${slug}-` : ''}${now}.json`;
+};
+
+/**
+ * Saves one character as a file.
+ *
+ * State is already the interchange format, so there is nothing to convert. The
+ * id is stamped fresh bc it doubles as the export's timestamp
+ */
+export function downloadOutfit(outfit: Outfit, now: number) {
+  const blob = new Blob([JSON.stringify({ ...outfit, id: now }, null, 2)], {
+    type: 'application/json;charset=utf-8;',
+  });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = outfitFilename(now, outfit.name);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

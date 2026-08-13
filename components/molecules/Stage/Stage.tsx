@@ -41,10 +41,17 @@ const EDGE_PAD = 24;
 const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
 
+// Where a character stands before anyone drags her: a row across the middle,
+// spaced so a new face lands beside the others rather than exactly on top.
+const homeOf = (i: number, n: number, s: { w: number; h: number }) => ({
+  x: s.w / 2 + (i - (n - 1) / 2) * 70,
+  y: Math.round(s.h / 2 + Math.min(s.h / 4, 150)),
+});
+
 const Stage = () => {
   const { chars, activeId, setActiveId, captionsOf, setCaption, focusReq } =
     useChar();
-  const { bg, mapId, maps, zoom } = useScene();
+  const { bg, mapId, maps, zoom, resetReq } = useScene();
 
   // fetched only once some character actually wants one, all off by default
   const wantsSpeech = chars.some(c => captionsOf(c.id).speech.on);
@@ -211,18 +218,35 @@ const Stage = () => {
       const saved =
         localStorage.getItem(`${POS_KEY}:${key}:${id}`) ??
         (i === 0 ? localStorage.getItem(`${POS_KEY}:${key}`) : null);
-      // a new face starts beside the others rather than exactly on top
-      next[id] = saved
-        ? JSON.parse(saved)
-        : {
-            x: s.w / 2 + (i - (list.length - 1) / 2) * 70,
-            y: Math.round(s.h / 2 + Math.min(s.h / 4, 150)),
-          };
+      next[id] = saved ? JSON.parse(saved) : homeOf(i, list.length, s);
     });
     setPos(next);
     const savedPan = localStorage.getItem(`${PAN_KEY}:${key}`);
     setPan(savedPan ? JSON.parse(savedPan) : { x: 0, y: 0 });
   }, [mapId, ids]);
+
+  // the recenter button, for a character dragged off somewhere unreachable
+  //
+  // this map only. positions are keyed per map and clearing the lot would
+  // undo every other map you had arranged
+  useEffect(() => {
+    if (!resetReq) return;
+    const key = mapId ?? 'none';
+    const s = spaceRef.current;
+    const list = ids ? ids.split(',').map(Number) : [];
+    const next: Record<number, { x: number; y: number }> = {};
+    list.forEach((id, i) => {
+      next[id] = homeOf(i, list.length, s);
+      localStorage.removeItem(`${POS_KEY}:${key}:${id}`);
+    });
+    // the solo key as well, or the first character would inherit her old spot
+    // straight back on the next load
+    localStorage.removeItem(`${POS_KEY}:${key}`);
+    localStorage.removeItem(`${PAN_KEY}:${key}`);
+    setPos(next);
+    setPan({ x: 0, y: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetReq]);
 
   useEffect(() => {
     const el = frameRef.current;

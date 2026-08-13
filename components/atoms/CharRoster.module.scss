@@ -84,6 +84,9 @@
 
 .act {
   flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 22px;
   height: 22px;
   appearance: none;
@@ -108,6 +111,10 @@
 }
 
 .add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   appearance: none;
   border: 0;
   border-radius: 5px;
@@ -127,5 +134,20 @@
   &:disabled {
     opacity: 0.45;
     cursor: default;
+  }
+}
+
+// what the last import had to say, warnings or the reason it failed
+.note {
+  border-radius: 5px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffe39a;
+  font-size: 10px;
+  line-height: 1.4;
+  cursor: pointer;
+
+  &[data-failed] {
+    color: #ff9a9a;
   }
 }
